@@ -1,82 +1,1361 @@
 <!DOCTYPE html>
-<html lang="pt-BR" data-theme="light">
+<html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Principal</title>
-    <!-- Tailwind CSS -->
+    <title>Painel Principal - NutriPort</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
-            darkMode: ['class', '[data-theme="dark"]'],
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#b8860b',
-                        'primary-hover': '#9a7209',
-                        surface: 'var(--color-surface)',
-                        'text-main': 'var(--color-text-primary)',
-                        sec: 'var(--color-text-secondary)',
-                        bg: 'var(--color-bg)',
-                        border: 'var(--color-border)',
-                    }
-                }
-            }
+            darkMode: ['class', '[data-theme="dark"]']
         }
     </script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        (function () {
+            try {
+                const stored = JSON.parse(localStorage.getItem('gestaovscontabil_theme'));
+                if (stored && stored.mode === 'escuro') {
+                    document.documentElement.classList.add('dark');
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                }
+            } catch (e) { }
+            
+            // Listen for changes in localStorage to update theme dynamically
+            window.addEventListener('storage', function(e) {
+                if (e.key === 'gestaovscontabil_theme') {
+                    try {
+                        const stored = JSON.parse(e.newValue);
+                        if (stored && stored.mode === 'escuro') {
+                            document.documentElement.classList.add('dark');
+                            document.documentElement.setAttribute('data-theme', 'dark');
+                            updateChartThemes(true);
+                        } else {
+                            document.documentElement.classList.remove('dark');
+                            document.documentElement.setAttribute('data-theme', 'light');
+                            updateChartThemes(false);
+                        }
+                    } catch (err) {}
+                }
+            });
+
+            // Global chart theme updater
+            window.updateChartThemes = function(isDark) {
+                const textColor = isDark ? '#a8a29e' : '#6b7280';
+                const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)';
+                const titleColor = isDark ? '#f2f2f2' : '#333';
+                const bgColor = isDark ? '#1c1917' : '#fff';
+                const tooltipBorderColor = isDark ? '#292524' : '#e5e7eb';
+
+                Chart.defaults.color = textColor;
+                
+                Object.values(chartInstances).forEach(chart => {
+                    if (chart.options.plugins.tooltip) {
+                        chart.options.plugins.tooltip.backgroundColor = bgColor;
+                        chart.options.plugins.tooltip.titleColor = titleColor;
+                        chart.options.plugins.tooltip.bodyColor = textColor;
+                        chart.options.plugins.tooltip.borderColor = tooltipBorderColor;
+                    }
+                    if (chart.options.scales && chart.options.scales.x) {
+                        chart.options.scales.x.ticks.color = textColor;
+                        if (chart.options.scales.x.grid) chart.options.scales.x.grid.color = gridColor;
+                    }
+                    if (chart.options.scales && chart.options.scales.y) {
+                        chart.options.scales.y.ticks.color = textColor;
+                        if (chart.options.scales.y.grid) chart.options.scales.y.grid.color = gridColor;
+                    }
+                    chart.update();
+                });
+            }
+        })();
+    </script>
     <style>
         :root {
-            --color-bg: #f8f9fa;
-            --color-surface: #ffffff;
-            --color-text-primary: #111827;
-            --color-text-secondary: #6b7280;
-            --color-border: #e5e7eb;
+            --bg: #f8f9fa;
+            --surface: #ffffff;
+            --surface-hover: #fafafa;
+            --border: #e5e7eb;
+            --text-primary: #111827;
+            --text-secondary: #6b7280;
+            --accent: #b8860b;
+            --accent-light: #faecd4;
+            --accent-dark: #9a7209;
         }
+
         html[data-theme="dark"] {
-            --color-bg: #0c0a09;
-            --color-surface: #1c1917;
-            --color-text-primary: #f2f2f2;
-            --color-text-secondary: #a8a29e;
-            --color-border: #292524;
+            --bg: #0c0a09;
+            --surface: #1c1917;
+            --surface-hover: #292524;
+            --border: #292524;
+            --text-primary: #f2f2f2;
+            --text-secondary: #a8a29e;
+            --accent: #b8860b;
+            --accent-light: #3d2e0a;
+            --accent-dark: #9a7209;
         }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            background-color: var(--color-bg);
-            color: var(--color-text-primary);
             font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text-primary);
             margin: 0;
-            padding: 24px;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .scrollable {
+            height: 100vh;
+            overflow-y: auto;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .scrollable::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* KPI Cards */
+        .kpi-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.25rem;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--stripe-color, #e5e7eb), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.08);
+            border-color: var(--stripe-color, var(--border));
+        }
+
+        .kpi-card:hover::before {
+            opacity: 1;
+        }
+
+        .kpi-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        .kpi-value {
+            font-size: 1.75rem;
+            font-weight: 800;
+            line-height: 1;
+            letter-spacing: -0.02em;
+        }
+
+        .kpi-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 2px;
+        }
+
+        /* Chart Cards */
+        .chart-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chart-card-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .chart-card-subtitle {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* Activity List */
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.65rem 0.75rem;
+            border-radius: 10px;
+            transition: background 0.15s;
+            border: 1px solid transparent;
+        }
+
+        .activity-item:hover {
+            background: var(--surface-hover);
+            border-color: var(--border);
+        }
+
+        .activity-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        /* Skeleton */
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 8px;
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: 200% 0;
+            }
+
+            100% {
+                background-position: -200% 0;
+            }
+        }
+
+        /* Loader */
+        .loader-container {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--bg);
+            z-index: 9999;
+            transition: opacity 0.4s ease-in-out;
+            opacity: 1;
+        }
+
+        .loader-container.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .preloader-container {
+            position: relative;
+            width: 150px;
+            height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .preloader-logo {
+            width: 80px;
+            height: auto;
+            z-index: 10;
+            animation: pulse 2s infinite ease-in-out;
+        }
+
+        .preloader-spinner {
+            position: absolute;
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            border: 3px solid transparent;
+            border-top-color: var(--accent);
+            animation: spin 1.5s linear infinite;
+        }
+
+        .preloader-spinner::before,
+        .preloader-spinner::after {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            border-radius: 50%;
+            border: 3px solid color-mix(in srgb, var(--accent) 30%, transparent);
+            animation: sonar 2s infinite;
+            opacity: 0;
+        }
+
+        .preloader-spinner::after {
+            animation-delay: 1s;
+        }
+
+        .loader-container p {
+            margin-top: 20px;
+            color: var(--text-secondary);
+            font-size: 1rem;
+            letter-spacing: 1px;
+            animation: fadeIn 2s infinite alternate;
+            text-align: center;
+            max-width: 80%;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes sonar {
+            0% {
+                transform: scale(0.5);
+                opacity: 0;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(1.2);
+                opacity: 0;
+            }
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0.5;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* Badge */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 9999px;
+            font-size: 0.65rem;
+            font-weight: 600;
+        }
+
+        /* Pulse ring for warning KPI */
+        @keyframes pulse-ring {
+            0% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+            }
+        }
+
+        .pulse-warning {
+            animation: pulse-ring 2s ease infinite;
+        }
+
+        /* Micro progress bar */
+        .micro-bar {
+            height: 4px;
+            border-radius: 99px;
+            background: #f3f4f6;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .micro-bar-fill {
+            height: 100%;
+            border-radius: 99px;
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
         }
     </style>
 </head>
+
 <body>
-    <div class="max-w-7xl mx-auto space-y-6">
-        <h1 class="text-2xl font-bold text-text-main"><i class="fa-solid fa-chart-pie text-primary mr-2"></i> Painel Principal</h1>
-        
-        <div class="bg-surface p-6 rounded-xl shadow-sm border border-border">
-            <p class="text-sec">Conteúdo do Painel Principal será desenvolvido aqui.</p>
+    <!-- Page Loader -->
+    <div id="page-loader" class="loader-container">
+        <div class="preloader-container">
+            <img src="https://i.imgur.com/8vy4QAK.png" alt="Logo NutriPort" class="preloader-logo">
+            <div class="preloader-spinner"></div>
+        </div>
+        <p id="loader-text">Carregando painel...</p>
+    </div>
+
+    <div class="scrollable">
+        <div class="max-w-7xl mx-auto p-4 sm:p-6 space-y-5">
+
+            <!-- Header -->
+            <header class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div>
+                    <h1 class="text-xl font-extrabold tracking-tight flex items-center gap-2" style="color: var(--text-primary)">
+                        <span
+                            class="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-yellow-400 flex items-center justify-center shadow-sm">
+                            <i class="fa-solid fa-chart-pie text-white text-sm"></i>
+                        </span>
+                        Painel Principal
+                    </h1>
+                    <p class="text-xs mt-1" style="color: var(--text-secondary)">Indicadores do Confronto Fiscal — Atualizado em tempo real</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div
+                        class="flex items-center border rounded-md shadow-sm overflow-hidden text-xs" style="background: var(--surface); border-color: var(--border);">
+                        <span class="pl-2 pr-1 font-medium" style="color: var(--text-secondary)">De</span>
+                        <input type="date" id="filter-dtent-inicio"
+                            class="py-1.5 px-0.5 focus:outline-none focus:ring-0 font-semibold bg-transparent cursor-pointer" style="color: var(--text-primary)"/>
+                        <div class="w-px h-4 mx-1" style="background: var(--border)"></div>
+                        <span class="pr-1 font-medium" style="color: var(--text-secondary)">Até</span>
+                        <input type="date" id="filter-dtent-fim"
+                            class="py-1.5 px-0.5 pr-2 focus:outline-none focus:ring-0 font-semibold bg-transparent cursor-pointer" style="color: var(--text-primary)"/>
+                    </div>
+                    <div id="realtime-badge"
+                        class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-emerald-700 text-xs font-semibold" style="background: var(--surface-hover); border: 1px solid var(--border)">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        Tempo Real
+                    </div>
+                    <div id="last-update" class="text-xs font-medium hidden sm:block" style="color: var(--text-secondary)"></div>
+                </div>
+            </header>
+
+            <!-- KPIs Row -->
+            <section id="kpi-section" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+                <!-- Total -->
+                <div class="kpi-card" style="--stripe-color: #6366f1;">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <div id="kpi-total" class="kpi-value" style="color: var(--text-primary)">—</div>
+                            <div class="kpi-label">Total Lançamentos</div>
+                        </div>
+                        <div class="kpi-icon text-indigo-500" style="background: var(--surface-hover)">
+                            <i class="fa-solid fa-layer-group"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Divergentes -->
+                <div class="kpi-card" style="--stripe-color: #ef4444;">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <div id="kpi-divergentes" class="kpi-value text-red-500">—</div>
+                            <div class="kpi-label">Divergentes</div>
+                        </div>
+                        <div class="kpi-icon text-red-500" style="background: var(--surface-hover)">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                        </div>
+                    </div>
+                    <div class="micro-bar">
+                        <div id="bar-divergentes" class="micro-bar-fill bg-red-500" style="width:0%"></div>
+                    </div>
+                </div>
+
+                <!-- OK -->
+                <div class="kpi-card" style="--stripe-color: #22c55e;">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <div id="kpi-ok" class="kpi-value text-emerald-500">—</div>
+                            <div class="kpi-label">OK (Conferidos)</div>
+                        </div>
+                        <div class="kpi-icon text-emerald-500" style="background: var(--surface-hover)">
+                            <i class="fa-solid fa-circle-check"></i>
+                        </div>
+                    </div>
+                    <div class="micro-bar">
+                        <div id="bar-ok" class="micro-bar-fill bg-emerald-500" style="width:0%"></div>
+                    </div>
+                </div>
+
+                <!-- Validados -->
+                <div class="kpi-card" style="--stripe-color: #3b82f6;">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <div id="kpi-validados" class="kpi-value text-blue-500">—</div>
+                            <div class="kpi-label">Validados WinThor</div>
+                        </div>
+                        <div class="kpi-icon text-blue-500" style="background: var(--surface-hover)">
+                            <i class="fa-solid fa-clipboard-check"></i>
+                        </div>
+                    </div>
+                    <div class="micro-bar">
+                        <div id="bar-validados" class="micro-bar-fill bg-blue-500" style="width:0%"></div>
+                    </div>
+                </div>
+
+                <!-- Tomador Divergente -->
+                <div class="kpi-card" style="--stripe-color: #f97316;">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <div id="kpi-tomador" class="kpi-value text-orange-500">—</div>
+                            <div class="kpi-label">Tomador ≠ Filial</div>
+                        </div>
+                        <div class="kpi-icon text-orange-500" style="background: var(--surface-hover)">
+                            <i class="fa-solid fa-user-xmark"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pendentes Verificação -->
+                <div class="kpi-card" id="kpi-verificando-card" style="--stripe-color: #a855f7;">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <div id="kpi-verificando" class="kpi-value text-purple-500">—</div>
+                            <div class="kpi-label">Em Verificação</div>
+                        </div>
+                        <div class="kpi-icon text-purple-500" style="background: var(--surface-hover)">
+                            <i id="icon-verificando" class="fa-solid fa-spinner"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Busca Isolada -->
+                <div class="kpi-card" id="kpi-buscaisolada-card" style="--stripe-color: #0ea5e9;">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <div id="kpi-buscaisolada" class="kpi-value text-sky-500">—</div>
+                            <div class="kpi-label">Busca Isolada</div>
+                        </div>
+                        <div class="kpi-icon text-sky-500" style="background: var(--surface-hover)">
+                            <i id="icon-buscaisolada" class="fa-solid fa-cloud-arrow-down"></i>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Filiais Panel -->
+            <section id="filiais-panel" class="rounded-xl border p-4 shadow-sm" style="background: var(--surface); border-color: var(--border);">
+                <div class="flex items-center gap-2 mb-3">
+                    <div
+                        class="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-100 to-yellow-50 flex items-center justify-center">
+                        <i class="fa-solid fa-building text-amber-500 text-xs"></i>
+                    </div>
+                    <div>
+                        <div class="text-sm font-bold" style="color: var(--text-primary)">Filiais Monitoradas</div>
+                        <div class="text-[10px]" style="color: var(--text-secondary)">Filiais sem lançamentos aparecem em vermelho</div>
+                    </div>
+                </div>
+                <div id="filiais-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-3">
+                    <!-- Preenchido dinamicamente -->
+                </div>
+            </section>
+
+            <!-- Charts Row -->
+            <section class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <!-- Status Pie -->
+                <div class="chart-card">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2">
+                            <div
+                                class="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-100 to-indigo-50 flex items-center justify-center">
+                                <i class="fa-solid fa-chart-pie text-indigo-500 text-xs"></i>
+                            </div>
+                            <div>
+                                <div class="chart-card-title" style="color: var(--text-primary)">Distribuição por Status</div>
+                                <div class="chart-card-subtitle" style="color: var(--text-secondary)">Todos os lançamentos</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="relative w-full flex-grow flex items-center justify-center" style="min-height: 220px;">
+                        <canvas id="chart-status"></canvas>
+                        <div class="absolute flex flex-col items-center justify-center pointer-events-none">
+                            <span id="chart-status-center" class="text-2xl font-extrabold" style="color: var(--text-primary)">0</span>
+                            <span class="text-[10px] font-medium" style="color: var(--text-secondary)">total</span>
+                        </div>
+                    </div>
+                    <div id="chart-status-legend" class="mt-3 pt-3 border-t flex flex-wrap gap-2" style="border-color: var(--border);"></div>
+                </div>
+
+                <!-- By Filial Bar -->
+                <div class="chart-card">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2">
+                            <div
+                                class="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-100 to-amber-50 flex items-center justify-center">
+                                <i class="fa-solid fa-building text-amber-500 text-xs"></i>
+                            </div>
+                            <div>
+                                <div class="chart-card-title" style="color: var(--text-primary)">Lançamentos por Filial</div>
+                                <div class="chart-card-subtitle" style="color: var(--text-secondary)">Distribuição entre filiais</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="relative w-full flex-grow" style="min-height: 220px;">
+                        <canvas id="chart-filial"></canvas>
+                    </div>
+                </div>
+
+                <!-- Validation Progress -->
+                <div class="chart-card">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2">
+                            <div
+                                class="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-100 to-emerald-50 flex items-center justify-center">
+                                <i class="fa-solid fa-chart-line text-emerald-500 text-xs"></i>
+                            </div>
+                            <div>
+                                <div class="chart-card-title" style="color: var(--text-primary)">Progresso de Validação</div>
+                                <div class="chart-card-subtitle" style="color: var(--text-secondary)">Validados vs Pendentes</div>
+                            </div>
+                        </div>
+                        <span id="validation-pct"
+                            class="text-sm font-extrabold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">0%</span>
+                    </div>
+                    <div class="relative w-full flex-grow flex items-center justify-center" style="min-height: 220px;">
+                        <canvas id="chart-validation"></canvas>
+                    </div>
+                    <div class="mt-3 pt-3 border-t flex items-center justify-between text-xs" style="border-color: var(--border);">
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+                            <span class="font-medium" style="color: var(--text-secondary)">Validados</span>
+                            <span id="legend-validados" class="font-bold" style="color: var(--text-primary)">0</span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-gray-300"></span>
+                            <span class="font-medium" style="color: var(--text-secondary)">Pendentes</span>
+                            <span id="legend-pendentes" class="font-bold" style="color: var(--text-primary)">0</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Bottom Row: Divergência por Filial + Atividade Recente -->
+            <section class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <!-- Divergência comparativa por filial -->
+                <div class="chart-card">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2">
+                            <div
+                                class="w-7 h-7 rounded-lg bg-gradient-to-br from-red-100 to-red-50 flex items-center justify-center">
+                                <i class="fa-solid fa-scale-unbalanced text-red-500 text-xs"></i>
+                            </div>
+                            <div>
+                                <div class="chart-card-title" style="color: var(--text-primary)">Divergências por Filial</div>
+                                <div class="chart-card-subtitle" style="color: var(--text-secondary)">OK vs Divergente por unidade</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="relative w-full flex-grow" style="min-height: 260px;">
+                        <canvas id="chart-div-filial"></canvas>
+                    </div>
+                </div>
+
+                <!-- Atividade Recente -->
+                <div class="chart-card">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2">
+                            <div
+                                class="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-100 to-violet-50 flex items-center justify-center">
+                                <i class="fa-solid fa-clock-rotate-left text-violet-500 text-xs"></i>
+                            </div>
+                            <div>
+                                <div class="chart-card-title" style="color: var(--text-primary)">Atividade Recente</div>
+                                <div class="chart-card-subtitle" style="color: var(--text-secondary)">Últimas validações realizadas</div>
+                            </div>
+                        </div>
+                        <span id="activity-count"
+                            class="text-xs font-bold text-violet-700 bg-violet-50 px-2 py-0.5 rounded-full border border-violet-200">0</span>
+                    </div>
+                    <div id="activity-list" class="flex-grow overflow-y-auto space-y-1" style="max-height: 280px;">
+                        <div class="flex items-center justify-center h-full text-sm py-12" style="color: var(--text-secondary)">
+                            <i class="fa-solid fa-inbox text-2xl mr-2"></i> Carregando...
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Footer -->
+            <footer class="text-center py-4">
+                <p class="text-xs" style="color: var(--text-secondary)">NutriPort &middot; Painel em tempo real</p>
+            </footer>
         </div>
     </div>
-    
-    <script>
-        const THEME_KEY = 'gestaovscontabil_theme';
-        function applyTheme() {
-            try {
-                const stored = JSON.parse(localStorage.getItem(THEME_KEY));
-                if (stored && stored.mode === 'escuro') {
-                    document.documentElement.setAttribute('data-theme', 'dark');
-                    document.documentElement.classList.add('dark');
-                } else {
-                    document.documentElement.setAttribute('data-theme', 'light');
-                    document.documentElement.classList.remove('dark');
-                }
-            } catch (e) {}
+
+    <script type="module">
+        const SUPABASE_URL = 'https://jmcwiszplkjksdvqyhbw.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptY3dpc3pwbGtqa3NkdnF5aGJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODczODIsImV4cCI6MjA5MTE2MzM4Mn0.G85OrkSFtjTXmaHvEPBkWXZQQbDKsjMBD97_V3Z6yw0';
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let chartInstances = {};
+
+        // =====================
+        // UTILITY FUNCTIONS
+        // =====================
+        function animateValue(el, end, skipAnim = false, duration = 300) {
+            if (el._animFrame) cancelAnimationFrame(el._animFrame);
+            if (skipAnim) {
+                el.textContent = end.toLocaleString('pt-BR');
+                return;
+            }
+            const currentText = el.textContent.replace(/\D/g, '');
+            const start = parseInt(currentText) || 0;
+            if (start === end) { el.textContent = end.toLocaleString('pt-BR'); return; }
+            let startTime = null;
+            function step(ts) {
+                if (!startTime) startTime = ts;
+                const p = Math.min((ts - startTime) / duration, 1);
+                el.textContent = Math.floor(p * (end - start) + start).toLocaleString('pt-BR');
+                if (p < 1) el._animFrame = requestAnimationFrame(step);
+                else el.textContent = end.toLocaleString('pt-BR');
+            }
+            el._animFrame = requestAnimationFrame(step);
         }
-        applyTheme();
-        
-        // Interval para checar mudanças pois o iframe pode não receber trigger 'storage' no mesmo window origin no Webkit
-        setInterval(applyTheme, 1000);
+
+        function formatDateBR(d) {
+            if (!d) return '-';
+            const dt = new Date(d);
+            return dt.toLocaleDateString('pt-BR') + ' ' + dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        // getCnpjTomador removido - lógica migrada para o backend
+
+        // =====================
+        // MAIN DATA FETCH
+        let isFetching = false;
+
+        async function fetchDashboardData(onProgress) {
+            if (isFetching) return { success: false };
+            isFetching = true;
+
+            try {
+                let allData = [];
+                let hasMore = true;
+                let from = 0;
+                const limit = 1000; // Requisição com feedback visual super rápido em lotes menores
+
+                const dtInicio = document.getElementById('filter-dtent-inicio').value;
+                const dtFim = document.getElementById('filter-dtent-fim').value;
+
+                const { count: verificandoCount } = await supabase.from('verificando').select('id', { count: 'exact', head: true });
+                const { count: buscaIsoladaCount } = await supabase.from('busca_isolada_queue').select('id', { count: 'exact', head: true }).in('status', ['Pendente', 'Processando']);
+
+                let queryValid = supabase.from('confrontofiscalnfconsumo')
+                    .select('id, codfilial, codfilialnf, numnota, validado_por, validado_em, validado_email, status')
+                    .eq('validado_winthor', true);
+                if (dtInicio) queryValid = queryValid.gte('dtent', dtInicio);
+                if (dtFim) queryValid = queryValid.lte('dtent', dtFim);
+                const { data: recentValidated } = await queryValid.order('validado_em', { ascending: false }).limit(20);
+
+                while (hasMore) {
+                    let queryAll = supabase
+                        .from('confrontofiscalnfconsumo')
+                        .select('id, codfilial, codfilialnf, status, validado_winthor, cnpj_filial');
+                    if (dtInicio) queryAll = queryAll.gte('dtent', dtInicio);
+                    if (dtFim) queryAll = queryAll.lte('dtent', dtFim);
+
+                    const { data, error } = await queryAll
+                        .range(from, from + limit - 1)
+                        .order('id', { ascending: false });
+
+                    if (error) throw error;
+
+                    if (data && data.length > 0) {
+                        allData = allData.concat(data);
+                        from += limit;
+
+                        // Atualiza a tela a cada 500 registros progressivamente!
+                        if (onProgress) {
+                            onProgress({ all: allData, verificandoCount: verificandoCount || 0, buscaIsoladaCount: buscaIsoladaCount || 0, recentValidated: recentValidated || [] }, false);
+                        }
+
+                        if (data.length < limit) hasMore = false;
+                    } else {
+                        hasMore = false;
+                    }
+                }
+
+                // Requisição de xml_doc removida, agora o status é pré-calculado no banco de dados.
+
+                // Chamada final do progresso (isFinal = true)
+                if (onProgress) {
+                    onProgress({ all: allData, verificandoCount: verificandoCount || 0, buscaIsoladaCount: buscaIsoladaCount || 0, recentValidated: recentValidated || [] }, true);
+                }
+
+                return {
+                    all: allData,
+                    verificandoCount: verificandoCount || 0,
+                    buscaIsoladaCount: buscaIsoladaCount || 0,
+                    recentValidated: recentValidated || [],
+                    success: true
+                };
+            } catch (e) {
+                console.error('Erro ao carregar dados:', e);
+                return { success: false };
+            } finally {
+                isFetching = false;
+            }
+        }
+
+        // =====================
+        // RENDER FUNCTIONS
+        // =====================
+        function renderKPIs(data, verificandoCount, buscaIsoladaCount = 0, skipAnim = false, isTomadorLoading = false) {
+            const total = data.length;
+
+            // Validação Virtual Unificada
+            // Identify tomador divergente diretamente pelo status do banco e força Divergente se filial diferir
+            let tomadorDivCount = 0;
+            data.forEach(item => {
+                // 1. Tomador Divergente
+                if (item.status === 'Tomador Divergente') {
+                    item._isTomadorDiv = true;
+                    tomadorDivCount++;
+                } else {
+                    item._isTomadorDiv = false;
+                }
+
+                // 2. Validação Virtual (Mesma regra do lancamentos.html)
+                if (!item._isTomadorDiv && String(item.codfilialnf) !== String(item.codfilial) && item.status !== 'Resolvido') {
+                    item.status = 'Divergente';
+                }
+            });
+
+            const nonTomadorDiv = data.filter(d => !d._isTomadorDiv);
+            const validados = nonTomadorDiv.filter(d => d.validado_winthor === true).length;
+            const okCount = nonTomadorDiv.filter(d => d.status === 'OK' && !d.validado_winthor).length;
+            const divergentes = nonTomadorDiv.filter(d => d.status !== 'OK' && d.status !== 'Validado' && !d.validado_winthor).length;
+
+            animateValue(document.getElementById('kpi-total'), total, skipAnim);
+            animateValue(document.getElementById('kpi-divergentes'), divergentes, skipAnim);
+            animateValue(document.getElementById('kpi-ok'), okCount, skipAnim);
+            animateValue(document.getElementById('kpi-validados'), validados, skipAnim);
+
+            const tomadorEl = document.getElementById('kpi-tomador');
+            if (tomadorEl.querySelector('i.fa-spin')) tomadorEl.innerHTML = '0';
+            animateValue(tomadorEl, tomadorDivCount, skipAnim);
+
+            animateValue(document.getElementById('kpi-verificando'), verificandoCount, skipAnim);
+            animateValue(document.getElementById('kpi-buscaisolada'), buscaIsoladaCount, skipAnim);
+
+            // Micro bars (percentages of total non-tomador-div)
+            const base = nonTomadorDiv.length || 1;
+            document.getElementById('bar-divergentes').style.width = ((divergentes / base) * 100) + '%';
+            document.getElementById('bar-ok').style.width = ((okCount / base) * 100) + '%';
+            document.getElementById('bar-validados').style.width = ((validados / base) * 100) + '%';
+
+            // Pulse effect and spinner if verificando > 0
+            const vCard = document.getElementById('kpi-verificando-card');
+            const vIcon = document.getElementById('icon-verificando');
+            if (verificandoCount > 0) {
+                vCard.classList.add('pulse-warning');
+                vIcon.classList.add('fa-spin');
+            } else {
+                vCard.classList.remove('pulse-warning');
+                vIcon.classList.remove('fa-spin');
+            }
+
+            const bCard = document.getElementById('kpi-buscaisolada-card');
+            const bIcon = document.getElementById('icon-buscaisolada');
+            if (buscaIsoladaCount > 0) {
+                bCard.classList.add('pulse-warning');
+                bIcon.classList.add('fa-fade');
+            } else {
+                bCard.classList.remove('pulse-warning');
+                bIcon.classList.remove('fa-fade');
+            }
+        }
+
+        function renderStatusChart(data, skipAnim = false) {
+            const nonTomadorDiv = data.filter(d => !d._isTomadorDiv);
+            const counts = {};
+            nonTomadorDiv.forEach(d => {
+                let s = d.validado_winthor ? 'Validado' : (d.status || 'Sem Status');
+                counts[s] = (counts[s] || 0) + 1;
+            });
+
+            // Add tomador div
+            const tomadorCount = data.filter(d => d._isTomadorDiv).length;
+            if (tomadorCount > 0) counts['Tomador Divergente'] = tomadorCount;
+
+            const labels = Object.keys(counts);
+            const values = Object.values(counts);
+
+            const colorMap = {
+                'OK': '#22c55e',
+                'Validado': '#3b82f6',
+                'Divergente': '#ef4444',
+                'Tomador Divergente': '#f97316',
+                'Sem Status': '#9ca3af'
+            };
+            const defaultColors = ['#8b5cf6', '#ec4899', '#14b8a6', '#f59e0b', '#6366f1', '#e11d48'];
+            let colorIdx = 0;
+            const colors = labels.map(l => colorMap[l] || defaultColors[colorIdx++ % defaultColors.length]);
+
+            document.getElementById('chart-status-center').textContent = data.length.toLocaleString('pt-BR');
+
+            // Legend
+            const legendEl = document.getElementById('chart-status-legend');
+            legendEl.innerHTML = labels.map((l, i) =>
+                `<div class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full" style="background:${colors[i]}"></span>
+                    <span class="text-[10px] font-medium" style="color: var(--text-secondary)">${l}</span>
+                    <span class="text-[10px] font-bold" style="color: var(--text-primary)">${values[i]}</span>
+                </div>`
+            ).join('');
+
+            if (chartInstances['status']) {
+                chartInstances['status'].data.labels = labels;
+                chartInstances['status'].data.datasets[0].data = values;
+                chartInstances['status'].data.datasets[0].backgroundColor = colors;
+                chartInstances['status'].update(skipAnim ? 'none' : undefined);
+            } else {
+                chartInstances['status'] = new Chart(document.getElementById('chart-status').getContext('2d'), {
+                    type: 'doughnut',
+                    data: { labels, datasets: [{ data: values, backgroundColor: colors, borderWidth: 0, borderRadius: 4 }] },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        cutout: '68%',
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: '#fff', titleColor: '#333', bodyColor: '#555',
+                                borderColor: '#e5e7eb', borderWidth: 1, padding: 10,
+                                callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw}` }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        function renderFilialChart(data, skipAnim = false) {
+            const filialCounts = {};
+            data.forEach(d => {
+                const f = d.codfilial || 'N/D';
+                filialCounts[f] = (filialCounts[f] || 0) + 1;
+            });
+
+            const sorted = Object.entries(filialCounts).sort((a, b) => b[1] - a[1]);
+            const labels = sorted.map(([k]) => `Filial ${k}`);
+            const values = sorted.map(([, v]) => v);
+
+            const gradient = ['#EE7F01', '#f59e0b', '#fbbf24', '#fcd34d', '#fde68a', '#fef3c7', '#a3e635', '#4ade80'];
+
+            if (chartInstances['filial']) {
+                chartInstances['filial'].data.labels = labels;
+                chartInstances['filial'].data.datasets[0].data = values;
+                chartInstances['filial'].data.datasets[0].backgroundColor = labels.map((_, i) => gradient[i % gradient.length]);
+                chartInstances['filial'].update(skipAnim ? 'none' : undefined);
+            } else {
+                chartInstances['filial'] = new Chart(document.getElementById('chart-filial').getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels,
+                        datasets: [{
+                            data: values,
+                            backgroundColor: labels.map((_, i) => gradient[i % gradient.length]),
+                            borderWidth: 0, borderRadius: 6, maxBarThickness: 32
+                        }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        indexAxis: 'y',
+                        plugins: { legend: { display: false }, tooltip: { backgroundColor: '#fff', titleColor: '#333', bodyColor: '#555', borderColor: '#e5e7eb', borderWidth: 1 } },
+                        scales: {
+                            x: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)', drawBorder: false }, ticks: { font: { size: 10 }, color: '#9ca3af', precision: 0 } },
+                            y: { grid: { display: false, drawBorder: false }, ticks: { font: { size: 11, weight: '600' }, color: '#374151' } }
+                        }
+                    }
+                });
+            }
+        }
+
+        function renderValidationChart(data, skipAnim = false) {
+            const nonTomadorDiv = data.filter(d => !d._isTomadorDiv);
+            const validados = nonTomadorDiv.filter(d => d.validado_winthor).length;
+            const pendentes = nonTomadorDiv.length - validados;
+            const pct = nonTomadorDiv.length > 0 ? Math.round((validados / nonTomadorDiv.length) * 100) : 0;
+
+            document.getElementById('validation-pct').textContent = pct + '%';
+            document.getElementById('legend-validados').textContent = validados.toLocaleString('pt-BR');
+            document.getElementById('legend-pendentes').textContent = pendentes.toLocaleString('pt-BR');
+
+            if (chartInstances['validation']) {
+                chartInstances['validation'].data.datasets[0].data = [validados, pendentes];
+                chartInstances['validation'].update(skipAnim ? 'none' : undefined);
+            } else {
+                chartInstances['validation'] = new Chart(document.getElementById('chart-validation').getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Validados', 'Pendentes'],
+                        datasets: [{ data: [validados, pendentes], backgroundColor: ['#3b82f6', '#e5e7eb'], borderWidth: 0, borderRadius: 4 }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        cutout: '75%',
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { backgroundColor: '#fff', titleColor: '#333', bodyColor: '#555', borderColor: '#e5e7eb', borderWidth: 1 }
+                        }
+                    }
+                });
+            }
+        }
+
+        function renderDivFilialChart(data, skipAnim = false) {
+            const nonTomadorDiv = data.filter(d => !d._isTomadorDiv && !d.validado_winthor);
+            const filialData = {};
+            nonTomadorDiv.forEach(d => {
+                const f = d.codfilial || 'N/D';
+                if (!filialData[f]) filialData[f] = { ok: 0, div: 0 };
+                if (d.status === 'OK') filialData[f].ok++;
+                else filialData[f].div++;
+            });
+
+            const sorted = Object.entries(filialData).sort((a, b) => (b[1].ok + b[1].div) - (a[1].ok + a[1].div));
+            const labels = sorted.map(([k]) => `Filial ${k}`);
+            const okVals = sorted.map(([, v]) => v.ok);
+            const divVals = sorted.map(([, v]) => v.div);
+
+            if (chartInstances['divFilial']) {
+                chartInstances['divFilial'].data.labels = labels;
+                chartInstances['divFilial'].data.datasets[0].data = okVals;
+                chartInstances['divFilial'].data.datasets[1].data = divVals;
+                chartInstances['divFilial'].update(skipAnim ? 'none' : undefined);
+            } else {
+                chartInstances['divFilial'] = new Chart(document.getElementById('chart-div-filial').getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels,
+                        datasets: [
+                            { label: 'OK', data: okVals, backgroundColor: '#22c55e', borderRadius: 4, maxBarThickness: 20 },
+                            { label: 'Divergente', data: divVals, backgroundColor: '#ef4444', borderRadius: 4, maxBarThickness: 20 }
+                        ]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'top', labels: { boxWidth: 10, boxHeight: 10, borderRadius: 4, font: { size: 11, weight: '600' }, padding: 16 } },
+                            tooltip: { backgroundColor: '#fff', titleColor: '#333', bodyColor: '#555', borderColor: '#e5e7eb', borderWidth: 1 }
+                        },
+                        scales: {
+                            x: { grid: { display: false, drawBorder: false }, ticks: { font: { size: 10, weight: '600' }, color: '#374151' }, stacked: false },
+                            y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)', drawBorder: false }, ticks: { font: { size: 10 }, color: '#9ca3af', precision: 0 }, stacked: false }
+                        }
+                    }
+                });
+            }
+        }
+
+        function renderActivity(recentValidated) {
+            const container = document.getElementById('activity-list');
+            document.getElementById('activity-count').textContent = recentValidated.length;
+
+            if (recentValidated.length === 0) {
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full py-12" style="color: var(--text-secondary)">
+                        <i class="fa-solid fa-inbox text-3xl mb-2"></i>
+                        <p class="text-sm font-medium">Nenhuma validação recente</p>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = recentValidated.map(item => {
+                const isOk = item.status === 'OK' || item.status === 'Validado';
+                const dotColor = isOk ? '#22c55e' : '#f59e0b';
+                const statusBadge = isOk
+                    ? '<span class="status-badge bg-emerald-50 text-emerald-700 border border-emerald-200"><i class="fa-solid fa-check fa-xs"></i>Validado</span>'
+                    : '<span class="status-badge bg-amber-50 text-amber-700 border border-amber-200"><i class="fa-solid fa-clock fa-xs"></i>Pendente</span>';
+
+                return `
+                <div class="activity-item">
+                    <div class="activity-dot" style="background:${dotColor}"></div>
+                    <div class="flex-grow min-w-0">
+                        <div class="flex items-center justify-between gap-2">
+                            <p class="text-xs font-semibold truncate" style="color: var(--text-primary)">
+                                Nota ${item.numnota || '—'} <span class="font-normal" style="color: var(--text-secondary)">· Filial ${item.codfilial || '—'}</span>
+                            </p>
+                            ${statusBadge}
+                        </div>
+                        <p class="text-[10px] mt-0.5" style="color: var(--text-secondary)">
+                            <i class="fa-solid fa-user fa-xs mr-1"></i>${item.validado_por || 'Sistema'}
+                            <span class="mx-1.5">·</span>
+                            <i class="fa-regular fa-clock fa-xs mr-1"></i>${formatDateBR(item.validado_em)}
+                        </p>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        // =====================
+        // FILIAIS PANEL
+        // =====================
+        const ALL_FILIAIS = [
+            { codigo: '8', uf: 'GO' }, { codigo: '10', uf: 'SC' }, { codigo: '18', uf: 'MT' },
+            { codigo: '22', uf: 'SP' }, { codigo: '23', uf: 'SP' }, { codigo: '24', uf: 'MG' },
+            { codigo: '25', uf: 'MG' }, { codigo: '35', uf: 'PR' }, { codigo: '36', uf: 'MS' },
+            { codigo: '37', uf: 'PE' }, { codigo: '38', uf: 'RJ' }, { codigo: '39', uf: 'BA' },
+            { codigo: '40', uf: 'CE' }, { codigo: '41', uf: 'RS' }, { codigo: '42', uf: 'PI' },
+            { codigo: '43', uf: 'MA' }, { codigo: '44', uf: 'PA' }, { codigo: '46', uf: 'GO' },
+            { codigo: '47', uf: 'RO' }, { codigo: '48', uf: 'AL' }, { codigo: '49', uf: 'GO' },
+            { codigo: '51', uf: 'SP' }
+        ];
+
+        function renderFiliaisPanel(data) {
+            const filiaisComDados = new Set();
+            data.forEach(d => {
+                if (d.codfilial) filiaisComDados.add(String(d.codfilial));
+            });
+
+            const container = document.getElementById('filiais-grid');
+            container.innerHTML = ALL_FILIAIS.map(f => {
+                const temDados = filiaisComDados.has(f.codigo);
+                const count = data.filter(d => String(d.codfilial) === f.codigo).length;
+                if (temDados) {
+                    return `<div class="flex items-center justify-between px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-700 w-full" title="${count} lançamentos">
+                        <div class="flex items-center gap-1.5"><i class="fa-solid fa-circle-check fa-xs"></i><span>${f.codigo} (${f.uf})</span></div>
+                        <span class="text-[10px] font-bold bg-emerald-100/80 px-1.5 py-0.5 rounded text-emerald-800">${count}</span>
+                    </div>`;
+                } else {
+                    return `<div class="flex items-center justify-between px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-xs font-bold text-red-600 w-full" title="Nenhum lançamento encontrado">
+                        <div class="flex items-center gap-1.5"><i class="fa-solid fa-triangle-exclamation fa-xs"></i><span>${f.codigo} (${f.uf})</span></div>
+                        <span class="text-[10px] font-bold bg-red-100/80 px-1.5 py-0.5 rounded text-red-800">0</span>
+                    </div>`;
+                }
+            }).join('');
+        }
+
+        // =====================
+        // MAIN INIT
+        // =====================
+        let isInitialLoad = true;
+        window.dashboardData = { all: [], verificandoCount: 0, buscaIsoladaCount: 0, recentValidated: [] };
+
+        async function init() {
+            let usedCache = false;
+            if (isInitialLoad) {
+                try {
+                    const cached = sessionStorage.getItem('dashboardCache');
+                    if (cached) {
+                        const parsed = JSON.parse(cached);
+                        const { all, verificandoCount, buscaIsoladaCount, recentValidated, timestamp } = parsed;
+
+                        window.dashboardData = { all, verificandoCount, buscaIsoladaCount: buscaIsoladaCount || 0, recentValidated };
+                        renderKPIs(all, verificandoCount, buscaIsoladaCount || 0, true);
+                        renderStatusChart(all, true);
+                        renderFilialChart(all, true);
+                        renderValidationChart(all, true);
+                        renderDivFilialChart(all, true);
+                        renderFiliaisPanel(all);
+                        renderActivity(recentValidated);
+
+                        document.getElementById('last-update').textContent = `Sincronizando (Cache: ${new Date(timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })})...`;
+                        document.getElementById('page-loader').classList.add('hidden');
+                        usedCache = true;
+                    }
+                } catch (e) {
+                    sessionStorage.removeItem('dashboardCache');
+                }
+            }
+
+            let chunkCount = 0;
+            let hasHiddenLoader = false;
+            const onProgress = (partialResult, isFinal = false) => {
+                chunkCount++;
+                const { all, verificandoCount, buscaIsoladaCount, recentValidated } = partialResult;
+                const skipAnim = usedCache || !isInitialLoad;
+
+                window.dashboardData = { all, verificandoCount, buscaIsoladaCount: buscaIsoladaCount || 0, recentValidated };
+
+                const isTomadorLoading = !isFinal && !usedCache;
+
+                // O usuário prefere ver os números e os gráficos subindo gradativamente!
+                renderKPIs(all, verificandoCount, buscaIsoladaCount || 0, skipAnim, isTomadorLoading);
+                renderStatusChart(all, skipAnim);
+                renderFilialChart(all, skipAnim);
+                renderValidationChart(all, skipAnim);
+                renderDivFilialChart(all, skipAnim);
+                renderFiliaisPanel(all);
+
+                if (isFinal || chunkCount === 1) {
+                    renderActivity(recentValidated);
+                }
+
+                if (!usedCache && !hasHiddenLoader && document.getElementById('page-loader')) {
+                    document.getElementById('page-loader').classList.add('hidden');
+                    hasHiddenLoader = true;
+                }
+
+                document.getElementById('last-update').textContent = isFinal
+                    ? `Atualizado: ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+                    : `Buscando registros... (${all.length})`;
+            };
+
+            const result = await fetchDashboardData(onProgress);
+
+            // Se houver falha na conexão (ou timeout/isFetching), ignora o recarregamento na tela
+            if (!result.success && !isInitialLoad) {
+                console.warn("Aviso: Falha ao recarregar os dados de conexão do Supabase. Ignorando atualização visual.");
+                return;
+            }
+            // Se for o primeiro load e falhar, tentamos novamente.
+            if (!result.success && isInitialLoad) {
+                if (!sessionStorage.getItem('dashboardCache')) {
+                    document.getElementById('page-loader').querySelector('p').textContent = "Falha na conexão. Tentando novamente...";
+                    document.getElementById('page-loader').classList.remove('hidden');
+                }
+                setTimeout(init, 3000);
+                return;
+            }
+
+            if (result.success) {
+                try {
+                    sessionStorage.setItem('dashboardCache', JSON.stringify({
+                        all: result.all, verificandoCount: result.verificandoCount, buscaIsoladaCount: result.buscaIsoladaCount, recentValidated: result.recentValidated, timestamp: new Date().getTime()
+                    }));
+                } catch (e) { }
+            }
+
+            isInitialLoad = false;
+        }
+
+        // =====================
+        // REALTIME OTIMIZADO (Custo de API Zero - Modifica dados e Gráficos em Memória)
+        // =====================
+        function startRealtime() {
+            supabase.channel('dashboard-rt')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'confrontofiscalnfconsumo' }, (payload) => {
+                    const row = payload.new;
+                    if (!row || !window.dashboardData.all) return;
+
+                    const idx = window.dashboardData.all.findIndex(d => d.id === row.id);
+                    if (idx !== -1) {
+                        Object.assign(window.dashboardData.all[idx], row);
+                    } else {
+                        window.dashboardData.all.unshift(row);
+                    }
+
+                    if (row.validado_winthor && !window.dashboardData.recentValidated.find(r => r.id === row.id)) {
+                        window.dashboardData.recentValidated.unshift(row);
+                    }
+
+                    // Se ocorreu inserção ou alteração, nós apenas mandamos renderizar a UI sem buscar nada!
+                    renderKPIs(window.dashboardData.all, window.dashboardData.verificandoCount, window.dashboardData.buscaIsoladaCount, true);
+                    renderStatusChart(window.dashboardData.all, true);
+                    renderFilialChart(window.dashboardData.all, true);
+                    renderValidationChart(window.dashboardData.all, true);
+                    renderDivFilialChart(window.dashboardData.all, true);
+                    renderFiliaisPanel(window.dashboardData.all);
+                    renderActivity(window.dashboardData.recentValidated);
+
+                    document.getElementById('last-update').textContent = `Atualizado (Ao Vivo): ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+                })
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'verificando' }, (payload) => {
+                    // Update count realtime
+                    if (payload.eventType === 'INSERT') window.dashboardData.verificandoCount++;
+                    if (payload.eventType === 'DELETE' && window.dashboardData.verificandoCount > 0) window.dashboardData.verificandoCount--;
+
+                    renderKPIs(window.dashboardData.all, window.dashboardData.verificandoCount, window.dashboardData.buscaIsoladaCount, true);
+                })
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'busca_isolada_queue' }, (payload) => {
+                    const oldStatus = payload.old?.status;
+                    if (payload.eventType === 'INSERT' && (payload.new.status === 'Pendente' || payload.new.status === 'Processando')) {
+                        window.dashboardData.buscaIsoladaCount = (window.dashboardData.buscaIsoladaCount || 0) + 1;
+                    }
+                    if (payload.eventType === 'UPDATE') {
+                        const isBeforeActive = (oldStatus === 'Pendente' || oldStatus === 'Processando');
+                        const isNowActive = (payload.new.status === 'Pendente' || payload.new.status === 'Processando');
+                        if (isBeforeActive && !isNowActive && window.dashboardData.buscaIsoladaCount > 0) window.dashboardData.buscaIsoladaCount--;
+                        if (!isBeforeActive && isNowActive) window.dashboardData.buscaIsoladaCount = (window.dashboardData.buscaIsoladaCount || 0) + 1;
+                    }
+                    if (payload.eventType === 'DELETE' && (oldStatus === 'Pendente' || oldStatus === 'Processando') && window.dashboardData.buscaIsoladaCount > 0) window.dashboardData.buscaIsoladaCount--;
+
+                    renderKPIs(window.dashboardData.all, window.dashboardData.verificandoCount, window.dashboardData.buscaIsoladaCount, true);
+                })
+                .subscribe((status) => {
+                    if (status === 'SUBSCRIBED') {
+                        console.log('Conectado ao tempo real otimizado do dashboard via WebSocket.');
+                    }
+                });
+        }
+
+        // Boot
+        const fInicio = document.getElementById('filter-dtent-inicio');
+        const fFim = document.getElementById('filter-dtent-fim');
+        if (!fInicio.value && !fFim.value) {
+            const _now = new Date();
+            const _y = _now.getFullYear();
+            const _m = String(_now.getMonth() + 1).padStart(2, '0');
+            fInicio.value = `${_y}-${_m}-01`;
+            fFim.value = new Date(_y, parseInt(_m, 10), 0).toISOString().substring(0, 10);
+        }
+
+        const onDateChange = () => {
+            document.getElementById('page-loader').querySelector('p').textContent = "Atualizando período...";
+            document.getElementById('page-loader').classList.remove('hidden');
+            isInitialLoad = true;
+            sessionStorage.removeItem('dashboardCache');
+            init();
+        };
+
+        fInicio.addEventListener('change', onDateChange);
+        fFim.addEventListener('change', onDateChange);
+
+        init();
+        startRealtime();
+
+        // Refresh silencioso a cada 1 segundo (a pedido do usuário)
+        setInterval(async () => {
+            if (isFetching || isInitialLoad) return;
+            const dtInicio = document.getElementById('filter-dtent-inicio').value;
+            const dtFim = document.getElementById('filter-dtent-fim').value;
+
+            try {
+                // Ao invés de baixar 50 mil itens, atualizamos silenciosamente contagens e a primeira página
+                // para não pesar no banco de dados. 
+                const { count: verificandoCount } = await supabase.from('verificando').select('id', { count: 'exact', head: true });
+                const { count: buscaIsoladaCount } = await supabase.from('busca_isolada_queue').select('id', { count: 'exact', head: true }).in('status', ['Pendente', 'Processando']);
+
+                if (verificandoCount !== null && verificandoCount !== undefined) window.dashboardData.verificandoCount = verificandoCount;
+                if (buscaIsoladaCount !== null && buscaIsoladaCount !== undefined) window.dashboardData.buscaIsoladaCount = buscaIsoladaCount;
+
+                // Re-renderizar painel com contagens novas silenciosamente
+                renderKPIs(window.dashboardData.all, window.dashboardData.verificandoCount, window.dashboardData.buscaIsoladaCount, true);
+            } catch (err) {
+                console.error("Erro no refresh silencioso:", err);
+            }
+        }, 1000);
     </script>
 </body>
+
 </html>
