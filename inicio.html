@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Principal</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: ['class', '[data-theme="dark"]'],
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#b8860b',
+                        'primary-hover': '#9a7209',
+                        surface: 'var(--color-surface)',
+                        'text-main': 'var(--color-text-primary)',
+                        sec: 'var(--color-text-secondary)',
+                        bg: 'var(--color-bg)',
+                        border: 'var(--color-border)',
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-bg: #f8f9fa;
+            --color-surface: #ffffff;
+            --color-text-primary: #111827;
+            --color-text-secondary: #6b7280;
+            --color-border: #e5e7eb;
+        }
+        html[data-theme="dark"] {
+            --color-bg: #0c0a09;
+            --color-surface: #1c1917;
+            --color-text-primary: #f2f2f2;
+            --color-text-secondary: #a8a29e;
+            --color-border: #292524;
+        }
+        body {
+            background-color: var(--color-bg);
+            color: var(--color-text-primary);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div class="max-w-7xl mx-auto space-y-6">
+        <h1 class="text-2xl font-bold text-text-main"><i class="fa-solid fa-chart-pie text-primary mr-2"></i> Painel Principal</h1>
+        
+        <div class="bg-surface p-6 rounded-xl shadow-sm border border-border">
+            <p class="text-sec">Conteúdo do Painel Principal será desenvolvido aqui.</p>
+        </div>
+    </div>
+    
+    <script>
+        const THEME_KEY = 'gestaovscontabil_theme';
+        function applyTheme() {
+            try {
+                const stored = JSON.parse(localStorage.getItem(THEME_KEY));
+                if (stored && stored.mode === 'escuro') {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.setAttribute('data-theme', 'light');
+                    document.documentElement.classList.remove('dark');
+                }
+            } catch (e) {}
+        }
+        applyTheme();
+        
+        // Interval para checar mudanças pois o iframe pode não receber trigger 'storage' no mesmo window origin no Webkit
+        setInterval(applyTheme, 1000);
+    </script>
+</body>
+</html>

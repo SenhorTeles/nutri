@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NutriPort Comercial - Usuários</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        /* === PALETA DE CORES PADRÃO DO SISTEMA === */
+        :root {
+            /* Tema Claro - Dona Chique */
+            --color-bg: #f8fafc;
+            --color-surface: #ffffff;
+            --color-border: #e5e7eb;
+            --color-border-hover: #d1d5db;
+            --color-text-primary: #111827;
+            --color-text-secondary: #4b5563;
+            --color-text-tertiary: #9ca3af;
+            --color-surface-hover: #f3f4f6;
+
+            /* Cores Primárias da Marca */
+            --color-primary: #b8860b;
+            --color-primary-hover: #9a7209;
+            --color-primary-text: #ffffff;
+            --color-primary-focus-ring: rgba(184, 134, 11, 0.4);
+            --color-primary-soft-bg: #fdf8f0;
+
+            /* Cores Semânticas */
+            --color-danger: #ef4444;
+            --color-danger-soft-bg: #fee2e2;
+            --color-success: #16a34a;
+            /* Verde padrão para melhor distinção */
+            --color-success-soft-bg: #dcfce7;
+            --color-info: #3b82f6;
+            --color-info-soft-bg: #dbeafe;
+            --color-warning: #f59e0b;
+            --color-warning-soft-bg: #fef3c7;
+
+            /* Configurações Globais */
+            --radius: 0.5rem;
+            --transition: 0.2s ease-in-out;
+        }
+
+        html[data-theme="dark"] {
+            /* Tema Escuro - Interpretação para Dona Chique */
+            --color-bg: #18181b;
+            /* Fundo escuro mais neutro */
+            --color-surface: #27272a;
+            --color-border: #3f3f46;
+            --color-border-hover: #52525b;
+            --color-text-primary: #f8fafc;
+            --color-text-secondary: #a1a1aa;
+            --color-text-tertiary: #71717a;
+            --color-surface-hover: #3a3a40;
+
+            /* Cores Primárias da Marca - Tema Escuro */
+            --color-primary: #b8860b;
+            /* Mantém a cor principal, que tem bom contraste no escuro */
+            --color-primary-hover: #9a7209;
+            /* Versão ligeiramente mais escura para hover */
+            --color-primary-text: #111827;
+            /* Texto escuro para contraste no botão claro */
+            --color-primary-focus-ring: rgba(184, 134, 11, 0.4);
+            --color-primary-soft-bg: #3d2e0a;
+
+            /* Cores Semânticas - Tema Escuro */
+            --color-danger: #f87171;
+            --color-danger-soft-bg: #452323;
+            --color-success: #4ade80;
+            --color-success-soft-bg: #1a3c2a;
+            --color-info: #60a5fa;
+            --color-info-soft-bg: #203555;
+            --color-warning: #facc15;
+            --color-warning-soft-bg: #4a3f1d;
+        }
+
+        /* === ESTILOS GERAIS E LOADER (COMPACTOS) === */
+        html {
+            font-size: 15px;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--color-bg);
+            color: var(--color-text-primary);
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body.loaded {
+            opacity: 1;
+        }
+
+        .loader-container {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--color-bg);
+            z-index: 9999;
+            transition: opacity 0.3s ease-out;
+        }
+
+        .loader {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--color-border);
+            border-bottom-color: var(--color-primary);
+            border-radius: 50%;
+            animation: rotation 1s linear infinite;
+        }
+
+        @keyframes rotation {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* === SCROLLBAR MINIMALISTA === */
+        .thin-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        .thin-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .thin-scrollbar::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 0);
+            border-radius: 10px;
+        }
+
+        .thin-scrollbar:hover::-webkit-scrollbar-thumb {
+            background-color: var(--color-border-hover);
+        }
+
+        .thin-scrollbar {
+            scrollbar-width: thin;
+            scrollbar-color: var(--color-border-hover) transparent;
+        }
+
+        /* === COMPONENTES DA PÁGINA (COMPACTOS) === */
+        .content-card {
+            background-color: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius);
+            box-shadow: 0 2px 4px -2px rgb(0 0 0 / 0.05);
+        }
+
+        .form-input {
+            width: 100%;
+            background-color: var(--color-surface);
+            border: 1px solid var(--color-border);
+            color: var(--color-text-primary);
+            border-radius: 0.375rem;
+            transition: border-color var(--transition), box-shadow var(--transition);
+            padding: 0.625rem 0.875rem;
+            font-size: 0.875rem;
+        }
+
+        .form-input:disabled {
+            background-color: var(--color-surface-hover);
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .form-input:focus {
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px var(--color-primary-focus-ring);
+            outline: none;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.625rem 1.25rem;
+            font-weight: 500;
+            border-radius: 0.375rem;
+            border: 1px solid transparent;
+            transition: all var(--transition);
+            font-size: 0.875rem;
+            cursor: pointer;
+        }
+
+        .btn-sm {
+            padding: 0.5rem;
+            font-size: 0.8rem;
+            line-height: 1;
+            border-radius: 0.375rem;
+        }
+
+        .btn-primary {
+            background-color: var(--color-primary);
+            color: var(--color-primary-text);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background-color: var(--color-primary-hover);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background-color: var(--color-surface);
+            color: var(--color-text-secondary);
+            border-color: var(--color-border);
+            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background-color: var(--color-surface-hover);
+            border-color: var(--color-border-hover);
+            color: var(--color-text-primary);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.15rem 0.6rem;
+            font-size: 0.7rem;
+            font-weight: 500;
+            border-radius: 9999px;
+            margin: 0.1rem;
+            white-space: nowrap;
+        }
+
+        .badge-access {
+            color: var(--color-primary);
+            background-color: var(--color-primary-soft-bg);
+        }
+
+        .badge-info {
+            color: var(--color-info);
+            background-color: var(--color-info-soft-bg);
+        }
+
+        .badge-warning {
+            color: var(--color-warning);
+            background-color: var(--color-warning-soft-bg);
+        }
+
+        .badge-success,
+        .badge-danger {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .badge-success {
+            color: var(--color-success);
+            background-color: var(--color-success-soft-bg);
+        }
+
+        .badge-danger {
+            color: var(--color-danger);
+            background-color: var(--color-danger-soft-bg);
+        }
+
+        tbody tr {
+            transition: background-color var(--transition);
+        }
+
+        tbody tr:hover {
+            background-color: var(--color-surface-hover);
+        }
+
+        thead th {
+            padding: 0.8rem 1rem;
+            font-size: 0.75rem;
+        }
+
+        tbody td {
+            padding: 0.75rem 1rem;
+            font-size: 0.875rem;
+        }
+
+        .search-input-container {
+            position: relative;
+        }
+
+        .search-input-container i {
+            position: absolute;
+            left: 0.875rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--color-text-tertiary);
+            font-size: 0.875rem;
+            pointer-events: none;
+        }
+
+        #search-input {
+            padding-left: 2.5rem;
+        }
+
+        /* === ESTILOS DO MODAL REFINADO === */
+        .modal-container {
+            transition: opacity 0.25s ease;
+        }
+
+        .modal-box {
+            transition: all 0.25s ease;
+            max-width: 50rem;
+        }
+
+        .modal-container.hidden {
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        .modal-container.hidden .modal-box {
+            transform: translateY(-20px) scale(0.98);
+        }
+
+        .card-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        .card-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--color-border);
+        }
+
+        /* Floating Labels para o formulário (ajustado) */
+        .floating-form-group {
+            position: relative;
+        }
+
+        .floating-input,
+        .floating-select .ts-control {
+            background-color: var(--color-surface-hover) !important;
+            border-radius: 0.375rem;
+            border: 1px solid var(--color-surface-hover) !important;
+            padding: 1.4rem 0.875rem 0.4rem 0.875rem !important;
+            transition: border-color var(--transition);
+            font-size: 0.875rem;
+            height: 50px;
+        }
+
+        .floating-input:focus,
+        .floating-select .ts-wrapper.focus .ts-control {
+            outline: none;
+            border-color: var(--color-primary) !important;
+        }
+
+        .floating-label {
+            position: absolute;
+            top: 0.8rem;
+            left: 0.875rem;
+            font-size: 0.875rem;
+            color: var(--color-text-secondary);
+            pointer-events: none;
+            transition: all 0.2s ease-out;
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+            z-index: 1;
+        }
+
+        .floating-input:focus+.floating-label,
+        .floating-input:not(:placeholder-shown)+.floating-label,
+        .floating-select .ts-wrapper.focus+.floating-label,
+        .floating-select .ts-wrapper.has-items+.floating-label {
+            top: 0.3rem;
+            font-size: 0.7rem;
+            color: var(--color-primary);
+        }
+
+        .floating-select .ts-dropdown {
+            background-color: var(--color-surface) !important;
+            border-color: var(--color-border) !important;
+            z-index: 60;
+            font-size: 0.875rem;
+        }
+
+        .floating-select .ts-dropdown .active {
+            background-color: var(--color-primary-soft-bg) !important;
+            color: var(--color-primary) !important;
+        }
+
+        /* === NOVO SELETOR DE PERMISSÕES (COM SCROLL) === */
+        .permission-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 0.75rem;
+            max-height: 240px;
+            /* ALTURA MÁXIMA PARA ATIVAR O SCROLL */
+            overflow-y: auto;
+            /* MOSTRAR SCROLL VERTICAL QUANDO NECESSÁRIO */
+            background-color: var(--color-surface-hover);
+            padding: 1rem;
+            border-radius: 0.375rem;
+            border: 1px solid var(--color-border);
+        }
+
+        .permission-item {
+            display: flex;
+            align-items: center;
+            background-color: var(--color-surface);
+            padding: 0.6rem 0.75rem;
+            border-radius: 0.375rem;
+            border: 1px solid var(--color-border);
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+
+        .permission-item:hover {
+            background-color: var(--color-primary-soft-bg);
+            border-color: var(--color-primary);
+        }
+
+        .permission-item input[type="checkbox"] {
+            accent-color: var(--color-primary);
+            width: 1rem;
+            height: 1rem;
+            margin-right: 0.75rem;
+            flex-shrink: 0;
+        }
+
+        .permission-item label {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--color-text-secondary);
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .permission-item:hover label {
+            color: var(--color-text-primary);
+        }
+    </style>
+    <script>
+        (function () {
+            try { if (JSON.parse(localStorage.getItem('gestaovscontabil_theme'))?.mode === 'escuro') { document.documentElement.setAttribute('data-theme', 'dark'); } } catch (e) { }
+        })();
+    </script>
+</head>
+
+<body class="p-4 sm:p-6 lg:p-8">
+    <div id="loader" class="loader-container">
+        <div class="loader"></div>
+    </div>
+    <div class="max-w-screen-xl mx-auto space-y-6">
+        <header>
+            <h1 class="text-3xl font-bold tracking-tight">Gerenciamento de Usuários</h1>
+            <p class="mt-1 text-base" style="color: var(--color-text-secondary);">Adicione, edite e controle as
+                permissões de acesso dos usuários.</p>
+        </header>
+
+        <main class="space-y-4">
+            <!-- Painel de Controle e Filtros -->
+            <div class="content-card p-3 flex flex-col md:flex-row items-center gap-3">
+                <div class="search-input-container w-full md:w-1/3">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="search" id="search-input" placeholder="Pesquisar por nome ou e-mail..."
+                        class="form-input">
+                </div>
+                <div class="flex items-center gap-3 w-full md:w-auto">
+                    <select id="status-filter" class="form-input w-full sm:w-32">
+                        <option value="todos">Todos Status</option>
+                        <option value="Ativo">Ativo</option>
+                        <option value="Inativo">Inativo</option>
+                    </select>
+                    <select id="type-filter" class="form-input w-full sm:w-40">
+                        <option value="todos">Todos os Tipos</option>
+                        <option value="Acesso Total">Acesso Total</option>
+                        <option value="Acesso Limitado">Limitado</option>
+                        <option value="Somente Leitura">Leitura</option>
+                    </select>
+                </div>
+                <button id="add-user-button" class="btn btn-primary ml-auto flex-shrink-0 w-full md:w-auto">
+                    <i class="fa-solid fa-user-plus mr-2"></i>Novo Usuário
+                </button>
+            </div>
+
+            <!-- Tabela -->
+            <div class="content-card">
+                <div class="overflow-x-auto thin-scrollbar">
+                    <table class="w-full text-sm text-left">
+                        <thead class="text-xs uppercase"
+                            style="background-color: var(--color-surface-hover); color: var(--color-text-tertiary);">
+                            <tr>
+                                <th scope="col" class="w-1/3">Nome Completo</th>
+                                <th scope="col">E-mail</th>
+                                <th scope="col">Permissões de Tela</th>
+                                <th scope="col" class="text-center">Acesso Banco</th>
+                                <th scope="col" class="text-center">Status</th>
+                                <th scope="col" class="text-right min-w-[100px]">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="user-table-body" class="divide-y" style="border-color: var(--color-border);"></tbody>
+                    </table>
+                    <div id="empty-state" class="text-center p-12 hidden">
+                        <i class="fa-solid fa-users-slash text-4xl" style="color: var(--color-border-hover);"></i>
+                        <h3 class="mt-3 text-base font-semibold">Nenhum usuário encontrado</h3>
+                        <p id="empty-state-message" class="mt-1 text-sm" style="color: var(--color-text-secondary);">
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Adicionar/Editar Usuário -->
+    <div id="user-modal"
+        class="modal-container fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 hidden">
+        <div class="modal-box content-card w-full max-h-[95vh] flex flex-col">
+            <form id="user-form" novalidate>
+                <header class="card-header flex justify-between items-center">
+                    <h2 id="modal-title" class="text-lg font-semibold">Editar Usuário</h2>
+                    <button type="button"
+                        class="close-modal-button text-xl hover:text-[var(--color-primary)] transition-colors"
+                        style="color: var(--color-text-tertiary);">&times;</button>
+                </header>
+
+                <div class="card-body overflow-y-auto thin-scrollbar space-y-6" style="max-height: calc(80vh - 6rem);">
+                    <!-- Seção 1: Informações do Usuário -->
+                    <div>
+                        <h3
+                            class="font-semibold text-base border-b border-[var(--color-border)] pb-2 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-address-card text-[var(--color-primary)]"></i>
+                            Informações do Usuário
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+                            <div class="floating-form-group">
+                                <input type="text" id="nome_completo" class="floating-input" placeholder=" " required>
+                                <label for="nome_completo" class="floating-label"><i
+                                        class="fa-solid fa-user-pen fa-fw"></i>Nome Completo</label>
+                            </div>
+                            <div class="floating-form-group">
+                                <input type="email" id="melhor_email" class="floating-input" placeholder=" " required>
+                                <label for="melhor_email" class="floating-label"><i
+                                        class="fa-solid fa-envelope fa-fw"></i>E-mail</label>
+                            </div>
+                            <div class="floating-form-group">
+                                <input type="text" id="telefone" class="floating-input" placeholder=" ">
+                                <label for="telefone" class="floating-label"><i
+                                        class="fa-solid fa-phone fa-fw"></i>Telefone</label>
+                            </div>
+                            <div class="floating-form-group">
+                                <input type="text" id="cpf_cnpj" class="floating-input" placeholder=" ">
+                                <label for="cpf_cnpj" class="floating-label"><i
+                                        class="fa-solid fa-id-card fa-fw"></i>CPF ou CNPJ</label>
+                            </div>
+                            <div id="password-container" class="floating-form-group md:col-span-2">
+                                <input type="password" id="senha" class="floating-input" placeholder=" " required
+                                    minlength="6">
+                                <label for="senha" class="floating-label"><i class="fa-solid fa-key fa-fw"></i>Senha de
+                                    Acesso (mín. 6 caracteres)</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seção 2: Controle de Acesso -->
+                    <div>
+                        <h3
+                            class="font-semibold text-base border-b border-[var(--color-border)] pb-2 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-shield-halved text-[var(--color-primary)]"></i>
+                            Permissões de Acesso
+                        </h3>
+                        <div class="grid grid-cols-2 gap-6 mb-5">
+                            <div class="floating-form-group floating-select">
+                                <select id="tipouser">
+                                    <option value="Acesso Limitado">Acesso Limitado</option>
+                                    <option value="Acesso Total">Acesso Total</option>
+                                    <option value="Somente Leitura">Somente Leitura</option>
+                                </select>
+                                <label for="tipouser" class="floating-label"><i
+                                        class="fa-solid fa-database fa-fw"></i>Acesso ao Banco</label>
+                            </div>
+                            <div class="floating-form-group floating-select">
+                                <select id="status">
+                                    <option value="Ativo">Ativo</option>
+                                    <option value="Inativo">Inativo</option>
+                                </select>
+                                <label for="status" class="floating-label"><i
+                                        class="fa-solid fa-toggle-on fa-fw"></i>Status</label>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium mb-2 block"
+                                style="color: var(--color-text-secondary)">Permissões de Tela</label>
+                            <div id="permission-list-container" class="permission-grid thin-scrollbar">
+                                <!-- Checkboxes serão populados via JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <footer class="card-footer flex flex-col sm:flex-row justify-between items-center gap-3"
+                    style="background-color: var(--color-surface-hover);">
+                    <div id="user-form-message" class="text-sm font-medium w-full sm:w-auto text-left"></div>
+                    <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+                        <button type="button" class="btn btn-secondary close-modal-button">Cancelar</button>
+                        <button type="submit" id="user-save-button" class="btn btn-primary w-28">
+                            <i id="user-save-spinner" class="fa-solid fa-spinner fa-spin mr-2 hidden"></i>
+                            <span id="user-save-text">Salvar</span>
+                        </button>
+                    </div>
+                </footer>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        const SUPABASE_URL = 'https://jmcwiszplkjksdvqyhbw.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptY3dpc3pwbGtqa3NkdnF5aGJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODczODIsImV4cCI6MjA5MTE2MzM4Mn0.G85OrkSFtjTXmaHvEPBkWXZQQbDKsjMBD97_V3Z6yw0';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const ACCESS_MAP = {
+            // Grupo: Visão Geral
+            "inicio.html": {
+                text: "Painel Principal",
+                tables: "Gestão;Contábil"
+            },
+            "confronto-dacte.html": {
+                text: "Confronto DACTe",
+                tables: "NFe;CTe;Confronto"
+            },
+            "confronto_nf_consumo.html": {
+                text: "Confronto NF Consumo",
+                tables: ""
+            },
+            "confronto_nf_servico.html": {
+                text: "Confronto NF Serviço",
+                tables: ""
+            },
+            "confronto_danfe.html": {
+                text: "Confronto DANFe",
+                tables: ""
+            },
+
+            // Grupo: Administração
+            "user.html": {
+                text: "Gestão de Usuários",
+                tables: "UFC"
+            },
+            "config.html": {
+                text: "Configurações",
+                tables: "UFC;Configuracoes"
+            },
+        };
+
+
+
+
+
+        const ACCESS_OPTIONS = Object.keys(ACCESS_MAP).map(fileName => ({
+            value: fileName, text: ACCESS_MAP[fileName].text
+        })).sort((a, b) => a.text.localeCompare(b.text));
+
+        let currentEditingUserId = null;
+        let tomSelectInstances = {};
+
+        const ui = {
+            loader: document.getElementById('loader'), body: document.body, tableBody: document.getElementById('user-table-body'), addUserButton: document.getElementById('add-user-button'), searchInput: document.getElementById('search-input'), emptyState: document.getElementById('empty-state'), emptyStateMessage: document.getElementById('empty-state-message'),
+            filters: { status: document.getElementById('status-filter'), type: document.getElementById('type-filter') },
+            modal: {
+                container: document.getElementById('user-modal'), form: document.getElementById('user-form'), title: document.getElementById('modal-title'), message: document.getElementById('user-form-message'), saveButton: document.getElementById('user-save-button'), saveText: document.getElementById('user-save-text'), spinner: document.getElementById('user-save-spinner'), closeButtons: document.querySelectorAll('#user-modal .close-modal-button'), passwordContainer: document.getElementById('password-container'),
+                permissionContainer: document.getElementById('permission-list-container'),
+                inputs: {
+                    nome_completo: document.getElementById('nome_completo'), melhor_email: document.getElementById('melhor_email'), telefone: document.getElementById('telefone'), cpf_cnpj: document.getElementById('cpf_cnpj'), status: document.getElementById('status'), tipouser: document.getElementById('tipouser'), senha: document.getElementById('senha'),
+                }
+            }
+        };
+
+        const debounce = (func, delay) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => func.apply(this, a), delay); }; };
+
+        const showFormMessage = (message, type = 'error') => {
+            const icon = type === 'success' ? 'fa-check-circle' : 'fa-times-circle';
+            const color = type === 'success' ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]';
+            ui.modal.message.innerHTML = `<span class="${color}"><i class="fa-solid ${icon} mr-2"></i>${message}</span>`;
+        };
+
+        const formatCPF_CNPJ = (v) => { const c = ('' + v).replace(/\D/g, ''); if (c.length <= 11) { return c.replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2'); } else { return c.slice(0, 14).replace(/^(\d{2})(\d)/, '$1.$2').replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3').replace(/\.(\d{3})(\d)/, '.$1/$2').replace(/(\d{4})(\d)/, '$1-$2'); } };
+
+        function renderUserRow(user) {
+            const nome = user["Nome Completo"] || 'N/A', email = user["Melhor e-mail"] || 'N/A', status = user["Status"] || 'Inativo', tipouser = user["tipouser"] || 'Limitado', acesso = user["Acesso"] || '';
+            const statusBadge = status === 'Ativo' ? `<span class="badge badge-success"><i class="fa-solid fa-circle fa-xs"></i>Ativo</span>` : `<span class="badge badge-danger"><i class="fa-solid fa-circle fa-xs"></i>Inativo</span>`;
+            let tipouserBadge;
+            switch (tipouser) {
+                case 'Acesso Total': tipouserBadge = `<span class="badge badge-access">Total</span>`; break;
+                case 'Somente Leitura': tipouserBadge = `<span class="badge badge-warning">Leitura</span>`; break;
+                default: tipouserBadge = `<span class="badge badge-info">Limitado</span>`;
+            }
+            const allAccessNames = acesso ? (acesso.split('|')[0] || '').split('>').map(f => ACCESS_MAP[f]?.text || f).filter(Boolean) : [];
+            let accessHTML = allAccessNames.length > 0 ? allAccessNames.slice(0, 2).map(n => `<span class="badge badge-access">${n}</span>`).join('') + (allAccessNames.length > 2 ? `<span class="badge badge-info">+${allAccessNames.length - 2}</span>` : '') : `<span class="text-xs" style="color: var(--color-text-tertiary);">Nenhuma</span>`;
+
+            return `<tr data-user-id="${user.id}">
+                    <td class="font-medium whitespace-nowrap align-middle">
+                        <div class="flex items-center gap-3">
+                            <img class="w-8 h-8 rounded-full object-cover ring-1 ring-offset-2 ring-offset-[var(--color-surface)] ring-[var(--color-border)]" src="https://ui-avatars.com/api/?name=${encodeURIComponent(nome)}&background=random&color=fff&font-size=0.4" alt="Foto">
+                            <span>${nome}</span>
+                        </div>
+                    </td>
+                    <td class="align-middle" style="color: var(--color-text-secondary);">${email}</td>
+                    <td class="align-middle"><div class="flex flex-wrap items-center gap-1" title="${allAccessNames.join(', ')}">${accessHTML}</div></td>
+                    <td class="align-middle text-center">${tipouserBadge}</td><td class="align-middle text-center">${statusBadge}</td>
+                    <td class="text-right align-middle"><div class="flex items-center justify-end gap-2">
+                        <button class="btn-toggle-status btn-sm btn-secondary" data-current-status="${status}" title="${status === 'Ativo' ? 'Inativar' : 'Ativar'}"><i class="fa-solid ${status === 'Ativo' ? 'fa-toggle-off' : 'fa-toggle-on'}"></i></button>
+                        <button class="btn-edit btn-sm btn-secondary" title="Editar"><i class="fa-solid fa-pencil"></i></button>
+                    </div></td></tr>`;
+        }
+
+        async function loadUsers() {
+            const searchTerm = ui.searchInput.value, statusFilter = ui.filters.status.value, typeFilter = ui.filters.type.value;
+            let query = supabase.from('UFC').select('*').order('Nome Completo', { ascending: true });
+            if (searchTerm) { query = query.or(`"Nome Completo".ilike.%${searchTerm}%, "Melhor e-mail".ilike.%${searchTerm}%`); }
+            if (statusFilter !== 'todos') { query = query.eq('Status', statusFilter); }
+            if (typeFilter !== 'todos') { query = query.eq('tipouser', typeFilter); }
+            const { data, error } = await query;
+            if (error) { ui.tableBody.innerHTML = ''; ui.emptyState.classList.remove('hidden'); ui.emptyStateMessage.textContent = `Erro: ${error.message}`; return; }
+            if (data.length === 0) { ui.tableBody.innerHTML = ''; ui.emptyState.classList.remove('hidden'); ui.emptyStateMessage.textContent = searchTerm || statusFilter !== 'todos' || typeFilter !== 'todos' ? `Nenhum resultado para os filtros.` : "Clique em 'Novo Usuário' para começar."; }
+            else { ui.emptyState.classList.add('hidden'); ui.tableBody.innerHTML = data.map(renderUserRow).join(''); }
+        }
+
+        function populatePermissions(selectedPermissions = []) {
+            ui.modal.permissionContainer.innerHTML = ACCESS_OPTIONS.map(opt => {
+                const isChecked = selectedPermissions.includes(opt.value);
+                return `
+                    <div class="permission-item">
+                        <input type="checkbox" id="perm_${opt.value}" value="${opt.value}" ${isChecked ? 'checked' : ''}>
+                        <label for="perm_${opt.value}">${opt.text}</label>
+                    </div>`;
+            }).join('');
+        }
+
+        function openUserModal(user = null) {
+            ui.modal.form.reset(); ui.modal.message.innerHTML = ''; currentEditingUserId = null;
+            Object.values(tomSelectInstances).forEach(ts => ts.clear());
+
+            if (user) {
+                currentEditingUserId = user.id;
+                ui.modal.title.textContent = 'Editar Usuário';
+                ui.modal.inputs.nome_completo.value = user["Nome Completo"] || '';
+                ui.modal.inputs.melhor_email.value = user["Melhor e-mail"] || '';
+                ui.modal.inputs.telefone.value = user["Telefone"] || '';
+                ui.modal.inputs.cpf_cnpj.value = user["CPF/CNPJ"] ? formatCPF_CNPJ(user["CPF/CNPJ"]) : '';
+                tomSelectInstances.status.setValue(user["Status"] || 'Inativo');
+                tomSelectInstances.tipouser.setValue(user["tipouser"] || 'Acesso Limitado');
+                const userPermissions = user["Acesso"] ? user["Acesso"].split('|')[0].split('>') : [];
+                populatePermissions(userPermissions);
+                ui.modal.inputs.melhor_email.disabled = true;
+                ui.modal.passwordContainer.classList.add('hidden');
+                ui.modal.inputs.senha.required = false;
+            } else {
+                ui.modal.title.textContent = 'Adicionar Novo Usuário';
+                populatePermissions();
+                ui.modal.inputs.melhor_email.disabled = false;
+                ui.modal.passwordContainer.classList.remove('hidden');
+                ui.modal.inputs.senha.required = true;
+            }
+            ui.modal.container.classList.remove('hidden');
+        }
+
+        function generateAccessString() {
+            const selectedFiles = Array.from(ui.modal.permissionContainer.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+            if (selectedFiles.length === 0) return null;
+            const fileString = selectedFiles.join('>');
+            const uniqueTables = new Set();
+            selectedFiles.forEach(fileName => {
+                const tables = ACCESS_MAP[fileName]?.tables;
+                if (tables) { tables.split(';').forEach(table => table && uniqueTables.add(table.trim())); }
+            });
+            const tableString = Array.from(uniqueTables).join(';');
+            return `${fileString}|${tableString}`;
+        }
+
+        async function handleUserFormSubmit(e) {
+            e.preventDefault();
+            if (!ui.modal.form.checkValidity()) { showFormMessage('Por favor, preencha os campos obrigatórios.'); return; }
+            ui.modal.saveButton.disabled = true; ui.modal.spinner.classList.remove('hidden'); ui.modal.saveText.textContent = 'Salvando...';
+
+            const profileData = { "Nome Completo": ui.modal.inputs.nome_completo.value.trim(), "CPF/CNPJ": ui.modal.inputs.cpf_cnpj.value.replace(/\D/g, '') || null, "Telefone": ui.modal.inputs.telefone.value.trim() || null, "Status": tomSelectInstances.status.getValue(), "tipouser": tomSelectInstances.tipouser.getValue(), "Acesso": generateAccessString() };
+
+            let error = null;
+            if (currentEditingUserId) {
+                const { error: updateError } = await supabase.from('UFC').update(profileData).eq('id', currentEditingUserId);
+                error = updateError;
+            } else {
+                const email = ui.modal.inputs.melhor_email.value.trim(), password = ui.modal.inputs.senha.value;
+                const { data: authData, error: authError } = await supabase.auth.signUp({ email, password });
+                if (authError) { error = authError; }
+                else if (authData.user) {
+                    const finalProfile = { ...profileData, id: authData.user.id, "Melhor e-mail": authData.user.email };
+                    const { error: profileError } = await supabase.from('UFC').insert(finalProfile);
+                    if (profileError) { error = profileError; }
+                }
+            }
+
+            if (error) { showFormMessage(`Erro: ${error.message}`); }
+            else {
+                showFormMessage(`Usuário ${currentEditingUserId ? 'atualizado' : 'criado'} com sucesso!`, 'success');
+                setTimeout(() => { ui.modal.container.classList.add('hidden'); loadUsers(); }, 1200);
+            }
+            ui.modal.saveButton.disabled = false; ui.modal.spinner.classList.add('hidden'); ui.modal.saveText.textContent = 'Salvar';
+        }
+
+        async function handleToggleStatus(userId, currentStatus) {
+            const { error } = await supabase.from('UFC').update({ "Status": currentStatus === 'Ativo' ? 'Inativo' : 'Ativo' }).eq('id', userId);
+            if (error) alert(`Erro: ${error.message}`); else await loadUsers();
+        }
+
+        async function init() {
+            tomSelectInstances.status = new TomSelect(ui.modal.inputs.status, { allowEmptyOption: false, controlInput: null });
+            tomSelectInstances.tipouser = new TomSelect(ui.modal.inputs.tipouser, { allowEmptyOption: false, controlInput: null });
+
+            await loadUsers();
+            const debouncedLoad = debounce(loadUsers, 300);
+
+            ui.addUserButton.addEventListener('click', () => openUserModal());
+            ui.modal.form.addEventListener('submit', handleUserFormSubmit);
+            ui.modal.closeButtons.forEach(btn => btn.addEventListener('click', () => ui.modal.container.classList.add('hidden')));
+            ui.modal.inputs.cpf_cnpj.addEventListener('input', (e) => { e.target.value = formatCPF_CNPJ(e.target.value); });
+            ui.searchInput.addEventListener('input', debouncedLoad);
+            ui.filters.status.addEventListener('change', loadUsers);
+            ui.filters.type.addEventListener('change', loadUsers);
+            ui.tableBody.addEventListener('click', async (e) => {
+                const button = e.target.closest('button');
+                const row = e.target.closest('tr');
+                if (!button || !row?.dataset.userId) return;
+                const userId = row.dataset.userId;
+                if (button.classList.contains('btn-edit')) {
+                    const { data } = await supabase.from('UFC').select('*').eq('id', userId).single();
+                    if (data) openUserModal(data);
+                }
+                if (button.classList.contains('btn-toggle-status')) {
+                    button.disabled = true;
+                    await handleToggleStatus(userId, button.dataset.currentStatus);
+                    button.disabled = false;
+                }
+            });
+
+            ui.loader.style.opacity = '0';
+            setTimeout(() => { ui.loader.style.display = 'none'; ui.body.classList.add('loaded'); }, 300);
+        }
+
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+    <script defer
+        src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516"
+        integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg=="
+        data-cf-beacon='{"version":"2024.11.0","token":"97ac66ee4a66456e998bdfa7fced6603","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}'
+        crossorigin="anonymous"></script>
+</body>
+
+</html>

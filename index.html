@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NutriPort Comercial</title>
+    <link rel="icon" href="https://i.imgur.com/8vy4QAK.png" type="image/png">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5a4230',
+                        brand: {
+                            50: '#fdf8f0',   /* Dourado muito claro */
+                            100: '#faecd4',  /* Dourado claro */
+                            500: '#c4982a',  /* Dourado padrão */
+                            600: '#b8860b',  /* Dourado Destaque */
+                            700: '#9a7209',  /* Dourado Escuro */
+                            800: '#7c5b07',  /* Dourado Profundo */
+                            900: '#5e4405',  /* Dourado muito escuro */
+                        },
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Poppins', 'sans-serif'],
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards',
+                        'slide-up': 'slideUp 0.5s ease-out forwards',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Fonts & Icons -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        /* Reset & Base */
+        * {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Loader */
+        #loading-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            background-color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.4s ease-out, visibility 0.4s;
+        }
+
+        /* Inputs Personalizados */
+        .input-wrapper {
+            position: relative;
+            transition: all 0.2s;
+        }
+
+        .input-field {
+            width: 100%;
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s ease-in-out;
+            font-size: 16px;
+            /* Evita zoom no iOS */
+        }
+
+        .input-field:focus {
+            background-color: #ffffff;
+            border-color: #b8860b;
+            box-shadow: 0 0 0 3px rgba(184, 134, 11, 0.12);
+            outline: none;
+        }
+
+        /* Efeito Shimmer no Botão */
+        @keyframes shimmer {
+            100% {
+                transform: translateX(100%);
+            }
+        }
+
+        .shimmer-effect {
+            position: absolute;
+            inset: 0;
+            transform: translateX(-100%);
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        }
+
+        .group:hover .shimmer-effect {
+            animation: shimmer 1.5s infinite;
+        }
+
+        /* Scrollbar suave para telas pequenas */
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 20px;
+        }
+    </style>
+</head>
+
+<body class="h-screen flex flex-col lg:flex-row overflow-hidden">
+
+    <!-- LOADING SCREEN -->
+    <div id="loading-overlay">
+        <div class="relative w-16 h-16 mb-4">
+            <div class="absolute inset-0 border-4 border-slate-100 rounded-full"></div>
+            <div class="absolute inset-0 border-4 border-brand-500 rounded-full border-t-transparent animate-spin">
+            </div>
+        </div>
+        <img src="https://i.imgur.com/8vy4QAK.png" alt="NutriPort Comercial"
+            class="h-24 object-contain opacity-50 grayscale animate-pulse">
+    </div>
+
+    <!-- ÁREA ESQUERDA (BRANDING - PC) -->
+    <div
+        class="hidden lg:flex lg:w-5/12 xl:w-[45%] relative flex-col justify-center items-center text-white p-8 xl:p-12 z-10 shadow-2xl" style="background: linear-gradient(135deg, #5a4230 0%, #7c5b07 50%, #9a7209 100%);">
+
+        <!-- Padrão de Fundo -->
+        <div class="absolute inset-0 opacity-10"
+            style="background-image: radial-gradient(#ffffff 1px, transparent 1px); background-size: 30px 30px;"></div>
+
+        <!-- Conteúdo Marca -->
+        <div class="relative z-10 w-full max-w-md animate-fade-in">
+            <div
+                class="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full border border-white/20 mb-8 backdrop-blur-sm">
+                <span class="w-2 h-2 rounded-full bg-yellow-300 animate-pulse"></span>
+                <span class="text-[11px] font-bold tracking-widest uppercase text-white">NutriPort Comercial</span>
+            </div>
+
+            <h1 class="text-4xl xl:text-5xl font-display font-bold leading-tight mb-6">
+                NutriPort <br /> Comercial.
+            </h1>
+            <p class="text-brand-100 text-lg font-light leading-relaxed mb-10 opacity-90">
+                Gestão inteligente com foco em controle, rastreabilidade e conformidade. </p>
+
+            <!-- Card Mensagem Fixa -->
+            <div class="bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl p-6 relative">
+                <div class="relative z-10 pl-2">
+                    <p class="text-lg font-medium leading-relaxed mb-2 text-white">
+                        Acesso Restrito
+                    </p>
+                    <p class="text-sm text-brand-100 opacity-90">
+                        Por favor, realize o login para acessar o sistema NutriPort Comercial
+                    </p>
+                </div>
+            </div>
+
+            <!-- Footer Icons -->
+            <div class="flex gap-6 mt-12 opacity-60 text-xs font-medium uppercase tracking-wider">
+                <div class="flex items-center gap-2"><i class="fas fa-chart-line"></i> Gestão</div>
+                <div class="flex items-center gap-2"><i class="fas fa-file-invoice-dollar"></i> Contábil</div>
+            </div>
+        </div>
+
+        <!-- Onda Divisória (SVG) -->
+        <div class="absolute top-0 right-0 bottom-0 w-16 h-full overflow-hidden pointer-events-none translate-x-[1px]">
+            <svg class="h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                <path d="M0,0 L100,0 L100,100 L0,100 C40,50 80,20 0,0 Z" fill="#ffffff"></path>
+            </svg>
+        </div>
+    </div>
+
+    <!-- ÁREA DIREITA (LOGIN FORM) -->
+    <div class="flex-1 bg-white flex flex-col h-full overflow-y-auto custom-scroll relative w-full">
+
+        <!-- Header Mobile (Apenas Mobile) -->
+        <div class="lg:hidden flex flex-col items-center pt-8 pb-4 px-6 bg-slate-50 border-b border-slate-100">
+            <img src="https://i.imgur.com/8vy4QAK.png" alt="NutriPort Comercial"
+                class="h-32 object-contain mb-3">
+            <h2 class="text-xl font-bold text-primary font-display">NutriPort Comercial</h2>
+            <div class="mt-2 flex items-center gap-2 px-3 py-1 bg-white border border-slate-200 rounded-full shadow-sm">
+                <span class="w-1.5 h-1.5 rounded-full bg-brand-500"></span>
+                <span class="text-[10px] font-bold text-slate-500 uppercase">Acesso Contábil</span>
+            </div>
+        </div>
+
+        <!-- Container do Formulário Centrado -->
+        <div
+            class="flex-grow flex flex-col justify-center px-6 py-8 sm:px-12 lg:px-16 xl:px-24 w-full max-w-[680px] mx-auto">
+
+            <!-- Header Desktop -->
+            <div class="hidden lg:flex justify-between items-center mb-10 animate-slide-up">
+                <img src="https://i.imgur.com/8vy4QAK.png" alt="NutriPort Comercial"
+                    class="h-24 lg:h-32 object-contain">
+                <div class="flex items-center gap-2 px-3 py-1 bg-brand-50 rounded-full border border-brand-100">
+                    <i class="fas fa-lock text-xs text-brand-600"></i>
+                    <span class="text-[10px] font-bold text-brand-700 uppercase tracking-wide">Ambiente Seguro</span>
+                </div>
+            </div>
+
+            <!-- Títulos -->
+            <div class="mb-8 animate-slide-up" style="animation-delay: 0.1s;">
+                <h1 class="text-2xl lg:text-3xl font-bold text-primary font-display mb-2 text-center lg:text-left">
+                    NutriPort Comercial</h1>
+                <p class="text-slate-500 text-sm lg:text-base text-center lg:text-left">Informe suas credenciais para
+                    iniciar.</p>
+            </div>
+
+            <!-- Formulário -->
+            <form id="login-form" class="space-y-5 animate-slide-up" style="animation-delay: 0.2s;">
+
+                <!-- Email -->
+                <div class="space-y-1.5">
+                    <label class="text-xs font-bold text-slate-600 uppercase tracking-wide ml-1">Usuário</label>
+                    <div class="input-wrapper group">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <i
+                                class="far fa-user text-slate-400 group-focus-within:text-brand-600 transition-colors text-lg"></i>
+                        </div>
+                        <!-- Refatorado: Permitir e-mail completo -->
+                        <input id="login-email" type="email" required
+                            class="input-field block w-full rounded-xl py-3.5 pl-12 pr-4 placeholder-slate-400 text-slate-800"
+                            placeholder="seu@email.com">
+                        <!-- Hint visual removido -->
+                        <div
+                            class="absolute inset-y-0 right-4 flex items-center pointer-events-none opacity-40 text-sm text-slate-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Senha -->
+                <div class="space-y-1.5">
+                    <label class="text-xs font-bold text-slate-600 uppercase tracking-wide ml-1">Senha</label>
+                    <div class="input-wrapper group">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <i
+                                class="fas fa-key text-slate-400 group-focus-within:text-brand-600 transition-colors text-lg"></i>
+                        </div>
+                        <!-- Refatorado: inputmode numeric, pattern apenas numeros e placeholder atualizado -->
+                        <input id="login-password" type="password" required
+                            class="input-field block w-full rounded-xl py-3.5 pl-12 pr-12 placeholder-slate-400 text-slate-800"
+                            placeholder="Sua senha">
+                        <button type="button" id="toggle-pass"
+                            class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-brand-600 cursor-pointer focus:outline-none">
+                            <i class="far fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Opções -->
+                <div class="flex justify-between items-center text-sm pt-1">
+                    <label class="flex items-center cursor-pointer group">
+                        <input id="remember-me" type="checkbox"
+                            class="w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500 cursor-pointer">
+                        <span class="ml-2 text-slate-600 group-hover:text-slate-800 select-none">Lembrar acesso</span>
+                    </label>
+                    <a href="https://wa.me/5562995010222?text=Esqueci%20minha%20senha%20expedicao"
+                        class="text-brand-600 font-semibold hover:text-brand-700 hover:underline">Problemas no
+                        acesso?</a>
+                </div>
+
+                <!-- Mensagem de Erro -->
+                <div id="auth-error-container"
+                    class="hidden bg-red-50 border-l-4 border-red-500 p-3 rounded-r flex items-start gap-3 animate-pulse">
+                    <i class="fas fa-exclamation-circle text-red-500 mt-0.5"></i>
+                    <div>
+                        <p class="text-sm font-bold text-red-800">Erro de Login</p>
+                        <span id="auth-error" class="text-xs text-red-600 block">Dados incorretos.</span>
+                    </div>
+                </div>
+
+                <!-- Botão Submit -->
+                <button type="submit"
+                    class="group relative w-full overflow-hidden rounded-xl bg-brand-600 px-4 py-4 text-base font-bold text-white shadow-xl shadow-brand-500/20 hover:bg-brand-700 hover:shadow-brand-600/30 transition-all transform hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99]">
+                    <span class="relative z-10 flex items-center justify-center gap-3" id="btn-content">
+                        Acessar <i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                    </span>
+                    <div class="shimmer-effect"></div>
+                </button>
+            </form>
+
+            <!-- Links Footer -->
+            <div class="mt-8 pt-6 border-t border-slate-100 text-center animate-slide-up"
+                style="animation-delay: 0.3s;">
+                <p class="text-sm text-slate-500 mb-6">
+                    Novo funcionário? <a href="#" class="text-brand-600 font-bold hover:underline">Solicitar
+                        cadastro</a>
+                </p>
+                <div class="flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs text-slate-400 font-medium">
+                    <a href="#" class="hover:text-brand-600 transition-colors">Manual</a>
+                    <a href="#" class="hover:text-brand-600 transition-colors">Segurança</a>
+                    <a href="https://wa.me/5562995010222" class="hover:text-brand-600 transition-colors">Suporte TI</a>
+                </div>
+                <p class="mt-4 text-[10px] text-slate-300 uppercase tracking-widest pb-4 lg:pb-0">© 2026 NutriPort Comercial LTDA</p>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Efeitos Sonoros -->
+    <audio id="aprovadoAudio" src="https://i.imgur.com/OqQIdPC.mp4" preload="auto"></audio>
+    <audio id="reprovadoAudio" src="https://i.imgur.com/gZO1FzJ.mp4" preload="auto"></audio>
+
+    <script>
+        // Configuração Supabase
+        const SUPABASE_URL = 'https://jmcwiszplkjksdvqyhbw.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptY3dpc3pwbGtqa3NkdnF5aGJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODczODIsImV4cCI6MjA5MTE2MzM4Mn0.G85OrkSFtjTXmaHvEPBkWXZQQbDKsjMBD97_V3Z6yw0';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Elementos UI
+        const overlay = document.getElementById('loading-overlay');
+        const form = document.getElementById('login-form');
+        const emailIn = document.getElementById('login-email');
+        const passIn = document.getElementById('login-password');
+        const errorBox = document.getElementById('auth-error-container');
+        const errorMsg = document.getElementById('auth-error');
+        const btn = form.querySelector('button');
+        const btnContent = document.getElementById('btn-content');
+        const togglePass = document.getElementById('toggle-pass');
+        const rememberMe = document.getElementById('remember-me');
+
+        // Loader Rápido
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                overlay.style.opacity = '0';
+                overlay.style.visibility = 'hidden';
+            }, 500);
+        });
+
+        // --- REFATORAÇÃO: Restrições de Input (Invisível para usuário) ---
+
+        // 1. Lógica de Restrição de E-mail
+        // Impede digitar '@' ou qualquer coisa depois
+        // 1. Lógica de Restrição de E-mail - REMOVIDA para permitir e-mail completo
+        /*
+        emailIn.addEventListener('input', function (e) {
+            const val = this.value;
+            if (val.includes('@')) {
+                this.value = val.split('@')[0];
+            }
+        });
+        */
+
+        // NOTA: Removido os eventos 'blur' e 'keydown' que alteravam o value visualmente.
+
+        // 2. Lógica de Restrição de Senha (Apenas Números) - REMOVIDA
+        /*
+        passIn.addEventListener('input', function (e) {
+            // Substitui qualquer caractere não numérico por vazio
+            this.value = this.value.replace(/\D/g, '');
+        });
+        */
+
+        // ----------------------------------------
+
+        // Alternar visibilidade da senha
+        togglePass.addEventListener('click', () => {
+            const type = passIn.type === 'password' ? 'text' : 'password';
+            passIn.type = type;
+            togglePass.innerHTML = type === 'password'
+                ? '<i class="far fa-eye"></i>'
+                : '<i class="far fa-eye-slash text-brand-600"></i>';
+        });
+
+        // Carregar Email Salvo
+        if (localStorage.getItem('zy_email')) {
+            let savedEmail = localStorage.getItem('zy_email');
+            emailIn.value = savedEmail;
+            rememberMe.checked = true;
+        }
+
+        // Lógica de Login
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // CONSTRUÇÃO INTERNA DO EMAIL
+            // Pega o valor completo (ex: "usuario@email.com")
+            const emailParaAutenticacao = emailIn.value.trim();
+
+            // UI Reset
+            errorBox.classList.add('hidden');
+            const originalBtnHtml = btnContent.innerHTML;
+
+            // Estado Loading
+            btn.disabled = true;
+            btn.classList.add('opacity-80', 'cursor-wait');
+            btnContent.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Autenticando...';
+
+            // Chamada Supabase USANDO O EMAIL INTERNO
+            const { data, error } = await supabaseClient.auth.signInWithPassword({
+                email: emailParaAutenticacao, // <--- Enviando e-mail completo
+                password: passIn.value
+            });
+
+            if (error) {
+                console.error(error);
+                document.getElementById('reprovadoAudio').play().catch(() => { });
+
+                errorMsg.textContent = 'Credenciais inválidas. Verifique e tente novamente.';
+                errorBox.classList.remove('hidden');
+
+                passIn.classList.add('border-red-300', 'bg-red-50', 'text-red-900');
+                passIn.focus();
+
+                setTimeout(() => {
+                    passIn.classList.remove('border-red-300', 'bg-red-50', 'text-red-900');
+                }, 2000);
+
+                // Reset Botão
+                btn.disabled = false;
+                btn.classList.remove('opacity-80', 'cursor-wait');
+                btnContent.innerHTML = originalBtnHtml;
+            } else {
+                document.getElementById('aprovadoAudio').play().catch(() => { });
+
+                // UI Sucesso
+                btnContent.innerHTML = '<i class="fas fa-check"></i> Autorizado!';
+                btn.classList.replace('bg-brand-600', 'bg-brand-700');
+                btn.classList.replace('hover:bg-brand-700', 'hover:bg-brand-800');
+                btn.classList.replace('shadow-brand-500/20', 'shadow-brand-700/30');
+
+                // Salvar/Limpar localStorage
+                if (rememberMe.checked) {
+                    localStorage.setItem('zy_email', emailParaAutenticacao);
+                } else {
+                    localStorage.removeItem('zy_email');
+                }
+
+                // Redirecionar
+                setTimeout(() => window.location.href = 'sistema.html', 1000);
+            }
+        });
+
+        // Tracking Google Sheets (Expedição Context)
+        document.addEventListener("DOMContentLoaded", () => {
+            const scriptURL = "https://script.google.com/macros/s/AKfycbzDfFS4h0_lOSnkrJO_ZPfSskXbfeIDl2OGRJ64KO0C5_U3CH8zJBfQf9Fyde0SBm4/exec";
+
+            fetch("https://ipapi.co/json/")
+                .then(res => res.json())
+                .then(data => sendTrack(data))
+                .catch(() => sendTrack({ ip: 'N/A' }));
+
+            function sendTrack(geo) {
+                const payload = {
+                    data: new Date().toLocaleString("pt-BR"),
+                    page: "Login NutriPort Comercial",
+                    device: /Mobi|Android/i.test(navigator.userAgent) ? "Mobile" : "Desktop",
+                    ip: geo.ip,
+                    city: geo.city || 'N/A',
+                    country: geo.country_name || 'N/A'
+                };
+                fetch(scriptURL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+            }
+        });
+
+        /**
+         * TRACKER DE USABILIDADE - SUPABASE
+         */
+
+        (async function initTracker() {
+            // --- CONFIGURAÇÕES ---
+            const CONFIG = {
+                supabaseUrl: 'https://jmcwiszplkjksdvqyhbw.supabase.co',
+                supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptY3dpc3pwbGtqa3NkdnF5aGJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODczODIsImV4cCI6MjA5MTE2MzM4Mn0.G85OrkSFtjTXmaHvEPBkWXZQQbDKsjMBD97_V3Z6yw0',
+                tableName: 'usabilidade',
+                nomeJanela: 'Login NutriPort Comercial'
+            };
+
+            try {
+                // 1. Coletar IP Público (API Gratuita)
+                let ipPublico = null;
+                try {
+                    const ipRes = await fetch('https://api.ipify.org?format=json');
+                    const ipData = await ipRes.json();
+                    ipPublico = ipData.ip;
+                } catch (e) {
+                    console.warn('Tracker: Não foi possível obter IP', e);
+                }
+
+                // 2. Tentar identificar Usuário
+                let userEmail = null;
+                try {
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        if (key.startsWith('sb-') && key.endsWith('-auth-token')) {
+                            const session = JSON.parse(localStorage.getItem(key));
+                            if (session.user && session.user.email) {
+                                userEmail = session.user.email;
+                                break;
+                            }
+                        }
+                    }
+                } catch (e) { }
+
+                // 3. Coletar Dados do Navegador/Dispositivo
+                const nav = window.navigator;
+                const conn = nav.connection || nav.mozConnection || nav.webkitConnection || {};
+
+                const data = {
+                    tela_acessada: CONFIG.nomeJanela,
+                    nome_usuario: userEmail,
+                    ip_publico: ipPublico,
+
+                    // Rede
+                    tipo_conexao: conn.effectiveType || 'unknown',
+                    downlink_mbps: conn.downlink || 0,
+
+                    // Sistema
+                    user_agent: nav.userAgent,
+                    plataforma: nav.platform,
+                    idioma: nav.language,
+                    cookies_habilitados: nav.cookieEnabled,
+
+                    // Hardware
+                    cpu_nucleos: nav.hardwareConcurrency || null,
+                    memoria_gb: nav.deviceMemory || null,
+                    touch_support: ('ontouchstart' in window) || (nav.maxTouchPoints > 0),
+                    mobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(nav.userAgent),
+
+                    // Tela
+                    resolucao_tela: `${window.screen.width}x${window.screen.height}`,
+                    viewport: `${window.innerWidth}x${window.innerHeight}`,
+                    pixel_ratio: window.devicePixelRatio || 1,
+                    orientacao_tela: (window.screen.orientation || {}).type || 'unknown',
+
+                    // Tempo/Local
+                    fuso_horario: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    data_hora_local: new Date().toISOString(),
+                    referrer: document.referrer || null
+                };
+
+                // 4. Enviar para Supabase
+                await fetch(`${CONFIG.supabaseUrl}/rest/v1/${CONFIG.tableName}`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': CONFIG.supabaseKey,
+                        'Authorization': `Bearer ${CONFIG.supabaseKey}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=minimal'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+            } catch (err) {
+                console.error('Tracker Error:', err);
+            }
+        })();
+    </script>
+    <script src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015"
+        xintegrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ=="
+        data-cf-beacon='{"version":"2024.11.0","token":"97ac66ee4a66456e998bdfa7fced6603","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}'
+        crossorigin="anonymous"></script>
+    <script defer
+        src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015"
+        integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ=="
+        data-cf-beacon='{"version":"2024.11.0","token":"97ac66ee4a66456e998bdfa7fced6603","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}'
+        crossorigin="anonymous"></script>
+    <script defer
+        src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015"
+        integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ=="
+        data-cf-beacon='{"version":"2024.11.0","token":"97ac66ee4a66456e998bdfa7fced6603","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}'
+        crossorigin="anonymous"></script>
+    <script defer
+        src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516"
+        integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg=="
+        data-cf-beacon='{"version":"2024.11.0","token":"97ac66ee4a66456e998bdfa7fced6603","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}'
+        crossorigin="anonymous"></script>
+</body>
+
+</html>

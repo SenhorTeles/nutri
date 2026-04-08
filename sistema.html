@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>NutriPort Comercial</title>
+
+    <!-- Favicon -->
+    <link rel="icon" href="https://i.imgur.com/8vy4QAK.png" type="image/png">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: ['class', '[data-theme="dark"]'],
+            theme: {
+                extend: {
+                    colors: {
+                        // Dourado Brand NutriPort
+                        primary: '#b8860b',
+                        'primary-hover': '#9a7209',
+
+                        surface: 'var(--color-surface)',
+                        'surface-hover': 'var(--color-surface-hover)',
+                        'surface-active': 'var(--color-surface-active)',
+                        border: 'var(--color-border)',
+                        sec: 'var(--color-text-secondary)',
+                        bg: 'var(--color-bg)',
+                        'text-main': 'var(--color-text-primary)',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.2s ease-out forwards',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(2px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Libs -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        /* === VARIÁVEIS DE CORES === */
+        :root {
+            /* Tema Claro */
+            --color-bg: #f8f9fa;
+            --color-surface: #ffffff;
+            --color-surface-hover: #fdf8f0;
+            /* Dourado bem claro no hover */
+            --color-surface-active: #faecd4;
+            /* Dourado claro ativo */
+            --color-border: #e5e7eb;
+
+            --color-text-primary: #111827;
+            --color-text-secondary: #6b7280;
+
+            --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+            --safe-area-top: env(safe-area-inset-top, 0px);
+        }
+
+        html[data-theme="dark"] {
+            /* Tema Escuro */
+            --color-bg: #0c0a09;
+            --color-surface: #1c1917;
+            --color-surface-hover: #292524;
+            --color-surface-active: #3d2e0a;
+            /* Dourado escuro */
+            --color-border: #292524;
+
+            --color-text-primary: #f2f2f2;
+            --color-text-secondary: #a8a29e;
+        }
+
+        /* === FIXAÇÃO DE LAYOUT (ANTI-BOUNCE) === */
+        html {
+            height: 100dvh;
+            /* Altura dinâmica real da viewport */
+            width: 100vw;
+            overflow: hidden;
+            /* Remove scroll do HTML */
+            overscroll-behavior: none;
+            /* Desativa o "pull-to-refresh" nativo */
+            -webkit-text-size-adjust: 100%;
+        }
+
+        body {
+            background-color: var(--color-bg);
+            color: var(--color-text-primary);
+            font-family: 'Inter', sans-serif;
+
+            /* Trava absoluta do corpo da página */
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+
+            overflow: hidden;
+            /* Nenhuma barra de rolagem no body */
+            overscroll-behavior: none;
+            /* Reforço do anti-bounce */
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+
+            /* Garante que o toque funcione corretamente */
+            touch-action: pan-x pan-y;
+        }
+
+        /* Scrollbar Hide */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Spinner & Loaders */
+        .loader-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: var(--color-bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.4s ease;
+        }
+
+        .loader-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 2px solid var(--color-surface-active);
+            border-top-color: #b8860b;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Sidebar Styling */
+        .sidebar {
+            box-shadow: 1px 0 0 0 #3d2e14;
+            background-color: #5a4230 !important;
+            border-right: 1px solid #7a6250;
+            color: #e2e8f0;
+        }
+
+        /* Custom overrides for dark sidebar irrespective of theme */
+        .sidebar .sidebar-item {
+            color: #94a3b8;
+            /* slate-400 */
+        }
+
+        .sidebar .sidebar-item:hover {
+            background-color: rgba(255, 255, 255, 0.1) !important;
+            color: #ffffff !important;
+        }
+
+        .sidebar .sidebar-item:hover i {
+            color: #ffffff !important;
+        }
+
+        .sidebar .sidebar-item.active {
+            background-color: rgba(184, 134, 11, 0.2) !important;
+            color: #c4982a !important;
+            border-color: transparent !important;
+        }
+
+        .sidebar .sidebar-item.active i {
+            color: #c4982a !important;
+        }
+
+        /* Adjust footer/logout button in sidebar */
+        .sidebar .border-t {
+            border-color: #7a6250 !important;
+        }
+
+        .sidebar .bg-surface {
+            background-color: transparent !important;
+            /* Remove bg-surface from footer container */
+        }
+
+        .sidebar #logout-btn-desktop {
+            color: #94a3b8;
+        }
+
+        .sidebar #logout-btn-desktop:hover {
+            background-color: rgba(244, 63, 94, 0.1) !important;
+            color: #fb7185 !important;
+        }
+
+        .sidebar-item {
+            transition: all 0.15s ease-in-out;
+            position: relative;
+            border: 1px solid transparent;
+        }
+
+        .sidebar-item:hover {
+            background-color: var(--color-surface-hover);
+            color: var(--color-text-primary);
+        }
+
+        /* Active State */
+        .sidebar-item.active {
+            background-color: var(--color-surface-active);
+            color: #b8860b;
+            /* Dark Orange text */
+            font-weight: 600;
+            border-color: var(--color-border);
+        }
+
+        .sidebar-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 16px;
+            width: 3px;
+            background-color: #b8860b;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .sidebar-item.active i {
+            color: #b8860b;
+        }
+
+        .sidebar-expanded-text {
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.1s ease;
+            white-space: nowrap;
+        }
+
+        /* Hover no menu NÃO fixado = Mostra e Aumenta */
+        .sidebar:not(.sidebar-pinned):hover {
+            width: 13rem !important;
+            /* Mais estreito que o w-64 (16rem) */
+        }
+
+        .sidebar:not(.sidebar-pinned):hover .sidebar-expanded-text {
+            opacity: 1;
+            visibility: visible;
+            transition-delay: 0.15s;
+        }
+
+        /* Sidebar Fixada = Sempre Visível e Larga (Desktop apenas) */
+        @media (min-width: 768px) {
+            .sidebar-pinned {
+                width: 13rem !important;
+                /* Mais estreito */
+            }
+
+            .sidebar-pinned .sidebar-expanded-text {
+                opacity: 1;
+                visibility: visible;
+                transition-delay: 0s;
+            }
+
+            body:has(.sidebar-pinned) .main-wrapper {
+                padding-left: 13rem !important;
+            }
+        }
+
+        /* Estilo do botão de pin */
+        .pin-btn {
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+
+        .sidebar:hover .pin-btn,
+        .sidebar-pinned .pin-btn {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .pin-btn.is-pinned {
+            transform: rotate(45deg);
+            color: #b8860b;
+        }
+
+        /* Bottom Nav (Mobile) */
+        .bottom-nav-item {
+            color: #94a3b8;
+            /* Light gray for dark background */
+        }
+
+        .bottom-nav-item.active {
+            color: #b8860b;
+            font-weight: 600;
+        }
+
+        .bottom-nav-item:not(.active):hover {
+            color: #f1f5f9;
+        }
+
+        /* User Dropdown */
+        .dropdown-enter {
+            transform: translateY(4px) scale(0.98);
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .dropdown-active {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Iframe */
+        .iframe-container {
+            flex: 1;
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            /* Iframe lida com o scroll interno */
+            background-color: var(--color-bg);
+            /* Correção para iOS Safari arredondar cantos em iframes se necessário */
+            -webkit-overflow-scrolling: touch;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+        }
+
+        /* Status Dot */
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-left: 8px;
+        }
+
+        .status-ok {
+            background-color: #10b981;
+        }
+
+        .status-error {
+            background-color: #ef4444;
+        }
+
+        /* Mobile Drawer Fix - Visibilidade e Transição Ajustadas */
+        .mobile-drawer {
+            transform: translateX(-100%);
+            visibility: hidden;
+            /* Esconde completamente quando fechado */
+            transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1), visibility 0s linear 0.3s;
+            /* Delay na visibilidade ao fechar */
+            will-change: transform;
+            /* Otimização de performance */
+        }
+
+        .mobile-drawer.active {
+            transform: translateX(0);
+            visibility: visible;
+            /* Mostra imediatamente ao abrir */
+            transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1), visibility 0s linear 0s;
+        }
+
+        .mobile-overlay {
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s;
+            backdrop-filter: blur(2px);
+        }
+
+        .mobile-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Logo Text Styles */
+        .logo-text-main {
+            color: var(--color-text-primary);
+        }
+
+        .logo-text-accent {
+            color: #b8860b;
+        }
+
+        /* Monitor de Conexão */
+        .header-offline {
+            background-color: #ef4444 !important;
+            border-bottom-color: #dc2626 !important;
+            transition: all 0.3s ease;
+        }
+
+        .header-offline .logo-text-main,
+        .header-offline .logo-text-accent,
+        .header-offline #page-text-center,
+        .header-offline #page-icon-center,
+        .header-offline #user-name-display,
+        .header-offline #page-title-mobile,
+        .header-offline .fa-chevron-down {
+            color: #ffffff !important;
+        }
+
+        .header-offline #page-title-center {
+            background-color: rgba(255, 255, 255, 0.2) !important;
+            border-color: rgba(255, 255, 255, 0.4) !important;
+        }
+
+        .header-offline #theme-toggle-btn i,
+        .header-offline .md\:hidden img {
+            color: #ffffff !important;
+        }
+
+        .header-offline img[src*="intypKe"] {
+            filter: brightness(0) invert(1);
+        }
+
+        /* Center Title */
+        .center-title-container {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+
+<body class="flex flex-col md:flex-row overflow-hidden text-sm selection:bg-yellow-500/10 selection:text-yellow-700">
+
+    <!-- Initial Loader -->
+    <div id="initial-loader" class="loader-overlay">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Mobile Overlay -->
+    <div id="mobile-overlay" class="mobile-overlay fixed inset-0 bg-black/50 z-40 md:hidden"
+        onclick="closeMobileDrawers()"></div>
+
+    <!-- SIDEBAR (Desktop) -->
+    <aside
+        class="hidden md:flex flex-col w-[72px] h-full bg-surface transition-all duration-300 z-50 sidebar group fixed left-0 top-0 overflow-x-hidden"
+        id="desktop-sidebar">
+
+        <!-- HEADER SIDEBAR -->
+        <div
+            class="h-12 flex items-center justify-between px-4 border-b border-[#7a6250] flex-shrink-0 relative bg-transparent overflow-hidden">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-bars text-xl text-white/80 w-6 text-center"></i>
+                <span class="sidebar-expanded-text font-bold text-white uppercase text-sm tracking-wider">Menu</span>
+            </div>
+
+            <button id="pin-sidebar-btn" class="pin-btn text-white/50 hover:text-white transition-colors"
+                title="Fixar menu lateral" onclick="toggleSidebarPin()">
+                <i class="fa-solid fa-thumbtack text-sm"></i>
+            </button>
+        </div>
+
+        <!-- Menu Items Desktop -->
+        <nav class="flex-1 overflow-y-auto py-5 flex flex-col gap-1 px-3 no-scrollbar" id="desktop-menu">
+            <!-- Injetado via JS -->
+        </nav>
+
+        <!-- Footer Sidebar -->
+        <div class="p-3 border-t border-border mt-auto flex flex-col gap-2 bg-surface">
+            <button id="logout-btn-desktop"
+                class="sidebar-item w-full flex items-center p-2.5 rounded-lg gap-3 text-sec hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 transition-colors group/logout overflow-hidden">
+                <i class="fa-solid fa-arrow-right-from-bracket text-base w-6 text-center shrink-0"></i>
+                <span class="sidebar-expanded-text font-medium text-xs">Sair</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- MOBILE MENU DRAWER -->
+    <div id="mobile-drawer"
+        class="fixed inset-y-0 left-0 w-[280px] bg-surface shadow-2xl z-[60] mobile-drawer flex flex-col border-r border-border md:hidden overscroll-none">
+        <div class="h-12 flex items-center justify-center border-b border-border bg-surface px-4 flex-shrink-0">
+            <img src="https://i.imgur.com/8vy4QAK.png" alt="NutriPort Comercial"
+                class="w-8 h-8 object-contain">
+        </div>
+        <nav class="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-2 no-scrollbar overscroll-contain"
+            id="mobile-drawer-menu">
+            <!-- Injetado via JS -->
+        </nav>
+        <div class="p-4 border-t border-border mt-auto flex-shrink-0">
+            <button id="logout-btn-mobile"
+                class="w-full flex items-center p-3 rounded-lg gap-4 text-rose-600 bg-rose-50/50 font-medium transition-colors hover:bg-rose-100 border border-transparent hover:border-rose-200">
+                <i class="fa-solid fa-arrow-right-from-bracket text-lg"></i>
+                <span>Sair da Conta</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT WRAPPER -->
+    <div
+        class="main-wrapper flex-1 flex flex-col h-full relative md:pl-[72px] transition-all duration-300 w-full overflow-hidden bg-bg">
+
+        <!-- HEADER -->
+        <header
+            class="h-12 bg-surface/90 backdrop-blur-sm border-b border-border flex items-center justify-between px-4 sm:px-6 z-30 flex-shrink-0 relative">
+
+            <!-- Esquerda: Logo Mobile e Nome -->
+            <div class="flex items-center gap-4 relative z-10">
+                <!-- Mobile Logo & Name -->
+                <div class="md:hidden flex items-center gap-3">
+                    <img src="https://i.imgur.com/8vy4QAK.png" alt="NutriPort Comercial"
+                        class="h-8 w-8 object-contain">
+                    <div class="text-lg font-bold tracking-tight">
+                        <span class="logo-text-main">NutriPort</span>
+                    </div>
+                    <span id="status-indicator" class="status-dot"></span>
+                </div>
+
+                <!-- Desktop Logo & Name -->
+                <div class="hidden md:flex items-center gap-3 select-none">
+                    <img src="https://i.imgur.com/8vy4QAK.png" alt="NutriPort Comercial"
+                        class="h-8 w-8 object-contain">
+                    <div class="text-lg font-bold tracking-tight">
+                        <span class="logo-text-main">NutriPort</span> <span class="logo-text-accent">Comercial</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Centro: Título da Página -->
+            <div class="center-title-container hidden md:flex items-center justify-center">
+                <div id="page-title-center"
+                    class="flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-surface border border-border shadow-sm animate-fade-in">
+                    <i id="page-icon-center" class="text-primary text-sm"></i>
+                    <span id="page-text-center"
+                        class="font-semibold text-text-main text-xs uppercase tracking-wider">Carregando...</span>
+                </div>
+            </div>
+
+            <!-- Mobile Title -->
+            <div class="md:hidden hidden absolute left-1/2 transform -translate-x-1/2 font-bold text-text-main truncate max-w-[150px]"
+                id="page-title-mobile">
+                Início
+            </div>
+
+            <!-- Direita -->
+            <div class="flex items-center gap-3 relative z-10">
+                <button id="theme-toggle-btn"
+                    class="hidden w-9 h-9 rounded-lg hover:bg-surface-hover border border-transparent hover:border-border flex items-center justify-center text-sec hover:text-text-main transition-all duration-200 focus:outline-none">
+                    <i class="fa-solid fa-moon dark:hidden text-sm"></i>
+                    <i class="fa-solid fa-sun hidden dark:block text-orange-400 text-sm"></i>
+                </button>
+
+                <div class="relative">
+                    <button id="user-menu-btn"
+                        class="flex items-center gap-2 hover:bg-surface-hover pl-1.5 pr-2 py-1.5 rounded-full transition-all border border-transparent hover:border-border group">
+                        <img id="user-avatar" src="https://i.imgur.com/bQKxZrI.png"
+                            class="w-8 h-8 rounded-full border border-border object-cover shadow-sm" alt="Avatar">
+                        <span
+                            class="hidden sm:block text-xs font-semibold text-sec group-hover:text-text-main transition-colors"
+                            id="user-name-display">...</span>
+                        <i class="fa-solid fa-chevron-down text-[10px] text-sec hidden sm:block"></i>
+                    </button>
+
+                    <!-- Dropdown Menu -->
+                    <div id="user-dropdown"
+                        class="absolute right-0 top-full mt-2 w-64 bg-surface border border-border rounded-lg shadow-lg z-50 dropdown-enter transition-all duration-200 origin-top-right overflow-hidden">
+                        <div class="p-5 text-center border-b border-border bg-surface-hover/50">
+                            <div class="relative inline-block">
+                                <img id="dropdown-avatar" src="https://i.imgur.com/bQKxZrI.png"
+                                    class="w-14 h-14 rounded-full mx-auto mb-3 border-2 border-surface shadow-sm object-cover">
+                                <div id="status-dot-dropdown"
+                                    class="absolute bottom-0 right-0 w-3.5 h-3.5 bg-gray-400 border-2 border-surface rounded-full">
+                                </div>
+                            </div>
+                            <p id="dropdown-name" class="font-bold text-text-main truncate text-sm">Usuário</p>
+                            <p id="dropdown-email" class="text-xs text-sec truncate mt-0.5">...</p>
+                            <p id="dropdown-joindate" class="text-[10px] text-sec italic mt-2"></p>
+                        </div>
+                        <div class="p-1.5 flex flex-col gap-0.5">
+                            <button id="logout-btn-dropdown"
+                                class="w-full text-left px-3 py-2 rounded-md text-sm font-medium text-rose-600 hover:bg-rose-50 hover:text-rose-700 flex items-center gap-3 transition-colors">
+                                <div
+                                    class="w-7 h-7 rounded-md bg-rose-50 flex items-center justify-center text-rose-600 text-xs">
+                                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                                </div>
+                                Sair
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- CONTENT AREA (IFRAME) -->
+        <div class="iframe-container flex-1 relative w-full overflow-hidden bg-bg">
+            <!-- Indicador de Internet Fraca -->
+            <div id="weak-internet-indicator"
+                class="absolute top-4 left-1/2 transform -translate-x-1/2 pointer-events-none z-50 hidden transition-opacity duration-500">
+                <div
+                    class="bg-yellow-600/70 backdrop-blur-md text-white px-5 py-2 rounded-full font-semibold text-xs shadow-lg flex items-center gap-2 border border-yellow-500/50">
+                    <i class="fa-solid fa-wifi fa-fade"></i>
+                    <span>Conexão Fraca</span>
+                </div>
+            </div>
+            <div id="iframe-loader" class="absolute inset-0 flex items-center justify-center bg-bg z-10 hidden">
+                <div class="spinner"></div>
+            </div>
+            <iframe id="content-iframe" src="" class="transition-opacity duration-300"></iframe>
+        </div>
+
+        <!-- BOTTOM NAV (Mobile Only) -->
+        <nav
+            class="md:hidden w-full bg-[#5a4230] border-t border-[#7a6250] z-40 pb-[env(safe-area-inset-bottom)] flex-shrink-0 fixed bottom-0 left-0 right-0">
+            <div class="h-16 flex items-center justify-around px-2" id="mobile-nav">
+                <!-- Injetado via JS -->
+            </div>
+        </nav>
+
+        <!-- Espaçador para o bottom nav não cobrir o iframe -->
+        <div class="md:hidden h-16 w-full flex-shrink-0"></div>
+    </div>
+
+    <script>
+        // ========================================
+        // CONFIGURAÇÃO SUPABASE (SOOLLAR)
+        // ========================================
+        const SUPABASE_URL = 'https://jmcwiszplkjksdvqyhbw.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptY3dpc3pwbGtqa3NkdnF5aGJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODczODIsImV4cCI6MjA5MTE2MzM4Mn0.G85OrkSFtjTXmaHvEPBkWXZQQbDKsjMBD97_V3Z6yw0';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // ========================================
+        // DADOS DO MENU (SOOLLAR)
+        // ========================================
+        // Definindo todos os itens possíveis
+        const menuData = [
+            {
+                title: "Visão Geral",
+                items: [
+                    { name: "Painel Principal", icon: "fa-solid fa-chart-pie", url: "inicio.html" },
+                    { name: "Confronto DACTe", icon: "fa-solid fa-truck-fast", url: "confronto-dacte.html" },
+                    { name: "Confronto NF Consumo", icon: "fa-solid fa-receipt", url: "confronto_nf_consumo.html" },
+                    { name: "Confronto NF Serviço", icon: "fa-solid fa-file-signature", url: "confronto_nf_servico.html" },
+                    { name: "Confronto DANFe", icon: "fa-solid fa-file-invoice-dollar", url: "confronto_danfe.html" },
+                ],
+            },
+            {
+                title: "Administração",
+                items: [
+                    { name: "Gestão de Usuários", icon: "fa-solid fa-users-cog", url: "user.html" },
+                    { name: "Configurações", icon: "fa-solid fa-gear", url: "config.html" },
+                ],
+            },
+        ];
+
+        const allMenuItems = menuData.flatMap(section =>
+            section.items.map(item => ({
+                id: item.url.replace('.html', ''),
+                name: item.name,
+                icon: item.icon,
+                url: item.url
+            }))
+        );
+
+        // ========================================
+        // VARIÁVEIS DE ESTADO
+        // ========================================
+        let currentUser = null;
+        let activePage = null;
+        let allowedPages = [];
+
+        // ========================================
+        // DOM ELEMENTS
+        // ========================================
+        const els = {
+            desktopMenu: document.getElementById('desktop-menu'),
+            desktopSidebar: document.getElementById('desktop-sidebar'),
+            pinSidebarBtn: document.getElementById('pin-sidebar-btn'),
+            mobileNav: document.getElementById('mobile-nav'),
+            mobileDrawer: document.getElementById('mobile-drawer'),
+            mobileDrawerMenu: document.getElementById('mobile-drawer-menu'),
+            mobileOverlay: document.getElementById('mobile-overlay'),
+            iframe: document.getElementById('content-iframe'),
+            iframeLoader: document.getElementById('iframe-loader'),
+            pageTitleCenterText: document.getElementById('page-text-center'),
+            pageTitleCenterIcon: document.getElementById('page-icon-center'),
+            pageTitleMobile: document.getElementById('page-title-mobile'),
+            userMenuBtn: document.getElementById('user-menu-btn'),
+            userDropdown: document.getElementById('user-dropdown'),
+            themeToggle: document.getElementById('theme-toggle-btn'),
+            statusIndicator: document.getElementById('status-indicator'),
+            initialLoader: document.getElementById('initial-loader'),
+            dropdownStatusDot: document.getElementById('status-dot-dropdown')
+        };
+
+        // ========================================
+        // TEMA
+        // ========================================
+        const THEME_KEY = 'gestaovscontabil_theme';
+
+        function applyTheme(mode) {
+            const isDark = mode === 'escuro';
+            document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+            if (isDark) document.documentElement.classList.add('dark');
+            else document.documentElement.classList.remove('dark');
+            localStorage.setItem(THEME_KEY, JSON.stringify({ mode }));
+        }
+
+        async function toggleTheme() {
+            const isDark = document.documentElement.classList.contains('dark');
+            const newMode = isDark ? 'claro' : 'escuro';
+            applyTheme(newMode);
+        }
+
+        (function () {
+            try {
+                const stored = JSON.parse(localStorage.getItem(THEME_KEY));
+                if (stored && stored.mode === 'escuro') {
+                    document.documentElement.classList.add('dark');
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                }
+            } catch (e) { }
+        })();
+
+        // ========================================
+        // FIXAÇÃO DA SIDEBAR (PIN)
+        // ========================================
+        const PIN_KEY = 'gestaovscontabil_sidebar_pinned';
+
+        function initSidebarPin() {
+            try {
+                const isPinned = localStorage.getItem(PIN_KEY) === 'true';
+                if (isPinned) {
+                    els.desktopSidebar.classList.add('sidebar-pinned');
+                    els.pinSidebarBtn.classList.add('is-pinned');
+                }
+            } catch (e) { console.error("Erro no localstorage - pin:", e) }
+        }
+
+        window.toggleSidebarPin = () => {
+            const isNowPinned = els.desktopSidebar.classList.toggle('sidebar-pinned');
+            els.pinSidebarBtn.classList.toggle('is-pinned');
+            try {
+                localStorage.setItem(PIN_KEY, isNowPinned ? 'true' : 'false');
+            } catch (e) { }
+        };
+
+        // Inicializa estado da sidebar
+        initSidebarPin();
+
+        // ========================================
+        // NAVEGAÇÃO & UI
+        // ========================================
+
+        function renderMenus() {
+            // Filtrar itens baseados nas permissões (allowedPages)
+            const visibleItems = allMenuItems.filter(item => allowedPages.includes(item.url));
+
+            // --- RENDERIZAÇÃO DESKTOP (Sidebar) ---
+            els.desktopMenu.innerHTML = '';
+
+            menuData.forEach((section, index) => {
+                // Filtra itens desta seção que estão permitidos
+                const sectionItems = section.items.filter(item => allowedPages.includes(item.url));
+
+                if (sectionItems.length > 0) {
+                    // Separador (exceto no primeiro grupo)
+                    if (index > 0) {
+                        els.desktopMenu.insertAdjacentHTML('beforeend', `<div class="my-3 border-t border-white/15 mx-4"></div>`);
+                    }
+
+                    // Título da Seção (visível apenas expandido)
+                    els.desktopMenu.insertAdjacentHTML('beforeend', `
+                        <div class="px-4 py-1 mt-1 text-[9px] font-extrabold text-white/80 uppercase tracking-widest sidebar-expanded-text truncate select-none whitespace-nowrap">
+                            ${section.title}
+                        </div>
+                    `);
+
+                    // Itens da Seção
+                    sectionItems.forEach(item => {
+                        const id = item.url.replace('.html', '');
+                        const isActive = activePage === id;
+
+                        els.desktopMenu.insertAdjacentHTML('beforeend', `
+                            <button onclick="handleNavigation('${id}', '${item.url}', '${item.icon}', '${item.name}')"
+                                    class="sidebar-item w-full flex items-center p-2.5 rounded-lg gap-3 text-sec group/item relative overflow-hidden mb-0.5 ${isActive ? 'active' : ''}"
+                                    title="${item.name}">
+                                <i class="${item.icon} text-base w-6 text-center transition-colors ${isActive ? '' : 'group-hover/item:text-text-main'}"></i>
+                                <span class="sidebar-expanded-text font-medium text-xs transition-colors duration-200">${item.name}</span>
+                            </button>
+                        `);
+                    });
+                }
+            });
+
+
+            // --- RENDERIZAÇÃO MOBILE (Bottom Nav) ---
+            // Usa a lista plana filtrada (visibleItems) para pegar os primeiros
+            const mobileBottomItems = visibleItems.slice(0, 3);
+
+            els.mobileNav.innerHTML = mobileBottomItems.map(item => `
+                <button onclick="handleNavigation('${item.id}', '${item.url}', '${item.icon}', '${item.name}')" 
+                        class="bottom-nav-item flex flex-col items-center justify-center w-full h-full gap-1 relative transition-all duration-200 ${activePage === item.id ? 'active' : ''}">
+                    <i class="${item.icon} text-lg"></i>
+                    <span class="text-[10px] font-medium text-center leading-none">${item.name.split(' ')[0]}</span>
+                </button>
+            `).join('') + `
+                 <button onclick="toggleMobileDrawer()" class="bottom-nav-item flex flex-col items-center justify-center w-full h-full gap-1 relative hover:text-primary transition-colors">
+                    <i class="fa-solid fa-bars text-lg"></i>
+                    <span class="text-[10px] font-medium">Menu</span>
+                </button>
+            `;
+
+            // --- RENDERIZAÇÃO MOBILE DRAWER (Lista Completa Agrupada) ---
+            els.mobileDrawerMenu.innerHTML = '';
+
+            menuData.forEach((section, index) => {
+                const sectionItems = section.items.filter(item => allowedPages.includes(item.url));
+
+                if (sectionItems.length > 0) {
+                    if (index > 0) {
+                        els.mobileDrawerMenu.insertAdjacentHTML('beforeend', `<div class="my-3 border-t border-border/50 mx-2"></div>`);
+                    }
+
+                    els.mobileDrawerMenu.insertAdjacentHTML('beforeend', `
+                        <div class="px-4 py-1.5 text-xs font-bold text-sec/70 uppercase tracking-wider mb-1">
+                            ${section.title}
+                        </div>
+                    `);
+
+                    sectionItems.forEach(item => {
+                        const id = item.url.replace('.html', '');
+                        const isActive = activePage === id;
+
+                        els.mobileDrawerMenu.insertAdjacentHTML('beforeend', `
+                            <button onclick="handleNavigation('${id}', '${item.url}', '${item.icon}', '${item.name}')" 
+                                    class="w-full flex items-center p-3 rounded-lg gap-4 text-sec hover:bg-surface-hover hover:text-text-main transition-all duration-200 ${isActive ? 'bg-surface-active text-text-main font-semibold border border-border' : ''}">
+                                <i class="${item.icon} text-lg w-6 text-center ${isActive ? 'text-primary' : ''}"></i>
+                                <span class="text-sm">${item.name}</span>
+                            </button>
+                        `);
+                    });
+                }
+            });
+        }
+
+        window.toggleMobileDrawer = () => {
+            els.mobileDrawer.classList.toggle('active');
+            els.mobileOverlay.classList.toggle('active');
+        };
+
+        window.closeMobileDrawers = () => {
+            els.mobileDrawer.classList.remove('active');
+            els.mobileOverlay.classList.remove('active');
+        };
+
+        window.handleNavigation = (id, url, icon, name) => {
+            // Verifica se o usuário tem permissão (segurança extra frontend)
+            if (!allowedPages.includes(url)) {
+                console.warn("Acesso negado a: " + url);
+                return;
+            }
+
+            activePage = id;
+            renderMenus();
+            if (els.mobileDrawer.classList.contains('active')) closeMobileDrawers();
+
+            if (els.pageTitleCenterText) {
+                const titleContainer = document.getElementById('page-title-center');
+                titleContainer.classList.remove('animate-fade-in');
+                void titleContainer.offsetWidth; // Trigger reflow
+                titleContainer.classList.add('animate-fade-in');
+
+                els.pageTitleCenterIcon.className = `${icon} text-primary text-sm`;
+                els.pageTitleCenterText.textContent = name;
+            }
+            if (els.pageTitleMobile) els.pageTitleMobile.textContent = name;
+
+            els.iframeLoader.classList.remove('hidden');
+
+            // Salva estado
+            sessionStorage.setItem('lastVisitedUrl', url);
+            sessionStorage.setItem('lastVisitedTitle', name);
+            sessionStorage.setItem('lastVisitedIcon', icon);
+            sessionStorage.setItem('lastVisitedId', id);
+
+            els.iframe.src = url;
+            els.userDropdown.classList.remove('dropdown-active');
+        };
+
+        els.iframe.onload = () => els.iframeLoader.classList.add('hidden');
+
+        // ========================================
+        // USUÁRIO & AUTH
+        // ========================================
+        els.userMenuBtn.onclick = (e) => {
+            e.stopPropagation();
+            els.userDropdown.classList.toggle('dropdown-active');
+        };
+        document.onclick = (e) => {
+            if (!els.userDropdown.contains(e.target) && !els.userMenuBtn.contains(e.target)) {
+                els.userDropdown.classList.remove('dropdown-active');
+            }
+        };
+
+        async function handleLogout() {
+            sessionStorage.clear();
+            await supabaseClient.auth.signOut();
+            window.location.href = 'index.html';
+        }
+        document.getElementById('logout-btn-desktop').onclick = handleLogout;
+        document.getElementById('logout-btn-dropdown').onclick = handleLogout;
+        document.getElementById('logout-btn-mobile').onclick = handleLogout;
+        els.themeToggle.onclick = toggleTheme;
+
+        // ========================================
+        // MONITORAMENTO DE SESSÃO
+        // ========================================
+        supabaseClient.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_OUT') { window.location.href = 'index.html'; return; }
+            if (event === 'TOKEN_REFRESHED' && !session) { handleLogout(); }
+            /* Correção do loop de logout */
+        });
+
+        setInterval(async () => {
+            const { data: { session }, error } = await supabaseClient.auth.getSession();
+            if (!session || error) { handleLogout(); }
+        }, 5 * 60 * 1000);
+
+        // ========================================
+        // MONITORAMENTO DE CONEXÃO (OFFLINE / FRACA)
+        // ========================================
+        function initNetworkMonitoring() {
+            function updateNetworkStatus() {
+                const header = document.querySelector('header');
+                const weakIndicator = document.getElementById('weak-internet-indicator');
+
+                if (!navigator.onLine) {
+                    header.classList.add('header-offline');
+                    if (weakIndicator) weakIndicator.classList.add('hidden');
+                    return;
+                }
+
+                header.classList.remove('header-offline');
+
+                let isWeak = false;
+                if (navigator.connection && navigator.connection.effectiveType) {
+                    if (navigator.connection.effectiveType === 'slow-2g' || navigator.connection.effectiveType === '2g') {
+                        isWeak = true;
+                    }
+                }
+
+                if (isWeak) {
+                    if (weakIndicator) weakIndicator.classList.remove('hidden');
+                } else {
+                    if (weakIndicator) weakIndicator.classList.add('hidden');
+                }
+            }
+
+            window.addEventListener('online', updateNetworkStatus);
+            window.addEventListener('offline', updateNetworkStatus);
+            if (navigator.connection) {
+                navigator.connection.addEventListener('change', updateNetworkStatus);
+            }
+            updateNetworkStatus();
+        }
+        initNetworkMonitoring();
+
+        // ========================================
+        // INIT (LÓGICA SOOLLAR)
+        // ========================================
+        (async function init() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) {
+                window.location.href = 'index.html';
+                return;
+            }
+            currentUser = session.user;
+
+            // Busca dados da tabela UFC (Lógica Original)
+            const { data: userData, error } = await supabaseClient
+                .from('UFC')
+                .select('"Nome Completo", created_at, "Status", "Acesso"')
+                .eq('"Melhor e-mail"', currentUser.email)
+                .single();
+
+            // Validação de Status
+            if (error || !userData || (userData["Status"] !== "Ativo" && userData["Status"] !== "ativo")) {
+                console.error("Erro auth ou status inativo:", error);
+                handleLogout();
+                return;
+            }
+
+            // Definição de páginas permitidas
+            allowedPages = userData["Acesso"] ? userData["Acesso"].split('|')[0].split('>').map(s => s.trim()) : [];
+
+            // UI Updates
+            // Helper function for Title Case
+            function toTitleCase(str) {
+                if (!str) return '';
+                return str.toLowerCase().split(' ').map(word => {
+                    // Ignorar preposições comuns se desejar, ou apenas capitalizar tudo
+                    if (['de', 'da', 'do', 'dos', 'das', 'e'].includes(word)) return word;
+                    return word.charAt(0).toUpperCase() + word.slice(1);
+                }).join(' ');
+            }
+
+            const rawName = userData["Nome Completo"] || "Usuário";
+            const fullNameTitle = toTitleCase(rawName);
+
+            // Format: "Claudeyr Teles" (First + Last)
+            const nameParts = fullNameTitle.split(' ');
+            const formattedShortName = nameParts.length > 1
+                ? `${nameParts[0]} ${nameParts[1]}`
+                : nameParts[0];
+
+            document.getElementById('user-name-display').textContent = formattedShortName;
+            document.getElementById('dropdown-name').textContent = fullNameTitle;
+            document.getElementById('dropdown-email').textContent = currentUser.email;
+
+            if (userData.created_at) {
+                const joinDate = new Date(userData.created_at).toLocaleDateString('pt-BR');
+                document.getElementById('dropdown-joindate').textContent = `Membro desde: ${joinDate}`;
+            }
+
+            // Status Indicator (Verde porque está ativo)
+            els.statusIndicator.classList.add('status-ok');
+            els.statusIndicator.classList.remove('status-error');
+            els.dropdownStatusDot.classList.remove('bg-gray-400');
+            els.dropdownStatusDot.classList.add('bg-green-500');
+
+            // Carregar última página ou primeira permitida
+            const lastUrl = sessionStorage.getItem('lastVisitedUrl');
+            const lastId = sessionStorage.getItem('lastVisitedId');
+            const lastIcon = sessionStorage.getItem('lastVisitedIcon');
+            const lastTitle = sessionStorage.getItem('lastVisitedTitle');
+
+            if (lastUrl && allowedPages.includes(lastUrl) && lastId) {
+                handleNavigation(lastId, lastUrl, lastIcon, lastTitle);
+            } else {
+                // Encontrar a primeira página permitida na ordem do menu
+                const firstAllowedItem = allMenuItems.find(item => allowedPages.includes(item.url));
+                if (firstAllowedItem) {
+                    handleNavigation(firstAllowedItem.id, firstAllowedItem.url, firstAllowedItem.icon, firstAllowedItem.name);
+                } else {
+                    els.iframe.src = ""; // Nenhuma permissão
+                    els.initialLoader.classList.add('hidden');
+                }
+            }
+
+            setTimeout(() => els.initialLoader.classList.add('hidden'), 500);
+        })();
+
+    </script>
+    <script defer
+        src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015"
+        integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ=="
+        data-cf-beacon='{"version":"2024.11.0","token":"97ac66ee4a66456e998bdfa7fced6603","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}'
+        crossorigin="anonymous"></script>
+    <script defer
+        src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516"
+        integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg=="
+        data-cf-beacon='{"version":"2024.11.0","token":"97ac66ee4a66456e998bdfa7fced6603","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}'
+        crossorigin="anonymous"></script>
+</body>
+
+</html>
