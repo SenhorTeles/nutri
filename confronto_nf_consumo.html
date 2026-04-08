@@ -1691,15 +1691,11 @@
                         <div><i class="fa-solid fa-key"></i>Chaves de Acesso</div>
                         <button type="button" id="btn-copy-chave"
                             class="btn btn-secondary btn-sm text-indigo-600 border-indigo-300 hover:bg-indigo-50 flex items-center gap-1.5"
-                            title="Copiar chave CTe para a área de transferência">
+                            title="Copiar chave NF para a área de transferência">
                             <i class="fa-regular fa-clipboard"></i> Copiar Chave
                         </button>
                     </h3>
-                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-2">
-                        <div><label class="block text-xs font-medium mb-1">Chave CTe</label><input type="text"
-                                name="chavecte" class="w-full form-input font-mono text-xs" readonly></div>
-                        <div><label class="block text-xs font-medium mb-1">Chave NFe</label><input type="text"
-                                name="chavenfe" class="w-full form-input font-mono text-xs" readonly></div>
+                    <div class="grid grid-cols-2 gap-2">
                         <div><label class="block text-xs font-medium mb-1">Chave WinThor</label><input type="text"
                                 name="chave_winthor" class="w-full form-input font-mono text-xs" readonly></div>
                         <div><label class="block text-xs font-medium mb-1">Chave XML</label><input type="text"
@@ -1713,7 +1709,7 @@
                         <div><i class="fa-solid fa-comment-dots"></i>Status e Observações</div>
                         <button type="button" id="btn-view-dacte"
                             class="btn btn-secondary btn-sm hidden text-blue-600 border-blue-600 hover:bg-blue-50">
-                            <i class="fa-solid fa-file-invoice mr-2"></i>Visualizar conhecimento xml
+                            <i class="fa-solid fa-file-invoice mr-2"></i>Visualizar XML
                         </button>
                     </div>
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
@@ -1818,11 +1814,11 @@
                         <i class="fa-solid fa-file-import mr-2"></i>Importar XML
                     </button>
                     <button id="btn-busca-nv" class="btn btn-secondary" style="color:#d946ef; border-color:#f0abfc;"
-                        title="Busca NV - Validar lista de CTEs">
+                        title="Busca NV - Validar lista de NFs">
                         <i class="fa-solid fa-list-ol mr-2"></i>Busca NV
                     </button>
                     <button id="btn-busca-isolada" class="btn btn-secondary"
-                        style="color:#0ea5e9; border-color:#bae6fd;" title="Buscar um CTe específico no WinThor">
+                        style="color:#0ea5e9; border-color:#bae6fd;" title="Buscar uma NF específica no WinThor">
                         <i class="fa-solid fa-cloud-arrow-down mr-2"></i>Busca Isolada
                     </button>
                     <button id="btn-validar-todos-ok" class="btn btn-primary"
@@ -1941,10 +1937,10 @@
             dtent: 'Dt Entrada',
             vltotal_banco: 'Total (WinThor)', vltotal_xml: 'Total (XML)',
             vlicms_banco: 'ICMS (WinThor)', vlicms_xml: 'ICMS (XML)',
-            chavecte: 'Chave CTe', status: 'Status', obs: 'Observação'
+            chavecte: 'Chave NF', status: 'Status', obs: 'Observação'
         };
         const VISIBLE_COLUMNS = ['created_at', 'codfilial', 'numnota', 'numtransent', 'dtent', 'vltotal_banco', 'vltotal_xml', 'vlicms_banco', 'vlicms_xml', 'status'];
-        const SEARCH_COLS = { 'chavecte': 'Chave CTe', 'numnota': 'Nº Nota', 'numtransent': 'Nº Trans Ent', 'codfilial': 'Filial', 'nsr': 'NSR' };
+        const SEARCH_COLS = { 'chavecte': 'Chave NF', 'numnota': 'Nº Nota', 'numtransent': 'Nº Trans Ent', 'codfilial': 'Filial', 'nsr': 'NSR' };
 
         const formatterBRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
         const formatBRL = val => (val === null || val === undefined || val === '') ? '-' : formatterBRL.format(val);
@@ -2042,7 +2038,7 @@
                     }).join('');
 
                     let acoesHtml = '';
-                    const btnCopiarChave = item.chavecte ? `<button class="action-icon-btn copy-chave-btn" data-chave="${item.chavecte}" title="Copiar Chave CTe" style="color:#6366f1"><i class="fa-regular fa-clipboard"></i></button>` : '';
+                    const btnCopiarChave = item.chavecte ? `<button class="action-icon-btn copy-chave-btn" data-chave="${item.chavecte}" title="Copiar Chave NF" style="color:#6366f1"><i class="fa-regular fa-clipboard"></i></button>` : '';
 
                     const isVerificandoTomador = state.verificandoTomadorIds.has(item.id);
 
@@ -2142,7 +2138,7 @@
                     const chave = e.currentTarget.dataset.chave;
                     if (chave) {
                         navigator.clipboard.writeText(chave).then(() => {
-                            showToast('Chave CTe copiada!');
+                            showToast('Chave NF copiada!');
                         }).catch(() => showToast('Erro ao copiar', 'error'));
                     }
                 };
@@ -2260,12 +2256,12 @@
                 const chave = form.querySelector('[name="chavecte"]')?.value;
                 if (chave && chave.trim()) {
                     navigator.clipboard.writeText(chave.trim()).then(() => {
-                        showToast('Chave CTe copiada!');
+                        showToast('Chave NF copiada!');
                     }).catch(() => {
                         showToast('Erro ao copiar', 'error');
                     });
                 } else {
-                    showToast('Nenhuma chave CTe disponível', 'error');
+                    showToast('Nenhuma chave NF disponível', 'error');
                 }
             };
 
@@ -2612,7 +2608,7 @@
                 // Confirmação via SweetAlert
                 const result = await Swal.fire({
                     title: `Validar ${elegíveis.length} registro(s)?`,
-                    html: `<p>Serão enviados <strong>${elegíveis.length}</strong> CTe(s) com status <strong style="color:#16a34a">OK</strong> para validação no WinThor.</p>
+                    html: `<p>Serão enviados <strong>${elegíveis.length}</strong> NF(s) com status <strong style="color:#16a34a">OK</strong> para validação no WinThor.</p>
                            <p style="font-size:0.85rem;color:#6b7280;margin-top:8px">Registros divergentes, com tomador ≠ filial, ou já validados foram excluídos automaticamente.</p>`,
                     icon: 'question',
                     showCancelButton: true,
@@ -2641,7 +2637,7 @@
 
                 const ids = elegíveis.map(e => e.id);
                 await enviarParaVerificandoMulti(ids);
-                showToast(`${ids.length} CTe(s) enviado(s) para validação em lote!`);
+                showToast(`${ids.length} NF(s) enviada(s) para validação em lote!`);
 
             } catch (err) {
                 console.error('Erro ao validar todos OK:', err);
@@ -2886,7 +2882,7 @@
                     'Val Total (XML)': item.vltotal_xml,
                     'Val ICMS (WinThor)': item.vlicms,
                     'Val ICMS (XML)': item.vlicms_xml,
-                    'Chave CTe': item.chavecte,
+                    'Chave NF': item.chavecte,
                     'Chave NFe': item.chavenfe,
                     'Status': item.codfilialnf != item.codfilial && item.status !== 'Resolvido' ? 'Divergente' : item.status,
                     'Observação': item.obs,
@@ -3550,7 +3546,7 @@
             setInterval(pollVerificandoTomador, 3000);
 
             // ==========================================
-            // BUSCA ISOLADA (CTe Sob Demanda)
+            // BUSCA ISOLADA (NF Sob Demanda)
             // ==========================================
             let activeBuscaIsoladaInterval = null;
 
@@ -3591,12 +3587,12 @@
             document.getElementById('btn-busca-isolada').addEventListener('click', async () => {
                 const { value: chave } = await Swal.fire({
                     title: 'Busca Isolada',
-                    text: 'Insira a chave de acesso do CTe (44 dígitos):',
+                    text: 'Insira a chave de acesso da NF (44 dígitos):',
                     input: 'text',
                     inputPlaceholder: 'Cole a chave aqui...',
                     showCancelButton: true,
                     confirmButtonColor: '#0ea5e9',
-                    confirmButtonText: '<i class="fa-solid fa-cloud-arrow-down mr-2"></i> Buscar CTe',
+                    confirmButtonText: '<i class="fa-solid fa-cloud-arrow-down mr-2"></i> Buscar NF',
                     cancelButtonText: 'Cancelar',
                     inputValidator: (value) => {
                         const cleanValue = value.replace(/\D/g, '');
@@ -3610,7 +3606,7 @@
                     try {
                         const { data: existente } = await supabase.from(TABLE_NAME).select('id, status').eq('chavecte', cleanChave).limit(1).single();
                         if (existente) {
-                            Swal.fire('Já existe!', `Este CTe já consta na base de dados com status: ${existente.status}`, 'info');
+                            Swal.fire('Já existe!', `Esta NF já consta na base de dados com status: ${existente.status}`, 'info');
                             state.searchTerm = cleanChave;
                             document.getElementById('search-input').value = cleanChave;
                             document.getElementById('search-column-select').value = 'chavecte';
@@ -3630,7 +3626,7 @@
                         if (error) throw error;
 
                         Swal.fire({
-                            title: 'Buscando CTe...',
+                            title: 'Buscando NF...',
                             html: '<p>A automação backend foi acionada e está acessando no Sieg e WinThor.</p><p class="text-xs mt-2 font-bold text-gray-500">Isso levará alguns segundos...</p>',
                             allowOutsideClick: false,
                             didOpen: () => {
@@ -3654,7 +3650,7 @@
             document.getElementById('btn-busca-nv').addEventListener('click', async () => {
                 const { value: textList } = await Swal.fire({
                     title: 'Busca NV',
-                    text: 'Insira a lista de Chaves CTe (uma por linha):',
+                    text: 'Insira a lista de Chaves NF (uma por linha):',
                     input: 'textarea',
                     inputPlaceholder: 'Cole as chaves aqui...',
                     showCancelButton: true,
@@ -3857,7 +3853,7 @@
                         chavesUnicas.forEach(ch => {
                             const finalStatus = mapFinais.has(ch) ? mapFinais.get(ch) : 'Falha ao Localizar/Inserir';
                             finalExportRows.push({
-                                'Chave CTE': ch,
+                                'Chave NF': ch,
                                 'Ação Inicial': chavesNaoExistentes.includes(ch) ? 'Busca Isolada (Nova)' : 'Verificação (Reclassificação)',
                                 'Status Final': finalStatus
                             });

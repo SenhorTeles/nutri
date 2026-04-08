@@ -348,7 +348,8 @@ def processar_filial(filial, data_inicio, data_fim):
 
     log(f"Enviando {len(chaves_novas)} notas novas ao Supabase com status 'Sem XML'...")
 
-    for chave in chaves_novas:
+    enviados = 0
+    for i, chave in enumerate(chaves_novas):
         dados_banco = notas_periodo[chave]
         vl_tot_bd = float(dados_banco.get('vltotal') or 0.0)
         vl_icms_bd = float(dados_banco.get('vlicms') or 0.0)
@@ -386,8 +387,17 @@ def processar_filial(filial, data_inicio, data_fim):
             "obs": "Aguardando importação de XML pelo front-end.",
         }
         enviar_supabase(payload)
+        enviados += 1
 
-    log(f"Período {data_inicio} a {data_fim} da filial {filial['codigo']} concluído!")
+        # Throttle: pausa de 0.3s entre cada registro
+        time.sleep(0.3)
+
+        # A cada 50 registros, pausa maior de 3s para não sobrecarregar
+        if enviados % 50 == 0:
+            log(f"  [{enviados}/{len(chaves_novas)}] enviados... (pausando 3s)")
+            time.sleep(3)
+
+    log(f"Período {data_inicio} a {data_fim} da filial {filial['codigo']} concluído! ({enviados} enviados)")
 
 
 def reavaliar_sem_xml():
@@ -413,40 +423,54 @@ def main():
 
     agora = datetime.now()
     data_atual_str = agora.strftime("%d/%m/%Y")
-    data_inicio_geral = "01/01/2026"
+    data_inicio_ano = "01/01/2026"
 
-    # 1. Varredura Global Inicial
-    log(f"\n---> INICIANDO VARREDURA GERAL ({data_inicio_geral} até {data_atual_str}) <---")
-    for filial in FILIAIS:
+    # =============================================
+    # FASE 1: Varredura do ano inteiro, filial por filial
+    # =============================================
+    log(f"\n{'='*60}")
+    log(f"FASE 1 - VARREDURA ANUAL ({data_inicio_ano} até {data_atual_str})")
+    log(f"Passando filial por filial com calma...")
+    log(f"{'='*60}")
+
+    for idx, filial in enumerate(FILIAIS):
         try:
-            reavaliar_sem_xml()  # Reavalia registros que receberam XML pelo front
-            processar_filial(filial, data_inicio_geral, data_atual_str)
+            log(f"\n[{idx+1}/{len(FILIAIS)}] Filial {filial['codigo']} ({filial['uf']})...")
+            processar_filial(filial, data_inicio_ano, data_atual_str)
+            # Pausa de 5s entre filiais para não sobrecarregar
+            if idx < len(FILIAIS) - 1:
+                log(f"  Aguardando 5s antes da próxima filial...")
+                time.sleep(5)
         except Exception as e:
-            log(f"ERRO CRÍTICO NA VARREDURA GERAL (Filial {filial['codigo']}): {e}")
+            log(f"ERRO NA FILIAL {filial['codigo']}: {e}")
+            time.sleep(5)
 
-    log("\n---> VARREDURA GERAL CONCLUÍDA <---")
+    log(f"\n{'='*60}")
+    log(f"FASE 1 CONCLUÍDA! Todas as filiais processadas.")
+    log(f"{'='*60}")
 
+    # =============================================
+    # FASE 2: Loop contínuo - só mês atual, a cada 2h
+    # =============================================
+    log(f"\nFASE 2 - Monitoramento contínuo (mês atual, a cada 2 horas)")
     ultima_varredura = time.time()
 
-    log("Iniciando modo contínuo (Monitoramento de XMLs importados + Varredura periódica).")
-
-    # 2. Ciclo Contínuo
     while True:
         try:
-            # 1. Reavaliar registros "Sem XML" que receberam XML pelo front
+            # Reavaliar registros "Sem XML" que receberam XML pelo front
             reavaliar_sem_xml()
 
-            # 2. A cada 2 horas, refaz varredura para ver novas notas
+            # A cada 2 horas, verifica novas notas do mês atual
             agora_ts = time.time()
             if (agora_ts - ultima_varredura) > (2 * 60 * 60):
                 agora = datetime.now()
                 primeiro_dia_mes = f"01/{agora.month:02d}/{agora.year}"
                 data_atual_str = agora.strftime("%d/%m/%Y")
 
-                log(f"\n---> INICIANDO CICLO MENSAL ({primeiro_dia_mes} até {data_atual_str}) <---")
+                log(f"\n---> CICLO MENSAL ({primeiro_dia_mes} até {data_atual_str}) <---")
                 for filial in FILIAIS:
-                    reavaliar_sem_xml()
                     processar_filial(filial, primeiro_dia_mes, data_atual_str)
+                    time.sleep(2)  # Pausa entre filiais
 
                 ultima_varredura = time.time()
                 log(f"---> CICLO MENSAL FINALIZADO. Próximo em 2 horas. <---")
@@ -454,7 +478,7 @@ def main():
         except Exception as e:
             log(f"ERRO CRÍTICO NO MODO CONTÍNUO: {e}")
 
-        # Espera curta para manter responsividade
+        # Espera 30s entre cada verificação de XML importado
         time.sleep(30)
 
 
