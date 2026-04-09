@@ -1933,13 +1933,13 @@
 
         const COLUMNS_MAP = {
             id: 'ID', created_at: 'Data', codfilial: 'Filial',
-            numnota: 'Nº Nota', numtransent: 'Nº Trans Ent', especie: 'Espécie', nsr: 'NSR',
+            numnota: 'Nº Nota', serie: 'Série', especie: 'Espécie', cfop: 'CFOP', codfiscal: 'C.Fisc.', numtransent: 'Nº Trans Ent', nsr: 'NSR',
             dtent: 'Dt Entrada',
             vltotal_banco: 'Total (WinThor)', vltotal_xml: 'Total (XML)',
             vlicms_banco: 'ICMS (WinThor)', vlicms_xml: 'ICMS (XML)',
             chavecte: 'Chave NF', status: 'Status', obs: 'Observação'
         };
-        const VISIBLE_COLUMNS = ['created_at', 'codfilial', 'numnota', 'numtransent', 'dtent', 'vltotal_banco', 'vltotal_xml', 'vlicms_banco', 'vlicms_xml', 'status'];
+        const VISIBLE_COLUMNS = ['created_at', 'codfilial', 'numnota', 'serie', 'especie', 'cfop', 'dtent', 'vltotal_banco', 'vltotal_xml', 'vlicms_banco', 'vlicms_xml', 'status'];
         const SEARCH_COLS = { 'chavecte': 'Chave NF', 'numnota': 'Nº Nota', 'numtransent': 'Nº Trans Ent', 'codfilial': 'Filial', 'nsr': 'NSR' };
 
         const formatterBRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -1991,7 +1991,7 @@
                 } else if (state.viewMode === 'nao_encontrado') {
                     itemsToRender = itemsToRender.filter(item => item.status === 'Não Encontrado no Sieg' && !item.validado_winthor && !item.is_tomador_dif);
                 } else if (state.viewMode === 'divergente') {
-                    itemsToRender = itemsToRender.filter(item => item.status !== 'OK' && item.status !== 'Não Encontrado no Sieg' && !item.validado_winthor && !item.is_tomador_dif);
+                    itemsToRender = itemsToRender.filter(item => item.status !== 'Sem XML' && item.status !== 'OK' && item.status !== 'Não Encontrado no Sieg' && !item.validado_winthor && !item.is_tomador_dif);
                 } else if (state.viewMode === 'validados') {
                     itemsToRender = itemsToRender.filter(item => item.validado_winthor);
                 } else if (state.viewMode === 'sem_xml') {
@@ -2006,10 +2006,10 @@
                     let parsedVals = {
                         vltotal_banco: item.vltotal,
                         vlicms_banco: item.vlicms,
-                        vltotal_xml: (item.vltotal_xml !== null && item.vltotal_xml !== undefined) ? item.vltotal_xml : item.vltotal,
-                        vlicms_xml: (item.vlicms_xml !== null && item.vlicms_xml !== undefined) ? item.vlicms_xml : item.vlicms
+                        vltotal_xml: (item.status === 'Sem XML') ? null : ((item.vltotal_xml !== null && item.vltotal_xml !== undefined && item.vltotal_xml !== 0) ? item.vltotal_xml : item.vltotal),
+                        vlicms_xml: (item.status === 'Sem XML') ? null : ((item.vlicms_xml !== null && item.vlicms_xml !== undefined && item.vlicms_xml !== 0) ? item.vlicms_xml : item.vlicms)
                     };
-                    if (item.obs) {
+                    if (item.obs && item.status !== 'Sem XML') {
                         const totMatch = item.obs.match(/TOTAL[^(]*\(DB:\s*[^|]+\|\s*XML:\s*([^)]+)\)/);
                         if (totMatch) parsedVals.vltotal_xml = parseFloat(totMatch[1]);
                         const icmsMatch = item.obs.match(/ICMS[^(]*\(DB:\s*[^|]+\|\s*XML:\s*([^)]+)\)/);
@@ -2024,8 +2024,10 @@
                         let val = item[col];
                         if (parsedVals[col] !== undefined) val = parsedVals[col];
 
-                        if (['vltotal_banco', 'vltotal_xml', 'vlicms_banco', 'vlicms_xml'].includes(col)) val = formatBRL(val);
+                        if (['vltotal_banco', 'vlicms_banco'].includes(col)) val = formatBRL(val);
+                        else if (['vltotal_xml', 'vlicms_xml'].includes(col)) val = val !== null ? formatBRL(val) : '-';
                         else if (col === 'created_at' || col === 'dtent') val = formatDate(val);
+                        else if (col === 'cfop' && !val && item['codfiscal']) val = item['codfiscal']; // Fallback automático codfiscal -> cfop
                         else if (col === 'status') {
                             let badgeColor = 'bg-red-100 text-red-800';
                             if (val === 'OK' || val === 'Resolvido' || val === 'Validado') badgeColor = 'bg-green-100 text-green-800';
@@ -2161,20 +2163,27 @@
             if (!data) return;
 
             let parsedData = { ...data };
-            parsedData.vltotal_banco = data.vltotal;
-            parsedData.vlicms_banco = data.vlicms;
-            parsedData.vltotal_xml = (data.vltotal_xml !== null && data.vltotal_xml !== undefined) ? data.vltotal_xml : data.vltotal;
-            parsedData.vlicms_xml = (data.vlicms_xml !== null && data.vlicms_xml !== undefined) ? data.vlicms_xml : data.vlicms;
-            if (data.obs) {
-                const totMatch = data.obs.match(/TOTAL[^(]*\(DB:\s*[^|]+\|\s*XML:\s*([^)]+)\)/);
-                if (totMatch) parsedData.vltotal_xml = parseFloat(totMatch[1]);
-                const icmsMatch = data.obs.match(/ICMS[^(]*\(DB:\s*[^|]+\|\s*XML:\s*([^)]+)\)/);
-                if (icmsMatch) parsedData.vlicms_xml = parseFloat(icmsMatch[1]);
+            parsedData.vltotal_banco = formatBRL(data.vltotal);
+            parsedData.vlicms_banco = formatBRL(data.vlicms);
+            
+            if (data.status === 'Sem XML') {
+                parsedData.vltotal_xml = '-';
+                parsedData.vlicms_xml = '-';
+            } else {
+                let vltotal_xml = (data.vltotal_xml !== null && data.vltotal_xml !== undefined && data.vltotal_xml !== 0) ? data.vltotal_xml : data.vltotal;
+                let vlicms_xml = (data.vlicms_xml !== null && data.vlicms_xml !== undefined && data.vlicms_xml !== 0) ? data.vlicms_xml : data.vlicms;
+                if (data.obs) {
+                    const totMatch = data.obs.match(/TOTAL[^(]*\(DB:\s*[^|]+\|\s*XML:\s*([^)]+)\)/);
+                    if (totMatch) vltotal_xml = parseFloat(totMatch[1]);
+                    const icmsMatch = data.obs.match(/ICMS[^(]*\(DB:\s*[^|]+\|\s*XML:\s*([^)]+)\)/);
+                    if (icmsMatch) vlicms_xml = parseFloat(icmsMatch[1]);
+                }
+                parsedData.vltotal_xml = formatBRL(vltotal_xml);
+                parsedData.vlicms_xml = formatBRL(vlicms_xml);
             }
-            parsedData.vltotal_banco = formatBRL(parsedData.vltotal_banco);
-            parsedData.vltotal_xml = formatBRL(parsedData.vltotal_xml);
-            parsedData.vlicms_banco = formatBRL(parsedData.vlicms_banco);
-            parsedData.vlicms_xml = formatBRL(parsedData.vlicms_xml);
+
+            parsedData.chave_winthor = data.chave_winthor || data.chavecte || data.chavenfe || '';
+            parsedData.chave_xml = data.chave_xml || '';
 
             // Format dates simply if they exist
             if (parsedData.dtemissao) parsedData.dtemissao = new Date(parsedData.dtemissao).toLocaleDateString('pt-BR');
@@ -2253,7 +2262,7 @@
             // ── Copy Key Button ──
             const btnCopy = document.getElementById('btn-copy-chave');
             btnCopy.onclick = () => {
-                const chave = form.querySelector('[name="chavecte"]')?.value;
+                const chave = form.querySelector('[name="chave_winthor"]')?.value;
                 if (chave && chave.trim()) {
                     navigator.clipboard.writeText(chave.trim()).then(() => {
                         showToast('Chave NF copiada!');
@@ -2411,20 +2420,6 @@
                 fetchedData.forEach(item => {
                     item.is_tomador_dif = (item.status === 'Tomador Divergente');
 
-                    // --- REGRA FILIAL 47 ---
-                    if (String(item.codfilial) === '47' && item.status !== 'Resolvido' && item.status !== 'Não Encontrado no Sieg' && !item.is_tomador_dif) {
-                        let wtIcms = (item.vlicms !== null && item.vlicms !== undefined) ? parseFloat(item.vlicms) : 0;
-                        let wtTotal = (item.vltotal !== null && item.vltotal !== undefined) ? parseFloat(item.vltotal) : 0;
-                        let xmlTotal = (item.vltotal_xml !== null && item.vltotal_xml !== undefined) ? parseFloat(item.vltotal_xml) : wtTotal;
-
-                        if (Math.abs(wtIcms) > 0.01) {
-                            item.status = 'Divergente';
-                            const icmsObs = `ICMS WinThor deve ser 0 p/ filial 47 (WT: ${wtIcms.toFixed(2)})`;
-                            if (!item.obs || !item.obs.includes('ICMS WinThor deve ser 0 p/ filial 47')) {
-                                item.obs = item.obs ? `${item.obs} | ${icmsObs}` : icmsObs;
-                            }
-                        }
-                    }
 
                     if (!item.is_tomador_dif && item.codfilialnf != item.codfilial && item.status !== 'Resolvido') {
                         item.status = 'Divergente';
@@ -2590,7 +2585,7 @@
                 const { data: verifData } = await supabase.from('verificandonfconsumo').select('confronto_id');
                 const currentlyVerifying = new Set((verifData || []).map(v => v.confronto_id));
 
-                let elegíveis = (allData || []).filter(item => {
+                let elegiveis = (allData || []).filter(item => {
                     const isTomadorDif = (item.status === 'Tomador Divergente');
 
                     // Filtrar: não pode ser tomador diferente, filial divergente, ou já em verificação na rede
@@ -2600,19 +2595,19 @@
                     return true;
                 });
 
-                if (elegíveis.length === 0) {
+                if (elegiveis.length === 0) {
                     showToast('Nenhum registro OK elegível para validação encontrado (ou já estão na fila).', 'error');
                     return;
                 }
 
                 // Confirmação via SweetAlert
                 const result = await Swal.fire({
-                    title: `Validar ${elegíveis.length} registro(s)?`,
-                    html: `<p>Serão enviados <strong>${elegíveis.length}</strong> NF(s) com status <strong style="color:#16a34a">OK</strong> para validação no WinThor.</p>
+                    title: `Validar ${elegiveis.length} registro(s)?`,
+                    html: `<p>Serão enviados <strong>${elegiveis.length}</strong> NF(s) com status <strong style="color:#16a34a">OK</strong> para validação no WinThor.</p>
                            <p style="font-size:0.85rem;color:#6b7280;margin-top:8px">Registros divergentes, com tomador ≠ filial, ou já validados foram excluídos automaticamente.</p>`,
                     icon: 'question',
                     showCancelButton: true,
-                    confirmButtonText: `Sim, validar ${elegíveis.length}!`,
+                    confirmButtonText: `Sim, validar ${elegiveis.length}!`,
                     cancelButtonText: 'Cancelar',
                     confirmButtonColor: '#16a34a',
                     cancelButtonColor: '#6b7280'
@@ -2621,21 +2616,21 @@
                 if (!result.isConfirmed) return;
 
                 // Enviar para verificando
-                btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-2"></i>Enviando ${elegíveis.length}...`;
+                btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-2"></i>Enviando ${elegiveis.length}...`;
 
                 // Precisamos que os dados estejam no lastFetchedData para o enviarParaVerificandoMulti funcionar,
                 // então vamos adicionar temporariamente os que não estão
-                const idsNoData = elegíveis.filter(e => !state.lastFetchedData.find(d => d.id === e.id)).map(e => e.id);
+                const idsNoData = elegiveis.filter(e => !state.lastFetchedData.find(d => d.id === e.id)).map(e => e.id);
                 if (idsNoData.length > 0) {
                     // Merge os dados que não estão na página atual
-                    elegíveis.forEach(item => {
+                    elegiveis.forEach(item => {
                         if (!state.lastFetchedData.find(d => d.id === item.id)) {
                             state.lastFetchedData.push(item);
                         }
                     });
                 }
 
-                const ids = elegíveis.map(e => e.id);
+                const ids = elegiveis.map(e => e.id);
                 await enviarParaVerificandoMulti(ids);
                 showToast(`${ids.length} NF(s) enviada(s) para validação em lote!`);
 
@@ -3835,10 +3830,8 @@
                         const mapFinais = new Map();
                         itemsFinais.forEach(item => {
                             let fStatus = item.status || 'Pendente';
-                            if (fStatus !== 'OK' && fStatus !== 'Não Encontrado no Sieg') {
-                                if (item.codfilial == '47') {
-                                    fStatus = fStatus === 'OK' ? 'OK' : fStatus;
-                                } else if (parseNum(item.vltotal) !== parseNum(item.vltotal_xml)) {
+                            if (fStatus !== 'OK' && fStatus !== 'Sem XML') {
+                                if (parseNum(item.vltotal) !== parseNum(item.vltotal_xml)) {
                                     fStatus = 'Divergente (Valor)';
                                 } else if (parseNum(item.vlicms) !== parseNum(item.vlicms_xml)) {
                                     fStatus = 'Divergente (ICMS)';

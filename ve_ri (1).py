@@ -315,12 +315,8 @@ def processar_registro(registro):
         if abs(winthor_vltotal - vltotal_xml) > 0.01:
             motivos_rejeicao.append(f"TOTAL divergem (WinThor:{winthor_vltotal:.2f} != XML:{vltotal_xml:.2f})")
 
-        if str(codfilial) == '47':
-            if abs(winthor_vlicms) > 0.01:
-                motivos_rejeicao.append(f"ICMS WinThor não é 0 p/ filial 47 (WT:{winthor_vlicms:.2f})")
-        else:
-            if abs(winthor_vlicms - vlicms_xml) > 0.01:
-                motivos_rejeicao.append(f"ICMS divergem (WinThor:{winthor_vlicms:.2f} != XML:{vlicms_xml:.2f})")
+        if abs(winthor_vlicms - vlicms_xml) > 0.01:
+            motivos_rejeicao.append(f"ICMS divergem (WinThor:{winthor_vlicms:.2f} != XML:{vlicms_xml:.2f})")
 
         if motivos_rejeicao:
             msg_erro = ", ".join(motivos_rejeicao)
@@ -557,13 +553,8 @@ def processar_lote(registros):
                 if abs(dados_wt["vltotal"] - vltotal_xml) > 0.01:
                     motivos.append(f"TOTAL (WT:{dados_wt['vltotal']:.2f} != XML:{vltotal_xml:.2f})")
                 
-                if str(dados_wt["codfilial"]) == '47':
-                    if abs(dados_wt["vlicms"]) > 0.01:
-                        motivos.append(f"ICMS WT deve ser 0 p/ filial 47 (WT:{dados_wt['vlicms']:.2f})")
-                else:
-                    if abs(dados_wt["vlicms"] - vlicms_xml) > 0.01:
-                        motivos.append(f"ICMS (WT:{dados_wt['vlicms']:.2f} != XML:{vlicms_xml:.2f})")
-
+                if abs(dados_wt["vlicms"] - vlicms_xml) > 0.01:
+                    motivos.append(f"ICMS (WT:{dados_wt['vlicms']:.2f} != XML:{vlicms_xml:.2f})")
                 if motivos:
                     msg = ", ".join(motivos)
                     log(f"    [DIVERGE] #{registro_id} Nota {numnota}: {msg}")

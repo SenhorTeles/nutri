@@ -1,17 +1,10 @@
 import os
 import time
-import zipfile
-import glob
 import json
 import requests
 import xml.etree.ElementTree as ET
 import oracledb
-import shutil
 from datetime import datetime
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 
 # --- CONFIGURAÇÕES DO BANCO DE DADOS (WINTHOR) ---
 CLIENT_LIB_DIR = r"C:\Users\informatica.ti\Documents\appdiscooveryzynapse\cmdintanci\instantclient_21_19"
@@ -43,13 +36,188 @@ FILIAIS = [
     {"codigo": "4", "cgc": "3612312000225", "uf": "SP"}
 ]
 
+TABLE_NAME = "confrontofiscalnfconsumo"
+
+def enviar_supabase(data_payload):
+    """Upsert um registro na tabela confrontofiscalnfconsumo."""
+    chave = data_payload.get('chavecte')
+    numnota = data_payload.get('numnota')
+    url = f"{SUPABASE_URL}/rest/v1/{TABLE_NAME}?on_conflict=chave_xml"
+    headers = {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type": "application/json",
+        "Prefer": "resolution=merge-duplicates,return=minimal"
+    }
+    try:
+        response = requests.post(url, headers=headers, json=data_payload)
+        if response.status_code in [200, 201]:
+            print(f"  [>] Upsert CHAVE: {chave} | Nota: {numnota} -> Supabase ({data_payload.get('status')}).")
+        else:
+            print(f"  [!] Erro ao enviar para Supabase: {response.status_code} - {response.text}")
+    except Exception as e:
+        print(f"Erro de conexão com Supabase: {e}")
 
 
+def buscar_dados_winthor_por_chaves(lista_chaves):
+    """Busca múltiplas chaves no WinThor de uma vez só, retorna dict {chave: dados}."""
+    if not lista_chaves:
+        return {}
+    
+    chaves_sql = ",".join([f"'{c}'" for c in lista_chaves])
+    sql = f"""
+    SELECT n.codfilialnf, n.codfilial, n.modelo, n.serie, n.especie, n.numnota, n.numtransent,
+           n.vltotal, n.codfornec, f.fornecedor, f.cgc, n.chavenfe, n.chavecte, n.dtemissao, 
+           n.conferido, n.dtent, NVL(b.vlicms, 0) AS vlicms
+    FROM pcnfent n, pcfornec f, pcnfbaseent b
+    WHERE n.codfornec = f.codfornec(+)
+      AND b.numtransent = n.numtransent
+      AND n.chavenfe IN ({chaves_sql})
+      AND n.especie = 'NF'
+      AND b.especie = 'NF'
+      AND n.dtcancel is null
+    """
+    notas_dict = {}
+    try:
+        connection = oracledb.connect(user=USUARIO, password=SENHA, dsn=DSN)
+        cursor = connection.cursor()
+        cursor.execute(sql)
+        columns = [col[0].lower() for col in cursor.description]
+        for row in cursor.fetchall():
+            dado = dict(zip(columns, row))
+            chave = str(dado.get('chavenfe') or dado.get('chavecte') or '').strip()
+            if chave and chave != 'None':
+                notas_dict[chave] = dado
+        connection.close()
+        print(f"  [DB] {len(notas_dict)} de {len(lista_chaves)} chaves encontradas no WinThor.")
+    except Exception as e:
+        print(f"Erro ao buscar no Winthor por chaves: {e}")
+    return notas_dict
 
 
+def processar_fila_busca_isolada():
+    """Processa chaves pendentes na fila de busca isolada.
+    Busca no WinThor e envia ao Supabase com status 'Sem XML'.
+    O XML será importado pelo front-end depois."""
+    url = f"{SUPABASE_URL}/rest/v1/busca_isolada_queue?status=eq.Pendente"
+    headers = {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Accept": "application/json"
+    }
+    
+    try:
+        resp = requests.get(url, headers=headers)
+        if resp.status_code != 200:
+            return
+        pendentes = resp.json()
+        if not pendentes:
+            return
+        
+        print(f"\n--- Processando [{len(pendentes)}] Chave(s) Pendente(s) na Busca Isolada ---")
+        
+        # 1. Marcar todas como "Processando" e montar mapa {chave: item_id}
+        mapa_fila = {}
+        todas_chaves = []
+        for item in pendentes:
+            chave_cte = item.get('chavecte')
+            item_id = item.get('id')
+            patch_url = f"{SUPABASE_URL}/rest/v1/busca_isolada_queue?id=eq.{item_id}"
+            requests.patch(patch_url, headers={**headers, "Content-Type": "application/json"}, json={"status": "Processando"})
+            mapa_fila[chave_cte] = item_id
+            todas_chaves.append(chave_cte)
+        
+        # 2. Buscar TODAS as chaves no WinThor
+        dados_banco_total = {}
+        for i in range(0, len(todas_chaves), 500):
+            bloco = todas_chaves[i:i+500]
+            resultado = buscar_dados_winthor_por_chaves(bloco)
+            dados_banco_total.update(resultado)
+        
+        # 3. Processar cada chave
+        for chave in todas_chaves:
+            item_id = mapa_fila[chave]
+            del_url = f"{SUPABASE_URL}/rest/v1/busca_isolada_queue?id=eq.{item_id}"
+            
+            if chave not in dados_banco_total:
+                requests.delete(del_url, headers={**headers, "Content-Type": "application/json"})
+                print(f"    [X] {chave} -> Não existe no WinThor. (removido da fila)")
+                continue
+            
+            dados_banco = dados_banco_total[chave]
+            codfilialnf = str(dados_banco.get('codfilialnf'))
+            filial_obj = next((f for f in FILIAIS if str(f['codigo']) == codfilialnf), None)
+            
+            if not filial_obj:
+                requests.delete(del_url, headers={**headers, "Content-Type": "application/json"})
+                print(f"    [X] {chave} -> Filial {codfilialnf} desconhecida. (removido da fila)")
+                continue
+            
+            # Montar payload e enviar com status 'Sem XML'
+            vl_tot_bd = float(dados_banco.get('vltotal') or 0.0)
+            vl_icms_bd = float(dados_banco.get('vlicms') or 0.0)
+            
+            d_em = dados_banco.get('dtemissao')
+            str_em = d_em.strftime('%Y-%m-%d') if hasattr(d_em, 'strftime') else d_em
+            d_ent = dados_banco.get('dtent')
+            str_ent = d_ent.strftime('%Y-%m-%d') if hasattr(d_ent, 'strftime') else d_ent
+            
+            payload = {
+                "codfilialnf": dados_banco.get('codfilialnf'),
+                "codfilial": dados_banco.get('codfilial'),
+                "modelo": dados_banco.get('modelo'),
+                "serie": dados_banco.get('serie'),
+                "especie": dados_banco.get('especie'),
+                "numnota": dados_banco.get('numnota'),
+                "numtransent": dados_banco.get('numtransent'),
+                "vltotal": vl_tot_bd,
+                "vlicms": vl_icms_bd,
+                "vltotal_xml": 0.0,
+                "vlicms_xml": 0.0,
+                "codfornec": dados_banco.get('codfornec'),
+                "fornecedor": dados_banco.get('fornecedor'),
+                "cgc": dados_banco.get('cgc'),
+                "chavenfe": dados_banco.get('chavenfe'),
+                "chavecte": chave,
+                "chave_winthor": chave,
+                "chave_xml": chave,
+                "cnpj_remetente": "",
+                "cnpj_filial": filial_obj['cgc'],
+                "dtemissao": str_em,
+                "dtent": str_ent,
+                "xml_doc": "",
+                "status": "Sem XML",
+                "obs": "Busca Isolada - Aguardando importação de XML pelo front-end.",
+            }
+            enviar_supabase(payload)
+            
+            # Remover da fila
+            requests.delete(del_url, headers={**headers, "Content-Type": "application/json"})
+            print(f"    [Y] {chave} -> Sem XML (removido da fila)")
+            time.sleep(0.3)
+        
+        print("\n--- Fila de Busca Isolada concluída! ---")
+                    
+    except Exception as e:
+        print(f"Erro Processo Automático de Fila Busca Isolada: {e}")
 
-def baixar_xmls_sieg(chaves_list, link_cliente):
-    if not chaves_list:
+
+def main():
+    print("=== INICIANDO BUSCA ISOLADA NF CONSUMO (SEM SIEG) ===")
+    print("Modo contínuo - Monitorando fila de busca isolada...")
+    
+    while True:
+        try:
+            processar_fila_busca_isolada()
+        except Exception as e:
+            print(f"ERRO CRÍTICO NO MODO CONTÍNUO: {e}")
+        
+        time.sleep(30)
+
+
+if __name__ == "__main__":
+    main()
+
         print("Nenhuma chave para buscar.")
         return None
         
