@@ -2666,11 +2666,11 @@
                         // Não existe mais na tabela (removido pelo script) = concluído com sucesso
                         state.verificandoIds.delete(id);
                         changed = true;
-                    } else if (reg.status === 'Erro') {
+                    } else if (reg.status && reg.status.startsWith('Erro')) {
                         // O script retornou com erro — parar polling para este item
                         state.verificandoIds.delete(id);
                         changed = true;
-                        const motivo = reg.obs || 'Erro desconhecido';
+                        const motivo = reg.status + (reg.obs ? ' | ' + reg.obs : '');
                         showToast(`Erro na nota #${id}: ${motivo}`, 'error');
                         // Remove o registro de "verificando" para liberar o retry
                         supabase.from('verificandodanfe').delete().eq('confronto_id', id).then(() => { });

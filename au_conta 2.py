@@ -100,7 +100,16 @@ def buscar_dados_winthor(sql_query, codfilial, data_inicio, data_fim):
         cursor.execute(sql)
         cols = [c[0].lower() for c in cursor.description]
         for row in cursor.fetchall():
-            dado = dict(zip(cols, row))
+            # Converter datetime para string para evitar erro de serialização JSON
+            valores = []
+            for v in row:
+                if isinstance(v, datetime):
+                    valores.append(v.strftime('%Y-%m-%d'))
+                elif hasattr(v, 'isoformat'):
+                    valores.append(v.isoformat())
+                else:
+                    valores.append(v)
+            dado = dict(zip(cols, valores))
             chave = str(dado.get('chavenfe') or dado.get('chavecte') or '').strip()
             if chave and chave != 'None':
                 notas_dict[chave] = dado
@@ -150,13 +159,19 @@ def avaliar_xml(table_name, reg):
         vt_el = root.find('.//vTPrest') or root.find('.//vNF')
         if vt_el is not None: vltotal_xml = float(vt_el.text)
             
-        for t in ['ICMS00','ICMSOutraUF','ICMS20','ICMS45','ICMS60','ICMS90','ICMSSN']:
-            n = root.find(f'.//{t}')
-            if n is not None:
-                vicms = n.find('vICMS') or n.find('vICMSOutraUF')
-                if vicms is not None:
-                    vlicms_xml = float(vicms.text)
-                    break
+        icms_tot = root.find('.//ICMSTot')
+        if icms_tot is not None:
+            v_icms = float(icms_tot.find('vICMS').text) if icms_tot.find('vICMS') is not None and icms_tot.find('vICMS').text else 0.0
+            v_mono = float(icms_tot.find('vICMSMonoRet').text) if icms_tot.find('vICMSMonoRet') is not None and icms_tot.find('vICMSMonoRet').text else 0.0
+            vlicms_xml = max(v_icms, v_mono)
+        else:
+            for t in ['ICMS00','ICMSOutraUF','ICMS20','ICMS45','ICMS60','ICMS90','ICMSSN','ICMS61']:
+                n = root.find(f'.//{t}')
+                if n is not None:
+                    vicms = n.find('vICMS') or n.find('vICMSOutraUF') or n.find('vICMSMonoRet')
+                    if vicms is not None:
+                        vlicms_xml = float(vicms.text)
+                        break
                     
         p_el, c_el = root.find('.//vPIS'), root.find('.//vCOFINS')
         if p_el is not None and p_el.text: vlpis_xml = float(p_el.text)
@@ -186,7 +201,7 @@ def avaliar_xml(table_name, reg):
         vlicms_db = float(reg.get("vlicms") or 0)
         cnpj_filial = FILIAL_CGC_MAP.get(str(reg.get("codfilialnf")), reg.get("cnpj_filial", ""))
         
-        diff_tomador = bool(cnpj_tomador and cnpj_filial and cnpj_tomador != cnpj_filial)
+        diff_tomador = bool(cnpj_tomador and cnpj_filial and cnpj_tomador.lstrip('0') != cnpj_filial.lstrip('0'))
         diff_tot = abs(vltotal_db - vltotal_xml) > 0.01
         diff_icms = abs(vlicms_db - vlicms_xml) > 0.01
 
@@ -329,6 +344,7 @@ def run_busca_isolada():
                     
                     achou = False
                     tbl_achou = None
+                    modulos_tentados = []
                     for nome, cfg in MODOS_SQL.items():
                         c_sql = f"'{chave}'"
                         sql = cfg['busca_isolada'].replace('{chaves_sql}', c_sql)
@@ -341,15 +357,16 @@ def run_busca_isolada():
                             payload.update({
                                 "vltotal": float(d.get('vltotal') or 0), "vlicms": float(d.get('vlicms') or 0),
                                 "chavecte": chave, "chave_xml": chave, "cnpj_filial": f_cgc, 
-                                "status": "Sem XML"
+                                "status": "Sem XML",
+                                "obs": f"Chave {chave} encontrada no WinThor (módulo {nome}). Filial: {d.get('codfilialnf')}."
                             })
                             enviar_supabase(cfg['tbl_confronto'], payload)
                             achou = True
                             tbl_achou = cfg['tbl_confronto']
+                            modulos_tentados.append(f"{nome}: ENCONTRADA")
                             
                             # --- COMPARAÇÃO IMEDIATA ---
-                            # Busca o registro que acabou de ser upsertado para ver se já tem XML
-                            time.sleep(0.5)  # Pequena pausa para o Supabase processar o upsert
+                            time.sleep(0.5)
                             resp_reg = requests.get(
                                 f"{SUPABASE_URL}/rest/v1/{cfg['tbl_confronto']}?chavecte=eq.{chave}&select=*",
                                 headers=HEADERS_GET
@@ -363,10 +380,13 @@ def run_busca_isolada():
                                         avaliar_xml(cfg['tbl_confronto'], reg)
                                         log(f"  Comparação concluída para {chave[:20]}...", "[BUSCA]")
                             break
+                        else:
+                            modulos_tentados.append(f"{nome}: não encontrada")
                             
                     if not achou:
+                        obs_detalhada = f"Chave {chave} buscada em: {', '.join(modulos_tentados)}. Resultado: NÃO ENCONTRADA no WinThor."
                         for nome, cfg in MODOS_SQL.items():
-                            requests.patch(f"{SUPABASE_URL}/rest/v1/{cfg['tbl_confronto']}?chave_xml=eq.{chave}", headers=HEADERS, json={"status": "Não Importada", "obs": "Não encontrada no WinThor."})
+                            requests.patch(f"{SUPABASE_URL}/rest/v1/{cfg['tbl_confronto']}?chave_xml=eq.{chave}", headers=HEADERS, json={"status": "Não Importada", "obs": obs_detalhada})
 
                     requests.delete(f"{SUPABASE_URL}/rest/v1/busca_isolada_queue?id=eq.{id_}", headers=HEADERS)
                     log(f"Chave {chave[:20]}... processada. Achou={achou}", "[BUSCA]")
@@ -382,7 +402,7 @@ def run_ve_ri():
     while True:
         try:
             for nome, cfg in MODOS_SQL.items():
-                resp = requests.get(f"{SUPABASE_URL}/rest/v1/{cfg['tbl_veri']}", headers=HEADERS_GET)
+                resp = requests.get(f"{SUPABASE_URL}/rest/v1/{cfg['tbl_veri']}?status=eq.Subindo", headers=HEADERS_GET)
                 if resp.status_code != 200: continue
                 filas = resp.json()
                 if not isinstance(filas, list) or not filas: continue
@@ -441,7 +461,7 @@ def run_toma_dif():
     while True:
         try:
             for nome, cfg in MODOS_SQL.items():
-                resp = requests.get(f"{SUPABASE_URL}/rest/v1/{cfg['tbl_veri_tomador']}", headers=HEADERS_GET)
+                resp = requests.get(f"{SUPABASE_URL}/rest/v1/{cfg['tbl_veri_tomador']}?status=eq.Subindo", headers=HEADERS_GET)
                 if resp.status_code != 200: continue
                 filas = resp.json()
                 if not isinstance(filas, list) or not filas: continue
@@ -451,7 +471,7 @@ def run_toma_dif():
                 conn = get_db_connection()
                 cursor = conn.cursor()
                 for reg in filas:
-                    cnpj_t = reg.get('cnpj_tomador') or ""
+                    cnpj_t = (reg.get('cnpj_tomador') or "").lstrip('0')
                     if cnpj_t.startswith(CNPJ_PREFIX):
                         filial_correta = FILIAIS_MAP.get(cnpj_t)
                         if not filial_correta: continue
