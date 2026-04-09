@@ -1779,6 +1779,9 @@
                         <button id="view-sem-xml-btn" class="filter-pill" data-view="sem_xml"
                             style="--pill-active-bg:#eab308;--pill-active-color:#fff">
                             <i class="fa-solid fa-file-circle-question"></i> Sem XML</button>
+                        <button id="view-nao-importada-btn" class="filter-pill" data-view="nao_importada"
+                            style="--pill-active-bg:#7c3aed;--pill-active-color:#fff">
+                            <i class="fa-solid fa-cloud-arrow-up"></i> Não Importada</button>
                         <button id="view-validados-btn" class="filter-pill" data-view="validados"
                             style="--pill-active-bg:#2563eb;--pill-active-color:#fff">
                             <i class="fa-solid fa-badge-check"></i> Validados</button>
@@ -1997,11 +2000,13 @@
                 } else if (state.viewMode === 'nao_encontrado') {
                     itemsToRender = itemsToRender.filter(item => item.status === 'Não Encontrado no Sieg' && !item.validado_winthor && !item.is_tomador_dif);
                 } else if (state.viewMode === 'divergente') {
-                    itemsToRender = itemsToRender.filter(item => item.status !== 'Sem XML' && item.status !== 'OK' && item.status !== 'Não Encontrado no Sieg' && !item.validado_winthor && !item.is_tomador_dif);
+                    itemsToRender = itemsToRender.filter(item => item.status !== 'Sem XML' && item.status !== 'OK' && item.status !== 'Não Encontrado no Sieg' && item.status !== 'Não Importada' && !item.validado_winthor && !item.is_tomador_dif);
                 } else if (state.viewMode === 'validados') {
                     itemsToRender = itemsToRender.filter(item => item.validado_winthor);
                 } else if (state.viewMode === 'sem_xml') {
                     itemsToRender = itemsToRender.filter(item => item.status === 'Sem XML');
+                } else if (state.viewMode === 'nao_importada') {
+                    itemsToRender = itemsToRender.filter(item => item.status === 'Não Importada');
                 }
             }
 
@@ -2430,7 +2435,7 @@
 
                 if (!sTerm) {
                     if (state.viewMode === 'divergente') {
-                        query = query.not('status', 'eq', 'OK').not('status', 'eq', 'Não Encontrado no Sieg').eq('validado_winthor', false);
+                        query = query.not('status', 'eq', 'OK').not('status', 'eq', 'Não Encontrado no Sieg').not('status', 'eq', 'Não Importada').eq('validado_winthor', false);
                     } else if (state.viewMode === 'ok') {
                         query = query.eq('status', 'OK').eq('validado_winthor', false);
                     } else if (state.viewMode === 'nao_encontrado') {
@@ -2441,6 +2446,8 @@
                         query = query.eq('status', 'Tomador Divergente').eq('validado_winthor', false);
                     } else if (state.viewMode === 'sem_xml') {
                         query = query.eq('status', 'Sem XML');
+                    } else if (state.viewMode === 'nao_importada') {
+                        query = query.eq('status', 'Não Importada');
                     }
                 }
 
@@ -2884,7 +2891,7 @@
                 let query = supabase.from(TABLE_NAME).select('*');
 
                 if (state.viewMode === 'divergente') {
-                    query = query.not('status', 'eq', 'OK').not('status', 'eq', 'Não Encontrado no Sieg').eq('validado_winthor', false);
+                    query = query.not('status', 'eq', 'OK').not('status', 'eq', 'Não Encontrado no Sieg').not('status', 'eq', 'Não Importada').eq('validado_winthor', false);
                 } else if (state.viewMode === 'ok') {
                     query = query.eq('status', 'OK').eq('validado_winthor', false);
                 } else if (state.viewMode === 'nao_encontrado') {
@@ -2895,6 +2902,8 @@
                     query = query.eq('status', 'Tomador Divergente').eq('validado_winthor', false);
                 } else if (state.viewMode === 'sem_xml') {
                     query = query.eq('status', 'Sem XML');
+                } else if (state.viewMode === 'nao_importada') {
+                    query = query.eq('status', 'Não Importada');
                 }
 
                 const sTerm = state.searchTerm.trim();
@@ -3383,6 +3392,7 @@
                 document.getElementById('view-ok-btn')?.classList.remove('active', 'text-green-600');
                 document.getElementById('view-tomador-dif-btn')?.classList.remove('active', 'text-orange-600');
                 document.getElementById('view-sem-xml-btn')?.classList.remove('active', 'text-yellow-600');
+                document.getElementById('view-nao-importada-btn')?.classList.remove('active', 'text-purple-600');
                 document.getElementById('view-validados-btn')?.classList.remove('active', 'text-blue-600');
             };
 
@@ -3409,6 +3419,10 @@
             document.getElementById('view-sem-xml-btn')?.addEventListener('click', e => {
                 state.viewMode = 'sem_xml'; state.currentPage = 1;
                 unselectViewPills(); e.target.classList.add('active', 'text-yellow-600'); fetchData();
+            });
+            document.getElementById('view-nao-importada-btn')?.addEventListener('click', e => {
+                state.viewMode = 'nao_importada'; state.currentPage = 1;
+                unselectViewPills(); e.target.classList.add('active', 'text-purple-600'); fetchData();
             });
 
             // Sidebar and Modals
@@ -4078,10 +4092,35 @@
                             .limit(1)
                             .maybeSingle();
 
-                        if (existente) {
-                            // Já existe: ignorar! (O usuário pediu para não alterar nada se já existe no Supabase)
-                            totalVinculados++; // consideramos como OK (ignorado pra não sobrescrever manual)
+                        if (existente && existente.status !== 'Sem XML') {
+                            // Já existe com dados: ignorar para não sobrescrever
+                            totalVinculados++;
                             continue;
+                        } else if (existente && existente.status === 'Sem XML') {
+                            // Existe mas está "Sem XML": complementar com os dados do XML importado
+                            const vltotalDb = parseFloat(existente.vltotal || 0);
+                            const vlicmsDb = parseFloat(existente.vlicms || 0);
+                            const cnpjFilial = existente.cnpj_filial || '';
+                            const diffTomador = !!(pf.cnpjTomador && cnpjFilial && String(pf.cnpjTomador).replace(/^0+/, '') !== String(cnpjFilial).replace(/^0+/, ''));
+                            const diffTot = Math.abs(vltotalDb - pf.vltotalXml) > 0.01;
+                            const diffIcms = Math.abs(vlicmsDb - pf.vlicmsXml) > 0.01;
+
+                            let novoStatus = 'OK';
+                            let obs = [];
+                            if (diffTomador) { novoStatus = 'Tomador Divergente'; obs.push(`Tomador (${pf.cnpjTomador} != ${cnpjFilial})`); }
+                            else if (diffTot || diffIcms) {
+                                novoStatus = 'DIVERGENTE';
+                                if (diffTot) obs.push(`TOTAL (DB: ${vltotalDb} | XML: ${pf.vltotalXml})`);
+                                if (diffIcms) obs.push(`ICMS (DB: ${vlicmsDb} | XML: ${pf.vlicmsXml})`);
+                            }
+
+                            const { error: updErr } = await supabase.from(TABLE_NAME).update({
+                                xml_doc: pf.xmlText, vltotal_xml: pf.vltotalXml, vlicms_xml: pf.vlicmsXml,
+                                cnpj_tomador: pf.cnpjTomador, cnpj_remetente: pf.cnpjRemetente,
+                                chave_xml: pf.chaveAcesso, status: novoStatus, obs: obs.join(' | ')
+                            }).eq('id', existente.id);
+
+                            if (updErr) totalErros++; else totalVinculados++;
                         } else {
                             // Não existe: inserir como "Não Importada" + enviar para fila do bot
                             const { error: insErr } = await supabase.from(TABLE_NAME).insert([{
