@@ -342,7 +342,7 @@ def processar_registro(registro):
               AND n.numnota = :numnota
               AND n.codfilial = :codfilial
               AND n.especie = 'NF'
-              AND n.conferido = 'N'
+              AND NVL(n.conferido, 'N') = 'N'
               AND n.dtcancel is null
               AND TRUNC(n.dtent) = TO_DATE(:dtent, 'DD/MM/YYYY')
               AND EXISTS (
@@ -579,7 +579,7 @@ def processar_lote(registros):
                     SET n.conferido = 'S'
                     WHERE n.numtransent IN ({bind_upd_clause})
                       AND n.especie = 'NF'
-                      AND n.conferido = 'N'
+                      AND NVL(n.conferido, 'N') = 'N'
                       AND n.dtcancel is null
                       AND EXISTS (
                           SELECT 1 FROM pcnfbaseent b 

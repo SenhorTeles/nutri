@@ -440,6 +440,12 @@
                     <p class="text-xs mt-1" style="color: var(--text-secondary)">Indicadores do Confronto Fiscal — Atualizado em tempo real</p>
                 </div>
                 <div class="flex items-center gap-2">
+                    <div id="realtime-badge"
+                        class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-emerald-700 text-xs font-semibold" style="background: var(--surface-hover); border: 1px solid var(--border)">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        Tempo Real
+                    </div>
+                    <div id="last-update" class="text-xs font-medium hidden sm:block" style="color: var(--text-secondary)">Carregando...</div>
                     <div
                         class="flex items-center border rounded-md shadow-sm overflow-hidden text-xs" style="background: var(--surface); border-color: var(--border);">
                         <span class="pl-2 pr-1 font-medium" style="color: var(--text-secondary)">De</span>
@@ -455,34 +461,34 @@
 
             <!-- Navigation Cards -->
             <section class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <a href="confronto_nf_consumo.html" class="flex flex-col items-center justify-center p-4 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 hover:shadow-md transition-all shadow-sm">
+                <button onclick="switchDashboard('confrontofiscalnfconsumo', this)" class="nav-card active flex flex-col items-center justify-center p-4 rounded-xl border border-indigo-500 bg-indigo-50 shadow-md transition-all ring-2 ring-offset-2 ring-indigo-500 cursor-pointer">
                     <div class="w-12 h-12 rounded-full flex items-center justify-center bg-indigo-100 text-indigo-600 mb-2">
                         <i class="fa-solid fa-cart-shopping text-xl"></i>
                     </div>
                     <span class="font-bold text-gray-800 text-sm">NF Consumo</span>
-                </a>
-                <a href="confronto_nf_servico.html" class="flex flex-col items-center justify-center p-4 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 hover:shadow-md transition-all shadow-sm">
+                </button>
+                <button onclick="switchDashboard('confrontofiscalnfservico', this)" class="nav-card flex flex-col items-center justify-center p-4 rounded-xl border border-gray-200 bg-white hover:bg-purple-50 hover:shadow-md transition-all shadow-sm cursor-pointer">
                     <div class="w-12 h-12 rounded-full flex items-center justify-center bg-purple-100 text-purple-600 mb-2">
                         <i class="fa-solid fa-briefcase text-xl"></i>
                     </div>
                     <span class="font-bold text-gray-800 text-sm">NF Serviço</span>
-                </a>
-                <a href="confronto_danfe.html" class="flex flex-col items-center justify-center p-4 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 hover:shadow-md transition-all shadow-sm">
+                </button>
+                <button onclick="switchDashboard('confrontofiscaldanfe', this)" class="nav-card flex flex-col items-center justify-center p-4 rounded-xl border border-gray-200 bg-white hover:bg-blue-50 hover:shadow-md transition-all shadow-sm cursor-pointer">
                     <div class="w-12 h-12 rounded-full flex items-center justify-center bg-blue-100 text-blue-600 mb-2">
                         <i class="fa-solid fa-file-invoice text-xl"></i>
                     </div>
                     <span class="font-bold text-gray-800 text-sm">DANFE</span>
-                </a>
-                <a href="confronto-dacte.html" class="flex flex-col items-center justify-center p-4 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 hover:shadow-md transition-all shadow-sm">
+                </button>
+                <button onclick="switchDashboard('confrontofiscalcte', this)" class="nav-card flex flex-col items-center justify-center p-4 rounded-xl border border-gray-200 bg-white hover:bg-orange-50 hover:shadow-md transition-all shadow-sm cursor-pointer">
                     <div class="w-12 h-12 rounded-full flex items-center justify-center bg-orange-100 text-orange-600 mb-2">
                         <i class="fa-solid fa-truck-fast text-xl"></i>
                     </div>
                     <span class="font-bold text-gray-800 text-sm">CT-e</span>
-                </a>
+                </button>
             </section>
 
             <!-- KPIs Row -->
-            <section id="kpi-section" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+            <section id="kpi-section" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                 <!-- Total -->
                 <div class="kpi-card" style="--stripe-color: #6366f1;">
                     <div class="flex items-start justify-between">
@@ -553,6 +559,32 @@
                         </div>
                         <div class="kpi-icon text-orange-500" style="background: var(--surface-hover)">
                             <i class="fa-solid fa-user-xmark"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Sem XML -->
+                <div class="kpi-card" style="--stripe-color: #94a3b8;">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <div id="kpi-semxml" class="kpi-value text-slate-500">—</div>
+                            <div class="kpi-label">Sem XML</div>
+                        </div>
+                        <div class="kpi-icon text-slate-500" style="background: var(--surface-hover)">
+                            <i class="fa-solid fa-file-excel"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Não Encontrado -->
+                <div class="kpi-card" style="--stripe-color: #52525b;">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <div id="kpi-naoencontrado" class="kpi-value text-zinc-500">—</div>
+                            <div class="kpi-label">Não Encontrado</div>
+                        </div>
+                        <div class="kpi-icon text-zinc-500" style="background: var(--surface-hover)">
+                            <i class="fa-solid fa-ghost"></i>
                         </div>
                     </div>
                 </div>
@@ -740,9 +772,32 @@
 
         let chartInstances = {};
 
-        // =====================
         // UTILITY FUNCTIONS
         // =====================
+        window.currentTable = 'confrontofiscalnfconsumo';
+
+        window.switchDashboard = function(tableName, btnElement) {
+            window.currentTable = tableName;
+            
+            // Visual Update
+            document.querySelectorAll('.nav-card').forEach(btn => {
+                btn.classList.remove('active', 'border-indigo-500', 'bg-indigo-50', 'ring-2', 'ring-offset-2', 'ring-indigo-500');
+                btn.classList.add('bg-white', 'border-gray-200');
+            });
+            btnElement.classList.remove('bg-white', 'border-gray-200');
+            btnElement.classList.add('active', 'border-indigo-500', 'bg-indigo-50', 'ring-2', 'ring-offset-2', 'ring-indigo-500');
+
+            // Force Fetch
+            document.getElementById('page-loader').classList.remove('hidden');
+            window.dashboardData = null; // Clear Current
+            isInitialLoad = true;
+            sessionStorage.removeItem('dashboardCache');
+            // Wait for call stack to clear
+            setTimeout(() => {
+                init();
+                startRealtime();
+            }, 50);
+        };
         function animateValue(el, end, skipAnim = false, duration = 300) {
             if (el._animFrame) cancelAnimationFrame(el._animFrame);
             if (skipAnim) {
@@ -788,10 +843,18 @@
                 const dtInicio = document.getElementById('filter-dtent-inicio').value;
                 const dtFim = document.getElementById('filter-dtent-fim').value;
 
-                const { count: verificandoCount } = await supabase.from('verificando').select('id', { count: 'exact', head: true });
-                const { count: buscaIsoladaCount } = await supabase.from('busca_isolada_queue').select('id', { count: 'exact', head: true }).in('status', ['Pendente', 'Processando']);
+                let verificandoCount = 0;
+                let buscaIsoladaCount = 0;
+                try {
+                    const resVeri = await supabase.from('verificando').select('id', { count: 'exact', head: true });
+                    verificandoCount = resVeri.count || 0;
+                } catch(e) {}
+                try {
+                    const resBusca = await supabase.from('busca_isolada_queue').select('id', { count: 'exact', head: true }).in('status', ['Pendente', 'Processando']);
+                    buscaIsoladaCount = resBusca.count || 0;
+                } catch(e) {}
 
-                let queryValid = supabase.from('confrontofiscalnfconsumo')
+                let queryValid = supabase.from(window.currentTable)
                     .select('id, codfilial, codfilialnf, numnota, validado_por, validado_em, validado_email, status')
                     .eq('validado_winthor', true);
                 if (dtInicio) queryValid = queryValid.gte('dtent', dtInicio);
@@ -800,7 +863,7 @@
 
                 while (hasMore) {
                     let queryAll = supabase
-                        .from('confrontofiscalnfconsumo')
+                        .from(window.currentTable)
                         .select('id, codfilial, codfilialnf, status, validado_winthor, cnpj_filial');
                     if (dtInicio) queryAll = queryAll.gte('dtent', dtInicio);
                     if (dtFim) queryAll = queryAll.lte('dtent', dtFim);
@@ -875,12 +938,16 @@
             const nonTomadorDiv = data.filter(d => !d._isTomadorDiv);
             const validados = nonTomadorDiv.filter(d => d.validado_winthor === true).length;
             const okCount = nonTomadorDiv.filter(d => d.status === 'OK' && !d.validado_winthor).length;
-            const divergentes = nonTomadorDiv.filter(d => d.status !== 'OK' && d.status !== 'Validado' && !d.validado_winthor).length;
+            const divergentes = nonTomadorDiv.filter(d => d.status !== 'OK' && d.status !== 'Validado' && d.status !== 'Sem XML' && d.status !== 'Não Encontrado no Sieg' && !d.validado_winthor).length;
+            const semXmlCount = nonTomadorDiv.filter(d => d.status === 'Sem XML').length;
+            const naoEcontradoCount = nonTomadorDiv.filter(d => d.status === 'Não Encontrado no Sieg').length;
 
             animateValue(document.getElementById('kpi-total'), total, skipAnim);
             animateValue(document.getElementById('kpi-divergentes'), divergentes, skipAnim);
             animateValue(document.getElementById('kpi-ok'), okCount, skipAnim);
             animateValue(document.getElementById('kpi-validados'), validados, skipAnim);
+            animateValue(document.getElementById('kpi-semxml'), semXmlCount, skipAnim);
+            animateValue(document.getElementById('kpi-naoencontrado'), naoEcontradoCount, skipAnim);
 
             const tomadorEl = document.getElementById('kpi-tomador');
             if (tomadorEl.querySelector('i.fa-spin')) tomadorEl.innerHTML = '0';
@@ -1270,9 +1337,12 @@
         // =====================
         // REALTIME OTIMIZADO (Custo de API Zero - Modifica dados e Gráficos em Memória)
         // =====================
+        let activeChannel = null;
         function startRealtime() {
-            supabase.channel('dashboard-rt')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'confrontofiscalnfconsumo' }, (payload) => {
+            if (activeChannel) supabase.removeChannel(activeChannel);
+
+            activeChannel = supabase.channel('dashboard-rt')
+                .on('postgres_changes', { event: '*', schema: 'public', table: window.currentTable }, (payload) => {
                     const row = payload.new;
                     if (!row || !window.dashboardData.all) return;
 
@@ -1352,27 +1422,18 @@
         init();
         startRealtime();
 
-        // Refresh silencioso a cada 1 segundo (a pedido do usuário)
+        // Refresh silencioso a cada 10 segundos
         setInterval(async () => {
             if (isFetching || isInitialLoad) return;
-            const dtInicio = document.getElementById('filter-dtent-inicio').value;
-            const dtFim = document.getElementById('filter-dtent-fim').value;
 
             try {
-                // Ao invés de baixar 50 mil itens, atualizamos silenciosamente contagens e a primeira página
-                // para não pesar no banco de dados. 
-                const { count: verificandoCount } = await supabase.from('verificando').select('id', { count: 'exact', head: true });
-                const { count: buscaIsoladaCount } = await supabase.from('busca_isolada_queue').select('id', { count: 'exact', head: true }).in('status', ['Pendente', 'Processando']);
-
-                if (verificandoCount !== null && verificandoCount !== undefined) window.dashboardData.verificandoCount = verificandoCount;
-                if (buscaIsoladaCount !== null && buscaIsoladaCount !== undefined) window.dashboardData.buscaIsoladaCount = buscaIsoladaCount;
-
-                // Re-renderizar painel com contagens novas silenciosamente
-                renderKPIs(window.dashboardData.all, window.dashboardData.verificandoCount, window.dashboardData.buscaIsoladaCount, true);
+                // Removemos o polling super agressivo que jogava 404 no console toda hora se as tabelas não existissem.
+                // Como elas tem Realtime logo em cima, o polling é inútil pra "Busca Isolada" e "Verificando".
+                // Deixamos apenas o painel reativo por socket.
             } catch (err) {
                 console.error("Erro no refresh silencioso:", err);
             }
-        }, 1000);
+        }, 10000);
     </script>
 </body>
 

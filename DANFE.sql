@@ -17,7 +17,8 @@ SELECT   n.codfilialnf,
                  NVL(b.vlicms, 0) AS vlicms,
                  --- Incluido PIS e COFINS
                  NVL(b.vlpis,0) AS VLPIS,
-                 NVL(b.vlcofins,0) AS VLCOFINS
+                 NVL(b.vlcofins,0) AS VLCOFINS,
+                 b.codfiscal
           FROM   pcnfent n , pcfornec f  ,  pcnfbaseent b
          WHERE n.codfornec = f.codfornec(+)
            AND b.numtransent = n.numtransent
@@ -26,7 +27,7 @@ SELECT   n.codfilialnf,
            AND n.especie = 'NF'
            AND b.especie = 'NF'
            AND B.codfiscal NOT IN (1556,2556)
-           AND n.conferido = 'N'
+           AND NVL(n.conferido, 'N') = 'N'
            AND n.dtcancel is null
         ORDER BY n.codfilial , n.numnota;
       

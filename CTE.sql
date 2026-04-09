@@ -25,6 +25,6 @@ SELECT   n.codfilialnf,
            AND TRUNC(n.dtent) BETWEEN TO_DATE('{data_inicio}', 'DD/MM/YYYY') AND TO_DATE('{data_fim}', 'DD/MM/YYYY')
            AND n.especie = 'CT'
            AND b.especie = 'CT'
-           AND n.conferido = 'N'
+           AND NVL(n.conferido, 'N') = 'N'
            AND n.dtcancel is null
       ORDER BY n.codfilial , n.numnota

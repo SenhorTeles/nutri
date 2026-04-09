@@ -1597,6 +1597,12 @@
                             <div><label class="block text-xs font-medium mb-1">Data Entrada</label><input type="text"
                                     name="dtent" class="w-full form-input" readonly></div>
                         </div>
+                        <div class="grid grid-cols-3 gap-2 mt-2">
+                            <div><label class="block text-xs font-medium mb-1">CFOP</label><input type="text"
+                                    name="codfiscal" class="w-full form-input" readonly></div>
+                            <div><label class="block text-xs font-medium mb-1">Conferido NF</label><input type="text"
+                                    name="conferido" class="w-full form-input text-center font-bold" readonly></div>
+                        </div>
                     </div>
 
                     <div class="form-section">
@@ -3977,8 +3983,36 @@
                                 .single();
 
                             if (searchErr || !existente) {
-                                console.warn(`Chave ${chaveAcesso} não encontrada no Supabase.`);
-                                totalSemMatch++;
+                                console.warn(`Chave ${chaveAcesso} não encontrada no Supabase. Inserindo como 'Não Importada'.`);
+                                
+                                const payloadNaoImportada = {
+                                    chavecte: chaveAcesso,
+                                    chave_xml: chaveAcesso,
+                                    xml_doc: xmlText,
+                                    vltotal_xml: vltotalXml,
+                                    vlicms_xml: vlicmsXml,
+                                    cnpj_tomador: cnpjTomador,
+                                    cnpj_remetente: cnpjRemetente,
+                                    status: 'Não Importada',
+                                    obs: 'XML Recebido. Buscando no WinThor...'
+                                };
+                                
+                                const { error: insErr } = await supabase.from(TABLE_NAME).insert([payloadNaoImportada]);
+                                
+                                if (insErr) {
+                                    console.error(`Erro ao inserir Nao Importada ${chaveAcesso}:`, insErr);
+                                    totalErros++;
+                                } else {
+                                    // Adiciona na fila para tentar achar no winthor
+                                    const payloadQueue = {
+                                        chavecte: chaveAcesso,
+                                        status: 'Pendente',
+                                        user_nome: currentUserData?.nome || 'Anônimo',
+                                        user_email: currentUserData?.email || ''
+                                    };
+                                    await supabase.from('busca_isolada_queue').insert([payloadQueue]);
+                                    totalImportados++;
+                                }
                                 continue;
                             }
 
@@ -4013,8 +4047,7 @@
                                     cnpj_remetente: cnpjRemetente,
                                     chave_xml: chaveAcesso,
                                     status: novoStatus,
-                                    obs: obs.join(' | '),
-                                    is_tomador_dif: diffTomador
+                                    obs: obs.join(' | ')
                                 })
                                 .eq('id', existente.id);
 
