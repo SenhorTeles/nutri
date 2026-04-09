@@ -2235,17 +2235,70 @@
                     const parser = new DOMParser();
                     const xmlDoc = parser.parseFromString(cleanXml, "text/xml");
 
-                    // Encontrar o nó ICMS correto (ICMS00, ICMS20, ICMS45, ICMS60, ICMS90, ICMSSN, ICMSOutraUF)
-                    const icmsNode = xmlDoc.querySelector('ICMS00') || xmlDoc.querySelector('ICMS20') || xmlDoc.querySelector('ICMS45') || xmlDoc.querySelector('ICMS60') || xmlDoc.querySelector('ICMS90') || xmlDoc.querySelector('ICMSSN') || xmlDoc.querySelector('ICMSOutraUF');
+                    // Se cnpj_tomador está vazio no banco, tenta re-extrair do xml_doc
+                    if (!data.cnpj_tomador || data.cnpj_tomador === '-') {
+                        let extractedTomador = '';
+                        const isNFe = !!xmlDoc.querySelector('infNFe');
+                        if (isNFe) {
+                            const destCnpj = xmlDoc.querySelector('dest > CNPJ') || xmlDoc.querySelector('dest > CPF');
+                            if (destCnpj) extractedTomador = destCnpj.textContent;
+                        } else {
+                            let tomaV = null;
+                            for (const tp of ['toma3 > toma', 'toma0 > toma', 'toma4 > toma', 'toma']) {
+                                const tEl = xmlDoc.querySelector(tp);
+                                if (tEl && tEl.textContent) { tomaV = tEl.textContent.trim(); break; }
+                            }
+                            const tm = {'0': 'rem > CNPJ', '1': 'exped > CNPJ', '2': 'receb > CNPJ', '3': 'dest > CNPJ', '4': 'toma4 > CNPJ'};
+                            if (tomaV && tm[tomaV]) { const c = xmlDoc.querySelector(tm[tomaV]); if (c) extractedTomador = c.textContent; }
+                        }
+                        if (extractedTomador) {
+                            parsedData.cnpj_tomador_xml = extractedTomador;
+                            // Recalcular validação tomador
+                            if (!data.cnpj_filial) { parsedData.tomador_validacao = 'Dados Insuficientes'; }
+                            else if (String(extractedTomador).replace(/^0+/, '') !== String(data.cnpj_filial).replace(/^0+/, '')) { parsedData.tomador_validacao = 'DIFERENTES!'; }
+                            else { parsedData.tomador_validacao = 'IGUAIS'; }
+                            // Atualizar os campos visuais
+                            const elTom = form.querySelector('[name="cnpj_tomador_xml"]'); if (elTom) elTom.value = extractedTomador;
+                            const elVal = form.querySelector('[name="tomador_validacao"]');
+                            if (elVal) {
+                                elVal.value = parsedData.tomador_validacao;
+                                if (parsedData.tomador_validacao === 'DIFERENTES!') elVal.className = 'w-full form-input font-bold text-red-700 bg-red-100 border-red-300';
+                                else if (parsedData.tomador_validacao === 'IGUAIS') elVal.className = 'w-full form-input font-bold text-green-700 bg-green-100 border-green-300';
+                                else elVal.className = 'w-full form-input font-bold text-gray-500 bg-gray-100 border-gray-300';
+                            }
+                            // Fix: persistir no Supabase para não perder de novo
+                            supabase.from(TABLE_NAME).update({ cnpj_tomador: extractedTomador }).eq('id', data.id).then(() => {});
+                        }
+                    }
 
-                    if (icmsNode) {
+                    // Encontrar o nó ICMS correto
+                    const icmsNode = xmlDoc.querySelector('ICMS00') || xmlDoc.querySelector('ICMS20') || xmlDoc.querySelector('ICMS45') || xmlDoc.querySelector('ICMS60') || xmlDoc.querySelector('ICMS90') || xmlDoc.querySelector('ICMSSN') || xmlDoc.querySelector('ICMSOutraUF') || xmlDoc.querySelector('ICMS61');
+
+                    const icmsTot = xmlDoc.querySelector('ICMSTot');
+
+                    if (icmsNode || icmsTot) {
                         taxPopulated = true;
-                        const CST = icmsNode.querySelector('CST')?.textContent || '-';
-                        const vBC = icmsNode.querySelector('vBC')?.textContent || icmsNode.querySelector('vBCOutraUF')?.textContent || '';
-                        const pICMS = icmsNode.querySelector('pICMS')?.textContent || icmsNode.querySelector('pICMSOutraUF')?.textContent || '';
-                        const vICMS = icmsNode.querySelector('vICMS')?.textContent || icmsNode.querySelector('vICMSOutraUF')?.textContent || '';
+                        const CST = icmsNode?.querySelector('CST')?.textContent || '-';
 
-                        const cstMap = { '00': '00 - Tributação Normal', '20': '20 - Red. Base de Cálculo', '40': '40 - Isenta', '41': '41 - Não Tributada', '45': '45 - Isenta/Não Trib.', '51': '51 - Diferimento', '60': '60 - ICMS cobrado anteriormente por ST', '90': '90 - ICMS outros' };
+                        let vBC = '', pICMS = '', vICMS = '';
+
+                        if (icmsTot) {
+                            vBC = icmsTot.querySelector('vBC')?.textContent || '0';
+                            const baseMono = icmsTot.querySelector('qBCMonoRet')?.textContent;
+                            if (parseFloat(vBC) === 0 && baseMono) vBC = baseMono;
+
+                            vICMS = icmsTot.querySelector('vICMS')?.textContent || '0';
+                            const monoRet = icmsTot.querySelector('vICMSMonoRet')?.textContent;
+                            if (parseFloat(vICMS) === 0 && monoRet) vICMS = monoRet;
+
+                            pICMS = icmsNode?.querySelector('pICMS')?.textContent || icmsNode?.querySelector('adRemICMSRet')?.textContent || '';
+                        } else if (icmsNode) {
+                            vBC = icmsNode.querySelector('vBC')?.textContent || icmsNode.querySelector('vBCOutraUF')?.textContent || icmsNode.querySelector('qBCMonoRet')?.textContent || '';
+                            pICMS = icmsNode.querySelector('pICMS')?.textContent || icmsNode.querySelector('pICMSOutraUF')?.textContent || icmsNode.querySelector('adRemICMSRet')?.textContent || '';
+                            vICMS = icmsNode.querySelector('vICMS')?.textContent || icmsNode.querySelector('vICMSOutraUF')?.textContent || icmsNode.querySelector('vICMSMonoRet')?.textContent || '';
+                        }
+
+                        const cstMap = { '00': '00 - Tributação Normal', '20': '20 - Red. Base de Cálculo', '40': '40 - Isenta', '41': '41 - Não Tributada', '45': '45 - Isenta/Não Trib.', '51': '51 - Diferimento', '60': '60 - ICMS cobrado anteriormente por ST', '61': '61 - ICMS Monofásico (Combustíveis)', '90': '90 - ICMS outros' };
                         document.getElementById('tax-cst').textContent = cstMap[CST] || CST;
                         document.getElementById('tax-vbc').textContent = vBC ? parseFloat(vBC).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '-';
                         document.getElementById('tax-picms').textContent = pICMS ? parseFloat(pICMS).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) + '%' : '-';
@@ -3920,6 +3973,8 @@
                     allowOutsideClick: false,
                     didOpen: () => { Swal.showLoading(); }
                 });
+                
+                await new Promise(r => setTimeout(r, 100)); // Allow UI to render
 
                 try {
                     // FASE 1: Parsear todos os XMLs e extrair chaves
@@ -3968,14 +4023,19 @@
                             }
 
                             let cnpjTomador = '', tomaVal = null;
-                            for (const tPath of ['toma3 > toma', 'toma0 > toma', 'toma4 > toma', 'toma']) {
-                                const tEl = xmlDoc.querySelector(tPath);
-                                if (tEl && tEl.textContent) { tomaVal = tEl.textContent.trim(); break; }
-                            }
-                            const tomaMap = {'0': 'rem > CNPJ', '1': 'exped > CNPJ', '2': 'receb > CNPJ', '3': 'dest > CNPJ', '4': 'toma4 > CNPJ'};
-                            if (tomaVal && tomaMap[tomaVal]) {
-                                const cnpjEl = xmlDoc.querySelector(tomaMap[tomaVal]);
-                                if (cnpjEl) cnpjTomador = cnpjEl.textContent;
+                            if (infNFe) {
+                                const tdest = xmlDoc.querySelector('dest > CNPJ') || xmlDoc.querySelector('dest > CPF');
+                                if (tdest) cnpjTomador = tdest.textContent;
+                            } else {
+                                for (const tPath of ['toma3 > toma', 'toma0 > toma', 'toma4 > toma', 'toma']) {
+                                    const tEl = xmlDoc.querySelector(tPath);
+                                    if (tEl && tEl.textContent) { tomaVal = tEl.textContent.trim(); break; }
+                                }
+                                const tomaMap = {'0': 'rem > CNPJ', '1': 'exped > CNPJ', '2': 'receb > CNPJ', '3': 'dest > CNPJ', '4': 'toma4 > CNPJ'};
+                                if (tomaVal && tomaMap[tomaVal]) {
+                                    const cnpjEl = xmlDoc.querySelector(tomaMap[tomaVal]);
+                                    if (cnpjEl) cnpjTomador = cnpjEl.textContent;
+                                }
                             }
 
                             let cnpjRemetente = '';
@@ -4019,30 +4079,9 @@
                             .maybeSingle();
 
                         if (existente) {
-                            // Já existe: atualizar com o XML
-                            const vltotalDb = parseFloat(existente.vltotal || 0);
-                            const vlicmsDb = parseFloat(existente.vlicms || 0);
-                            const cnpjFilial = existente.cnpj_filial || '';
-                            const diffTomador = !!(pf.cnpjTomador && cnpjFilial && String(pf.cnpjTomador).replace(/^0+/, '') !== String(cnpjFilial).replace(/^0+/, ''));
-                            const diffTot = Math.abs(vltotalDb - pf.vltotalXml) > 0.01;
-                            const diffIcms = Math.abs(vlicmsDb - pf.vlicmsXml) > 0.01;
-
-                            let novoStatus = 'OK';
-                            let obs = [];
-                            if (diffTomador) { novoStatus = 'Tomador Divergente'; obs.push(`Tomador (${pf.cnpjTomador} != ${cnpjFilial})`); }
-                            else if (diffTot || diffIcms) {
-                                novoStatus = 'DIVERGENTE';
-                                if (diffTot) obs.push(`TOTAL (DB: ${vltotalDb} | XML: ${pf.vltotalXml})`);
-                                if (diffIcms) obs.push(`ICMS (DB: ${vlicmsDb} | XML: ${pf.vlicmsXml})`);
-                            }
-
-                            const { error: updErr } = await supabase.from(TABLE_NAME).update({
-                                xml_doc: pf.xmlText, vltotal_xml: pf.vltotalXml, vlicms_xml: pf.vlicmsXml,
-                                cnpj_tomador: pf.cnpjTomador, cnpj_remetente: pf.cnpjRemetente,
-                                chave_xml: pf.chaveAcesso, status: novoStatus, obs: obs.join(' | ')
-                            }).eq('id', existente.id);
-
-                            if (updErr) totalErros++; else totalVinculados++;
+                            // Já existe: ignorar! (O usuário pediu para não alterar nada se já existe no Supabase)
+                            totalVinculados++; // consideramos como OK (ignorado pra não sobrescrever manual)
+                            continue;
                         } else {
                             // Não existe: inserir como "Não Importada" + enviar para fila do bot
                             const { error: insErr } = await supabase.from(TABLE_NAME).insert([{
