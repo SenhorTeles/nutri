@@ -22,7 +22,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='au_conta 2',
+    name='ZyNapse Conect',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

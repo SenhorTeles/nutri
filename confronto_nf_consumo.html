@@ -1560,7 +1560,8 @@
                 <!-- NF Consumo content injected here by JS -->
             </div>
         </div>
-        <div class="modal-footer justify-end">
+        <div class="modal-footer justify-end gap-2">
+            <button type="button" id="dacte-print-btn" class="btn btn-primary"><i class="fa-solid fa-print mr-2"></i> Imprimir</button>
             <button type="button" id="dacte-modal-close-view-btn" class="btn btn-secondary">Fechar</button>
         </div>
     </div>
@@ -1799,6 +1800,9 @@
                         <button id="view-nao-importada-btn" class="filter-pill" data-view="nao_importada"
                             style="--pill-active-bg:#7c3aed;--pill-active-color:#fff" title="XML importado mas não encontrada no WinThor">
                             <i class="fa-solid fa-cloud-arrow-up"></i> Não Importada</button>
+                        <button id="view-aguardando-btn" class="filter-pill" data-view="aguardando_robo"
+                            style="--pill-active-bg:#0891b2;--pill-active-color:#fff" title="Aguardando o robô importar no WinThor">
+                            <i class="fa-solid fa-robot"></i> Aguardando Robo</button>
                         <button id="view-validados-btn" class="filter-pill" data-view="validados"
                             style="--pill-active-bg:#2563eb;--pill-active-color:#fff" title="Validados no WinThor">
                             <i class="fa-solid fa-badge-check"></i> Validados</button>
@@ -2015,13 +2019,15 @@
                 } else if (state.viewMode === 'nao_encontrado') {
                     itemsToRender = itemsToRender.filter(item => item.status === 'Não Encontrado no Sieg' && !item.validado_winthor && !item.is_tomador_dif);
                 } else if (state.viewMode === 'divergente') {
-                    itemsToRender = itemsToRender.filter(item => item.status !== 'Sem XML' && item.status !== 'OK' && item.status !== 'Não Encontrado no Sieg' && item.status !== 'Não Importada' && !item.validado_winthor && !item.is_tomador_dif);
+                    itemsToRender = itemsToRender.filter(item => item.status !== 'Sem XML' && item.status !== 'OK' && item.status !== 'Não Encontrado no Sieg' && item.status !== 'Não Importada' && item.status !== 'Aguardando Robo' && item.status !== 'Totalmente Validada' && !item.validado_winthor && !item.is_tomador_dif);
                 } else if (state.viewMode === 'validados') {
-                    itemsToRender = itemsToRender.filter(item => item.validado_winthor);
+                    itemsToRender = itemsToRender.filter(item => item.validado_winthor || item.status === 'Totalmente Validada');
                 } else if (state.viewMode === 'sem_xml') {
                     itemsToRender = itemsToRender.filter(item => item.status === 'Sem XML');
                 } else if (state.viewMode === 'nao_importada') {
                     itemsToRender = itemsToRender.filter(item => item.status === 'Não Importada');
+                } else if (state.viewMode === 'aguardando_robo') {
+                    itemsToRender = itemsToRender.filter(item => item.status === 'Aguardando Robo');
                 }
             }
 
@@ -2056,7 +2062,7 @@
                         else if (col === 'cfop' && !val && item['codfiscal']) val = item['codfiscal']; // Fallback automático codfiscal -> cfop
                         else if (col === 'status') {
                             let badgeColor = 'bg-red-100 text-red-800';
-                            if (val === 'OK' || val === 'Resolvido' || val === 'Validado') badgeColor = 'bg-green-100 text-green-800';
+                            if (val === 'OK' || val === 'Resolvido' || val === 'Validado' || val === 'Totalmente Validada') badgeColor = 'bg-green-100 text-green-800';
                             else if (val === 'Sem XML') badgeColor = 'bg-yellow-100 text-yellow-800';
                             else if (val === 'Não Encontrado no Sieg') badgeColor = 'bg-gray-100 text-gray-800';
                             else if (val === 'Tomador Divergente') badgeColor = 'bg-orange-100 text-orange-800';
@@ -2072,7 +2078,7 @@
 
                     if (isVerificando || isVerificandoTomador) {
                         acoesHtml = '<span class="verificando-spinner" title="Verificando..."></span>' + btnCopiarChave;
-                    } else if (isValidado) {
+                    } else if (isValidado || item.status === 'Totalmente Validada') {
                         acoesHtml = `<button class="action-icon-btn btn-xml view-btn" data-id="${item.id}" title="Ver NF Consumo XML"><i class="fa-solid fa-file-code"></i></button>
                                       <button class="action-icon-btn btn-log view-log-btn" data-id="${item.id}" title="Ver Log"><i class="fa-solid fa-clock-rotate-left"></i></button>
                                       ${btnCopiarChave}
@@ -2085,7 +2091,7 @@
                             ? `<button class="btn-verificar-tomador verificar-tomador-btn" data-id="${item.id}" title="Verificar Tomador Dif Filial"><i class="fa-solid fa-magnifying-glass"></i></button>`
                             : '';
 
-                        const btnValidarHtml = (isDivergente || item.status === 'Não Importada' || item.status === 'Erro Importação' || item.status === 'Aguardando Importação')
+                        const btnValidarHtml = (isDivergente || item.status === 'Não Importada' || item.status === 'Erro Importação' || item.status === 'Aguardando Robo')
                             ? ''
                             : `<button class="btn-verificado verificado-btn" data-id="${item.id}" title="Validar no WinThor"><i class="fa-solid fa-check"></i></button>`;
 
@@ -2102,9 +2108,10 @@
                     }
 
                     const isDivergenteCb = item.is_tomador_dif || (item.codfilialnf != item.codfilial && item.status !== 'Resolvido') || item.status === 'Não Encontrado no Sieg';
+                    const isTotalmenteValidada = item.status === 'Totalmente Validada';
                     const isVerificandoTomadorRow = state.verificandoTomadorIds.has(item.id);
                     return `<tr class="cursor-pointer ${(isVerificando || isVerificandoTomadorRow) ? 'verificando-row' : ''} ${isSelected ? 'bg-blue-50' : ''}" data-id="${item.id}" ondblclick="openEditModal(${item.id})">
-                               <td class="selection-col" onclick="event.stopPropagation()"><input type="checkbox" class="row-checkbox" data-id="${item.id}" ${isSelected ? 'checked' : ''} ${isValidado || isDivergenteCb ? 'disabled' : ''}></td>
+                               <td class="selection-col" onclick="event.stopPropagation()"><input type="checkbox" class="row-checkbox" data-id="${item.id}" ${isSelected ? 'checked' : ''} ${isValidado || isDivergenteCb || isTotalmenteValidada ? 'disabled' : ''}></td>
                                ${tds}
                                <td class="text-center" style="white-space:nowrap">${acoesHtml}</td>
                             </tr>`;
@@ -2196,7 +2203,7 @@
                             state.verificandoIds.add(parseInt(id));
                             renderTable();
                             
-                            const { error } = await supabase.from(TABLE_NAME).update({ status: 'Aguardando Importação', obs: 'Aguardando o robô processar a importação...' }).eq('id', id);
+                            const { error } = await supabase.from(TABLE_NAME).update({ status: 'Aguardando Robo', obs: 'Aguardando o robo processar a importacao...' }).eq('id', id);
                             
                             if (error) throw error;
                             showToast('NF enviada para a fila de importação com sucesso!', 'success');
@@ -2537,7 +2544,7 @@
                     } else if (state.viewMode === 'nao_encontrado') {
                         query = query.eq('status', 'Não Encontrado no Sieg').eq('validado_winthor', false);
                     } else if (state.viewMode === 'validados') {
-                        query = query.eq('validado_winthor', true);
+                        query = query.or('validado_winthor.eq.true,status.eq.Totalmente Validada');
                     } else if (state.viewMode === 'tomador_dif') {
                         query = query.eq('status', 'Tomador Divergente').eq('validado_winthor', false);
                     } else if (state.viewMode === 'sem_xml') {
@@ -2996,7 +3003,7 @@
                 } else if (state.viewMode === 'nao_encontrado') {
                     query = query.eq('status', 'Não Encontrado no Sieg').eq('validado_winthor', false);
                 } else if (state.viewMode === 'validados') {
-                    query = query.eq('validado_winthor', true);
+                    query = query.or('validado_winthor.eq.true,status.eq.Totalmente Validada');
                 } else if (state.viewMode === 'tomador_dif') {
                     query = query.eq('status', 'Tomador Divergente').eq('validado_winthor', false);
                 } else if (state.viewMode === 'sem_xml') {
@@ -3070,276 +3077,234 @@
 
         const openDacteModal = (xmlString) => {
             const parser = new DOMParser();
-            const cleanXml = xmlString.replace(/xmlns=".*?"/g, "").replace(/cte:/g, "");
+            const cleanXml = xmlString.replace(/xmlns=".*?"/g, "").replace(/nfe:/g, "");
             const xmlDoc = parser.parseFromString(cleanXml, "text/xml");
 
-            const v = (tag) => { const el = xmlDoc.querySelector(tag); return el ? el.textContent : ''; };
-            const vAll = (tag) => Array.from(xmlDoc.querySelectorAll(tag));
+            const v = (selector) => { const el = xmlDoc.querySelector(selector); return el ? el.textContent : ''; };
+            const vAll = (selector) => Array.from(xmlDoc.querySelectorAll(selector));
+            
+            // Helper functions
             const fmtCnpj = (c) => { if (!c) return ''; return c.length === 14 ? c.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5') : c.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4'); };
-            const fmtFone = (f) => { if (!f) return ''; if (f.length === 11) return `(${f.slice(0, 2)}) ${f.slice(2, 7)}-${f.slice(7)}`; if (f.length === 10) return `(${f.slice(0, 2)}) ${f.slice(2, 6)}-${f.slice(6)}`; return f; };
             const fmtCep = (c) => { if (!c) return ''; return c.replace(/^(\d{5})(\d{3})$/, '$1-$2'); };
-            const fmtDate = (d) => { if (!d) return ''; try { const dt = new Date(d); return dt.toLocaleDateString('pt-BR') + ' ' + dt.toLocaleTimeString('pt-BR'); } catch (e) { return d; } };
+            const fmtFone = (f) => { if (!f) return ''; if (f.length === 11) return `(${f.slice(0, 2)}) ${f.slice(2, 7)}-${f.slice(7)}`; if (f.length === 10) return `(${f.slice(0, 2)}) ${f.slice(2, 6)}-${f.slice(6)}`; return f; };
+            const fmtDate = (d) => { if (!d) return ''; try { return d.split('T')[0].split('-').reverse().join('/'); } catch (e) { return d; } };
+            const fmtTime = (d) => { if (!d) return ''; try { return d.split('T')[1].split('-')[0]; } catch (e) { return ''; } };
             const fmtChave = (ch) => { if (!ch) return ''; return ch.replace(/(.{4})/g, '$1 ').trim(); };
+            const fmtNum = (n, dec = 2) => { if (!n) return '0,00'; return parseFloat(n).toLocaleString('pt-BR', { minimumFractionDigits: dec, maximumFractionDigits: dec }); };
 
             // === IDE ===
-            const CFOP = v('CFOP'); const natOp = v('natOp'); const mod = v('mod'); const serie = v('serie');
-            const nCT = v('nCT'); const dhEmi = v('dhEmi');
-            const tpAmb = v('tpAmb'); const tpCTe = v('tpCTe');
-            const modal_val = v('modal'); const tpServ = v('tpServ');
-            const xMunIni = v('xMunIni'); const UFIni = v('UFIni');
-            const xMunFim = v('xMunFim'); const UFFim = v('UFFim');
-            const indIEToma = v('indIEToma');
-            const tomaT = v('toma3 toma') || v('toma0 toma') || v('toma4 toma');
+            const natOp = v('natOp'); const mod = v('mod'); const serie = v('serie'); const nNF = v('nNF');
+            const dhEmi = v('dhEmi'); const dhSaiEnt = v('dhSaiEnt'); const tpAmb = v('tpAmb');
+            const tpNF = v('tpNF'); // 0=Entrada, 1=Saída
 
-            const mapToma = (t) => ({ '0': 'Remetente', '1': 'Expedidor', '2': 'Recebedor', '3': 'Destinatário', '4': 'Outros' }[t] || t);
-            const mapModal = (m) => ({ '01': 'Rodoviário', '02': 'Aéreo', '03': 'Aquaviário', '04': 'Ferroviário', '05': 'Dutoviário', '06': 'Multimodal' }[m] || m);
-            const mapTpCTe = (t) => ({ '0': 'Normal', '1': 'Complemento', '2': 'Anulação', '3': 'Substituto' }[t] || t);
-            const mapTpServ = (t) => ({ '0': 'Normal', '1': 'Subcontratação', '2': 'Redespacho', '3': 'Redesp. Intermediário', '4': 'Multimodal' }[t] || t);
-
-            let chCTe = v('chCTe');
-            if (!chCTe) { const inf = xmlDoc.querySelector('infCte'); if (inf) chCTe = inf.getAttribute('Id')?.replace('CTe', '') || ''; }
+            // === CHAVE ===
+            let chNFe = v('chNFe');
+            if (!chNFe) { const inf = xmlDoc.querySelector('infNFe'); if (inf) chNFe = inf.getAttribute('Id')?.replace('NFe', '') || ''; }
 
             // === PROTOCOLO ===
             const dhRecbto = v('dhRecbto'); const nProt = v('nProt');
 
             // === EMITENTE ===
-            const emitCNPJ = v('emit CNPJ'); const emitIE = v('emit IE');
-            const emitNome = v('emit xNome'); const emitFant = v('emit xFant');
-            const emitLgr = v('enderEmit xLgr'); const emitNro = v('enderEmit nro');
-            const emitBairro = v('enderEmit xBairro');
-            const emitxMun = v('enderEmit xMun'); const emitCEP = v('enderEmit CEP');
-            const emitUF = v('enderEmit UF'); const emitFone = v('enderEmit fone');
+            const emitCNPJ = v('emit > CNPJ') || v('emit > CPF');
+            const emitxNome = v('emit > xNome'); const emitxFant = v('emit > xFant') || emitxNome;
+            const emitxLgr = v('emit > enderEmit > xLgr'); const emitnro = v('emit > enderEmit > nro'); const emitxCpl = v('emit > enderEmit > xCpl');
+            const emitxBairro = v('emit > enderEmit > xBairro'); const emitxMun = v('emit > enderEmit > xMun');
+            const emitUF = v('emit > enderEmit > UF'); const emitCEP = v('emit > enderEmit > CEP'); const emitfone = v('emit > enderEmit > fone');
+            const emitIE = v('emit > IE'); const emitIM = v('emit > IM');
 
-            // === PARTES ===
-            const getParty = (pfx) => {
-                const endPfx = pfx === 'rem' ? 'enderReme' : pfx === 'exped' ? 'enderExped' : pfx === 'receb' ? 'enderReceb' : 'enderDest';
+            // === DESTINATÁRIO ===
+            const destCNPJ = v('dest > CNPJ') || v('dest > CPF');
+            const destxNome = v('dest > xNome');
+            const destxLgr = v('dest > enderDest > xLgr'); const destnro = v('dest > enderDest > nro'); const destxCpl = v('dest > enderDest > xCpl');
+            const destxBairro = v('dest > enderDest > xBairro'); const destxMun = v('dest > enderDest > xMun');
+            const destUF = v('dest > enderDest > UF'); const destCEP = v('dest > enderDest > CEP'); const destfone = v('dest > enderDest > fone');
+            const destIE = v('dest > IE');
+
+            // === CÁLCULO DO IMPOSTO ===
+            const vBC = v('ICMSTot > vBC'); const vICMS = v('ICMSTot > vICMS');
+            const vBCST = v('ICMSTot > vBCST'); const vST = v('ICMSTot > vST');
+            const vProd = v('ICMSTot > vProd'); const vFrete = v('ICMSTot > vFrete');
+            const vSeg = v('ICMSTot > vSeg'); const vDesc = v('ICMSTot > vDesc');
+            const vOutro = v('ICMSTot > vOutro'); const vIPI = v('ICMSTot > vIPI');
+            const vNF = v('ICMSTot > vNF'); const vTotTrib = v('ICMSTot > vTotTrib');
+            // Mocking these slightly based on layout availability
+            const vII = v('ICMSTot > vII'); const vFCP = v('ICMSTot > vFCP'); const vICMSDeson = v('ICMSTot > vICMSDeson');
+            const vFCPST = v('ICMSTot > vFCPST'); const vFCPSTRet = v('ICMSTot > vFCPSTRet');
+
+            // === TRANSPORTADOR ===
+            const modFrete = v('transp > modFrete');
+            const mapModFrete = (m) => m === '0' ? '0-Contratação do Frete por conta do Remetente (CIF)' : 
+                                       m === '1' ? '1-Contratação do Frete por conta do Destinatário (FOB)' : 
+                                       m === '2' ? '2-Contratação do Frete por conta de Terceiros' :
+                                       m === '3' ? '3-Transporte Próprio por conta do Remetente' :
+                                       m === '4' ? '4-Transporte Próprio por conta do Destinatário' :
+                                       m === '9' ? '9-Sem Transporte' : m;
+            const transpxNome = v('transp > transporta > xNome');
+            const transpCNPJ = v('transp > transporta > CNPJ') || v('transp > transporta > CPF');
+            const transpIE = v('transp > transporta > IE');
+            const transpEnd = v('transp > transporta > xEnder');
+            const transpMun = v('transp > transporta > xMun');
+            const transpUF = v('transp > transporta > UF');
+            const veicPlaca = v('transp > veicTransp > placa');
+            const veicUF = v('transp > veicTransp > UF');
+            const veicRNTRC = v('transp > veicTransp > RNTRC');
+
+            const volQVol = v('transp > vol > qVol');
+            const volEsp = v('transp > vol > esp');
+            const volMarca = v('transp > vol > marca');
+            const volNVol = v('transp > vol > nVol');
+            const volPesoB = v('transp > vol > pesoB');
+            const volPesoL = v('transp > vol > pesoL');
+
+            // === DADOS ADICIONAIS ===
+            const infCpl = v('infAdic > infCpl');
+            const infAdFisco = v('infAdic > infAdFisco');
+
+            // === ITENS ===
+            const dets = vAll('det').map(d => {
+                const p = d.querySelector('prod');
+                const i = d.querySelector('imposto');
+                const icms = i ? i.querySelector('ICMS') : null;
+                const ipi = i ? i.querySelector('IPI') : null;
+                
+                let cst_csosn = '';
+                if(icms) {
+                    const tag = icms.firstElementChild;
+                    if(tag) {
+                        cst_csosn = tag.querySelector('CST')?.textContent || tag.querySelector('CSOSN')?.textContent || '';
+                        let orig = tag.querySelector('orig')?.textContent || '';
+                        cst_csosn = orig + cst_csosn;
+                    }
+                }
+
                 return {
-                    cnpj: v(`${pfx} CNPJ`) || v(`${pfx} CPF`), ie: v(`${pfx} IE`),
-                    nome: v(`${pfx} xNome`), fone: v(`${pfx} fone`),
-                    lgr: v(`${endPfx} xLgr`), nro: v(`${endPfx} nro`), cpl: v(`${endPfx} xCpl`),
-                    bairro: v(`${endPfx} xBairro`), mun: v(`${endPfx} xMun`),
-                    cep: v(`${endPfx} CEP`), uf: v(`${endPfx} UF`), pais: v(`${endPfx} xPais`)
+                    cProd: p?.querySelector('cProd')?.textContent || '',
+                    xProd: (p?.querySelector('xProd')?.textContent || '') + (d.querySelector('infAdProd')?.textContent ? '\\n' + d.querySelector('infAdProd')?.textContent : ''),
+                    NCM: p?.querySelector('NCM')?.textContent || '',
+                    CST: cst_csosn,
+                    CFOP: p?.querySelector('CFOP')?.textContent || '',
+                    uCom: p?.querySelector('uCom')?.textContent || '',
+                    qCom: p?.querySelector('qCom')?.textContent || '',
+                    vUnCom: p?.querySelector('vUnCom')?.textContent || '',
+                    vProd: p?.querySelector('vProd')?.textContent || '',
+                    vDesc: p?.querySelector('vDesc')?.textContent || '',
+                    
+                    vBCICMS: icms?.querySelector('vBC')?.textContent || icms?.querySelector('vBCSTRet')?.textContent || icms?.querySelector('qBCMonoRet')?.textContent || '0.00',
+                    vICMS: icms?.querySelector('vICMS')?.textContent || icms?.querySelector('vICMSSTRet')?.textContent || icms?.querySelector('vICMSMonoRet')?.textContent || '0.00',
+                    vIPI: ipi?.querySelector('vIPI')?.textContent || '0.00',
+                    pICMS: icms?.querySelector('pICMS')?.textContent || icms?.querySelector('pst')?.textContent || icms?.querySelector('adRemICMSRet')?.textContent || '0.00',
+                    pIPI: ipi?.querySelector('pIPI')?.textContent || '0.00'
                 };
-            };
-            const rem = getParty('rem'); const dest = getParty('dest');
-            const exped = getParty('exped'); const receb = getParty('receb');
+            });
 
-            // Descobrindo quem é o Tomador
-            let tomadorDoc = null;
-            if (tomaT === '0') tomadorDoc = rem;
-            else if (tomaT === '1') tomadorDoc = exped;
-            else if (tomaT === '2') tomadorDoc = receb;
-            else if (tomaT === '3') tomadorDoc = dest;
-            else {
-                tomadorDoc = {
-                    nome: v('toma4 xNome') || v('toma0 xNome'),
-                    cnpj: v('toma4 CNPJ') || v('toma4 CPF') || v('toma0 CNPJ'),
-                    ie: v('toma4 IE') || v('toma0 IE'),
-                    lgr: v('toma4 xLgr') || v('toma0 xLgr'), nro: v('toma4 nro') || v('toma0 nro'),
-                    mun: v('toma4 xMun') || v('toma0 xMun'), uf: v('toma4 UF') || v('toma0 UF')
-                };
-            }
-
-            // === VALORES ===
-            const vTPrest = v('vTPrest'); const vRec = v('vRec');
-            const comps = vAll('Comp').map(c => ({ nome: c.querySelector('xNome')?.textContent || '', valor: c.querySelector('vComp')?.textContent || '0.00' }));
-            // Fill comps up to 4 slots typical for layout
-            const safeComps = [...comps, null, null, null, null].slice(0, 4);
-
-            // === IMPOSTOS ===
-            // === IMPOSTOS ===
-            const icmsNodeDacte = xmlDoc.querySelector('ICMS00') || xmlDoc.querySelector('ICMS20') || xmlDoc.querySelector('ICMS45') || xmlDoc.querySelector('ICMS60') || xmlDoc.querySelector('ICMS90') || xmlDoc.querySelector('ICMSSN') || xmlDoc.querySelector('ICMSOutraUF') || xmlDoc.querySelector('ICMS61');
-            const CST = icmsNodeDacte?.querySelector('CST')?.textContent || '00';
-            
-            let vBC = '0.00', pICMS = '0.00', vICMS = '0.00';
-            const icmsTot = xmlDoc.querySelector('ICMSTot');
-            if (icmsTot) {
-                vBC = icmsTot.querySelector('vBC')?.textContent || '0.00';
-                const baseMono = icmsTot.querySelector('qBCMonoRet')?.textContent;
-                if (parseFloat(vBC) === 0 && baseMono) vBC = baseMono;
-                
-                vICMS = icmsTot.querySelector('vICMS')?.textContent || '0.00';
-                const monoRet = icmsTot.querySelector('vICMSMonoRet')?.textContent;
-                if (parseFloat(vICMS) === 0 && monoRet) vICMS = monoRet;
-                
-                pICMS = icmsNodeDacte?.querySelector('pICMS')?.textContent || icmsNodeDacte?.querySelector('adRemICMSRet')?.textContent || '0.00';
-            } else {
-                vBC = icmsNodeDacte?.querySelector('vBC')?.textContent || icmsNodeDacte?.querySelector('vBCOutraUF')?.textContent || icmsNodeDacte?.querySelector('qBCMonoRet')?.textContent || '0.00';
-                pICMS = icmsNodeDacte?.querySelector('pICMS')?.textContent || icmsNodeDacte?.querySelector('pICMSOutraUF')?.textContent || icmsNodeDacte?.querySelector('adRemICMSRet')?.textContent || '0.00';
-                vICMS = icmsNodeDacte?.querySelector('vICMS')?.textContent || icmsNodeDacte?.querySelector('vICMSOutraUF')?.textContent || icmsNodeDacte?.querySelector('vICMSMonoRet')?.textContent || '0.00';
-            }
-
-            // === CARGA ===
-            const vCarga = parseFloat(v('vCarga') || 0); const proPred = v('proPred');
-            const infQs = vAll('infQ').map(q => ({ unid: q.querySelector('cUnid')?.textContent || '', tp: q.querySelector('tpMed')?.textContent || '', qtd: q.querySelector('qCarga')?.textContent || '' }));
-            const qPesoB = infQs.find(q => q.tp.toUpperCase().includes('PESO BRUTO'));
-            const qPesoBC = infQs.find(q => q.tp.toUpperCase().includes('PESO BASE CALCUL') || q.tp.toUpperCase().includes('PESO BC'));
-            const qVol = infQs.find(q => q.tp.toUpperCase().includes('VOLUME') || q.tp.toUpperCase() === 'VOL');
-
-            // === DOCS ===
-            const infNFes = vAll('infNFe').map(n => n.querySelector('chave')?.textContent || '');
-            const rntrc = v('RNTRC') || v('rodo RNTRC');
-
-            // === COMPL ===
-            const xObs = v('xObs');
-            const obsCont = vAll('ObsCont').map(o => ({ campo: o.getAttribute('xCampo') || '', texto: o.querySelector('xTexto')?.textContent || '' }));
-            const allObs = [xObs, ...obsCont.map(o => o.campo + ': ' + o.texto)].filter(Boolean).join(' | ');
-
-            const emitEnd = `${emitLgr}${emitNro ? ', ' + emitNro : ''} ${emitBairro} - ${fmtCep(emitCEP)} - ${emitxMun} - ${emitUF}`;
-
-            // Layout Blocks
-            const partyBlock = (tit, p) => `
-                <table class="d-table-inner w-full">
-                    <tr><td class="d-label border-b" colspan="4">${tit}</td></tr>
-                    <tr><td class="w-full font-bold text-[10px]" colspan="4">${(p?.nome || '').toUpperCase()}</td></tr>
-                    <tr><td class="d-label" colspan="4">ENDEREÇO</td></tr>
-                    <tr><td class="w-full text-[9px]" colspan="4">${p?.lgr || ''}, ${p?.nro || ''} - ${p?.cpl || ''}<br>${p?.bairro || ''}</td></tr>
-                    <tr>
-                        <td class="w-1/4"><div class="d-label">MUNICÍPIO</div><div class="text-[9px]">${p?.mun || ''}</div></td>
-                        <td class="w-1/4"><div class="d-label">CEP</div><div class="text-[9px]">${fmtCep(p?.cep)}</div></td>
-                        <td class="w-1/4"><div class="d-label">CNPJ/CPF</div><div class="text-[9px]">${fmtCnpj(p?.cnpj)}</div></td>
-                        <td class="w-1/4"><div class="d-label">INSCRIÇÃO ESTADUAL</div><div class="text-[9px]">${p?.ie || ''}</div></td>
-                    </tr>
-                    <tr>
-                        <td colspan="2"><div class="d-label">PAÍS</div><div class="text-[9px]">${(p?.pais || 'BRASIL').toUpperCase()}</div></td>
-                        <td colspan="2"><div class="d-label">FONE</div><div class="text-[9px]">${fmtFone(p?.fone)}</div></td>
-                    </tr>
-                </table>
-            `;
-
-            const nfeList = infNFes.map(ch => `<div class="text-[10px] w-1/3 float-left mb-1">${fmtChave(ch)}</div>`).join('');
+            const renderItems = dets.map(d => `
+                <tr class="text-[7.5px] leading-[1.05] text-center border-b border-[#000]">
+                    <td class="text-center border-r border-[#000] p-[2px] break-words">${d.cProd}</td>
+                    <td class="text-left border-r border-[#000] p-[2px] break-words uppercase">${d.xProd.replace(/\\n/g, '<br>')}</td>
+                    <td class="border-r border-[#000] p-[2px]">${d.NCM}</td>
+                    <td class="border-r border-[#000] p-[2px]">${d.CST}</td>
+                    <td class="border-r border-[#000] p-[2px]">${d.CFOP}</td>
+                    <td class="border-r border-[#000] p-[2px]">${d.uCom}</td>
+                    <td class="text-right border-r border-[#000] p-[2px]">${fmtNum(d.qCom, 4)}</td>
+                    <td class="text-right border-r border-[#000] p-[2px]">${fmtNum(d.vUnCom, 4)}</td>
+                    <td class="text-right border-r border-[#000] p-[2px]">${fmtNum(d.vProd)}</td>
+                    <td class="text-right border-r border-[#000] p-[2px]">${fmtNum(d.vDesc)}</td>
+                    <td class="text-right border-r border-[#000] p-[2px]">${fmtNum(d.vBCICMS)}</td>
+                    <td class="text-right border-r border-[#000] p-[2px]">${fmtNum(d.vICMS)}</td>
+                    <td class="text-right border-r border-[#000] p-[2px]">${fmtNum(d.vIPI)}</td>
+                    <td class="text-right border-r border-[#000] p-[2px]">${fmtNum(d.pICMS)}</td>
+                    <td class="text-right p-[2px]">${fmtNum(d.pIPI)}</td>
+                </tr>
+            `).join('');
 
             const html = `
             <style>
-                .d-wrapper { font-family: 'Arial', sans-serif; background: #fff; color: #000; width: 100%; max-width: 900px; margin: 0 auto; line-height: 1.2; }
-                .d-table { width: 100%; border-collapse: collapse; border: 1px solid #000; table-layout: fixed; margin-bottom: 2px; }
-                .d-table td { border: 1px solid #000; padding: 2px 4px; vertical-align: top; }
+                .danfe-wrapper { font-family: 'Times New Roman', Times, serif; background: #fff; color: #000; width: 100%; max-width: 900px; margin: 0 auto; line-height: 1.1; }
+                .d-table { width: 100%; border-collapse: collapse; border: 1px solid #000; margin-bottom: 2px; box-sizing: border-box; table-layout: fixed;}
+                .d-table td { border: 1px solid #000; padding: 0 2px 1px 2px; vertical-align: top; box-sizing: border-box; overflow: hidden;}
                 .d-table-inner { width: 100%; border-collapse: collapse; }
-                .d-table-inner td { border: none; padding: 1px 2px; }
-                .border-b { border-bottom: 1px solid #000 !important; }
-                .border-r { border-right: 1px solid #000 !important; }
-                .border-none { border: none !important; }
-                .d-label { font-size: 7px; text-transform: uppercase; color: #333; margin-bottom: 1px; }
-                .d-val { font-size: 10px; font-weight: bold; }
-                .text-center { text-align: center; }
-                .text-right { text-align: right; }
-                .w-full { width: 100%; } .w-1-2 { width: 50%; } .w-1-3 { width: 33.33%; } .w-1-4 { width: 25%; }
+                .d-table-inner td { border: none; padding: 0; }
+                .danfe-label { font-size: 5.5px; text-transform: uppercase; margin-bottom: 1px; font-family: Arial, sans-serif; display: block; color: #111;}
+                .danfe-val { font-size: 8px; font-weight: bold; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: 'Times New Roman', Times, serif;}
+                .text-center { text-align: center; } .text-right { text-align: right; } .text-left { text-align: left; }
+                .w-full { width: 100%; } .font-bold { font-weight: bold; }
+                .border-b { border-bottom: 1px solid #000 !important; } .border-r { border-right: 1px solid #000 !important; }
+                .border-t-0 { border-top: none !important;}
             </style>
-            <div class="d-wrapper">
+            <div class="danfe-wrapper pt-1 pb-2 px-1">
                 
-                <!-- HEADER DECLARAÇÃO (SIMULATED NF CONSUMO HEADER) -->
-                <table class="d-table">
-                    <tr><td colspan="3" class="text-center text-[8px] p-0">DECLARO QUE RECEBI OS VOLUMES DESTE CONHECIMENTO EM PERFEITO ESTADO PELO QUE DOU POR CUMPRIDO O PRESENTE CONTRATO DE TRANSPORTE</td></tr>
+                <!-- CANHOTO -->
+                <table class="d-table mb-[4px]">
                     <tr>
-                        <td class="w-1-3 h-8"><div class="d-label">NOME</div></td>
-                        <td class="w-1-3 h-8 text-center"><div class="d-label">ASSINATURA / CARIMBO</div></td>
-                        <td class="w-1-3 h-8">
-                            <div class="flex justify-between">
-                                <div><div class="d-label">TÉRMINO DA PRESTAÇÃO - DATA/HORA</div><br><div class="d-label">INÍCIO DA PRESTAÇÃO - DATA/HORA</div></div>
-                                <div class="text-right"><div class="d-label text-black tracking-widest text-sm">CT-E</div><div class="font-bold text-[11px]">Nº. ${nCT.padStart(9, '0')}</div><div class="text-[10px]">Série ${serie.padStart(3, '0')}</div></div>
+                        <td style="width: 82%" class="p-1 border-r border-[#000]">
+                            <div class="danfe-label">RECEBEMOS DE ${(emitxNome || emitxFant || '').toUpperCase()} OS PRODUTOS E/OU SERVIÇOS CONSTANTES DA NOTA FISCAL ELETRÔNICA INDICADA ABAIXO.</div>
+                            <div class="text-[6.5px] font-family-arial text-gray-800 leading-tight">
+                                EMISSÃO: ${fmtDate(dhEmi)} VALOR TOTAL: R$ ${fmtNum(vNF)} DESTINATÁRIO: ${(destxNome || '').toUpperCase()} - ${destxLgr ? destxLgr+', ' : ''}${destnro} - ${destxBairro} ${destxCpl} ${destxMun}-${destUF}
                             </div>
+                            <div class="flex mt-[6px]">
+                                <div class="w-[20%] border-r border-[#000] pt-1"><div class="danfe-label">DATA DE RECEBIMENTO</div><div class="h-[12px]"></div></div>
+                                <div class="w-[80%] pl-2 pt-1"><div class="danfe-label">IDENTIFICAÇÃO E ASSINATURA DO RECEBEDOR</div><div class="h-[12px]"></div></div>
+                            </div>
+                        </td>
+                        <td style="width: 18%" class="text-center align-middle relative p-1">
+                            <div class="font-bold text-base mb-1">NF-e</div>
+                            <div class="font-bold text-[9px]">Nº. ${nNF ? nNF.padStart(9, '0').replace(/(\d{3})(\d{3})(\d{3})/, '$1.$2.$3') : nNF}</div>
+                            <div class="font-bold text-[9px]">Série ${serie ? serie.padStart(3, '0') : serie}</div>
                         </td>
                     </tr>
                 </table>
 
-                <div class="border-t border-b border-black border-dashed my-2"></div>
+                <div class="border-t border-[#000] border-dashed mb-[4px]"></div>
 
-                <!-- MAIN HEADER -->
+                <!-- HEADER -->
                 <table class="d-table">
                     <tr>
-                        <td style="width: 40%;">
-                            <div class="font-bold text-sm text-center mb-1">${(emitNome || emitFant || '').toUpperCase()}</div>
-                            <div class="text-[8px] text-center mb-1">${emitEnd}<br>Fone/Fax: ${fmtFone(emitFone)}</div>
-                            <div class="flex justify-between text-[8px] mt-2">
-                                <div><strong>CNPJ/CPF:</strong> ${fmtCnpj(emitCNPJ)}</div>
-                                <div><strong>Insc. Estadual:</strong> ${emitIE}</div>
-                            </div>
+                        <!-- Emitente -->
+                        <td style="width: 38%;" class="text-center p-1 relative">
+                            <div class="danfe-label absolute top-[2px] left-1 text-left text-gray-500 italic" style="font-size: 5px;">IDENTIFICAÇÃO DO EMITENTE</div>
+                            <div class="font-bold text-[11px] mb-[2px] mt-2 leading-[1.1] uppercase">${(emitxNome || emitxFant || '').toUpperCase()}</div>
+                            <div class="text-[7.5px] mb-1 font-family-arial leading-[1.1]">${emitxLgr}, ${emitnro} ${emitxCpl ? ' - ' + emitxCpl : ''}<br>${emitxBairro} - ${fmtCep(emitCEP)}<br>${emitxMun} - ${emitUF} Fone/Fax: ${emitfone}</div>
                         </td>
-                        <td style="width: 40%; padding: 0" class="text-center">
+                        <!-- DANFE -->
+                        <td style="width: 22%; padding: 0;" class="text-center">
                             <table class="d-table-inner w-full h-full">
-                                <tr><td class="text-center border-b"><div class="font-bold text-lg leading-tight uppercase tracking-widest">NF CONSUMO</div><div class="text-[8px] leading-tight">Nota Fiscal de Consumo<br>Visualização do XML</div></td></tr>
+                                <tr><td class="text-center border-b border-[#000] pt-[2px] pb-[1px]">
+                                    <div class="font-bold text-sm uppercase tracking-wider font-family-arial leading-none">DANFE</div>
+                                    <div class="text-[6.5px] font-family-arial leading-tight mt-[1px]">Documento Auxiliar da Nota<br>Fiscal Eletrônica</div>
+                                </td></tr>
                                 <tr>
-                                    <td class="border-b p-0">
-                                        <table class="d-table-inner w-full">
-                                            <tr>
-                                                <td class="border-r"><div class="d-label">MODELO</div><div class="d-val text-center">${mod}</div></td>
-                                                <td class="border-r"><div class="d-label">SÉRIE</div><div class="d-val text-center">${serie}</div></td>
-                                                <td class="border-r"><div class="d-label">NÚMERO</div><div class="d-val text-center">${nCT}</div></td>
-                                                <td class="border-r"><div class="d-label">FL</div><div class="d-val text-center">1/1</div></td>
-                                                <td><div class="d-label">DATA E HORA DE EMISSÃO</div><div class="text-[9px] text-center">${fmtDate(dhEmi)}</div></td>
-                                            </tr>
-                                        </table>
+                                    <td class="border-b border-[#000] p-1 flex items-center justify-center">
+                                        <div class="text-[6.5px] text-left leading-tight w-[60%] ml-1 font-family-arial">0 - ENTRADA<br>1 - SAÍDA</div>
+                                        <div class="font-bold text-[12px] border border-black p-[2px] leading-none w-auto text-center font-family-arial">${tpNF || '1'}</div>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td class="pt-2 text-center h-full align-middle">
-                                        <svg id="barcode-cte" style="width:100%;height:40px;"></svg>
+                                    <td class="pt-[2px] pb-[1px]">
+                                        <div class="font-bold text-[9px] leading-[1.1]">Nº. ${nNF ? nNF.padStart(9, '0').replace(/(\d{3})(\d{3})(\d{3})/, '$1.$2.$3') : nNF}</div>
+                                        <div class="font-bold text-[9px] leading-[1.1]">Série ${serie ? serie.padStart(3, '0') : serie}</div>
+                                        <div class="text-[6.5px] italic font-family-arial leading-none pt-[1px]">Folha 1/1</div>
                                     </td>
                                 </tr>
                             </table>
                         </td>
-                        <td style="width: 20%;" class="text-center pt-2">
-                            <div class="d-label">MODAL</div>
-                            <div class="font-bold text-lg">${mapModal(modal_val)}</div>
-                            <div class="mt-2 flex justify-center">
-                                <div id="qrcode-cte" title="QR Code CT-e"></div>
-                            </div>
-                        </td>
-                    </tr>
-                </table>
-
-                <table class="d-table mb-1">
-                    <tr>
-                        <td style="width: 20%"><div class="d-label">TIPO DO CTE</div><div class="text-[10px] text-center">${mapTpCTe(tpCTe)}</div></td>
-                        <td style="width: 20%"><div class="d-label">TIPO DO SERVIÇO</div><div class="text-[10px] text-center">${mapTpServ(tpServ)}</div></td>
-                        <td style="width: 60%">
-                            <div class="d-label">CHAVE DE ACESSO</div>
-                            <div class="font-bold text-sm tracking-[2px] text-center">${fmtChave(chCTe)}</div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td colspan="2"><div class="d-label">CFOP - NATUREZA DA PRESTAÇÃO</div><div class="d-val">${CFOP} - ${natOp}</div></td>
-                        <td>
-                            <div class="d-label">PROTOCOLO DE AUTORIZAÇÃO DE USO</div>
-                            <div class="d-val text-center">${nProt} - ${fmtDate(dhRecbto)}</div>
-                        </td>
-                    </tr>
-                </table>
-
-                <!-- MUNICÍPIOS DE PRESTAÇÃO -->
-                <table class="d-table mb-1">
-                    <tr>
-                        <td class="w-1-2"><div class="d-label">INÍCIO DA PRESTAÇÃO</div><div class="d-val">${xMunIni} - ${UFIni}</div></td>
-                        <td class="w-1-2"><div class="d-label">TÉRMINO DA PRESTAÇÃO</div><div class="d-val">${xMunFim} - ${UFFim}</div></td>
-                    </tr>
-                </table>
-
-                <!-- PARTES -->
-                <table class="d-table mb-1">
-                    <tr>
-                        <td class="w-1-2 p-0">${partyBlock('REMETENTE', rem)}</td>
-                        <td class="w-1-2 p-0">${partyBlock('DESTINATÁRIO', dest)}</td>
-                    </tr>
-                    <tr>
-                        <td class="w-1-2 p-0">${partyBlock('EXPEDIDOR', exped)}</td>
-                        <td class="w-1-2 p-0">${partyBlock('RECEBEDOR', receb)}</td>
-                    </tr>
-                </table>
-                
-                <table class="d-table mb-1">
-                    <tr>
-                        <td colspan="4">
-                            <table class="d-table-inner w-full">
+                        <!-- Chave/Barcode -->
+                        <td style="width: 40%; padding: 0" class="pt-1">
+                             <table class="d-table-inner w-full h-full">
                                 <tr>
-                                    <td class="w-2-3">
-                                        <div class="d-label">TOMADOR DO SERVIÇO</div>
-                                        <div class="d-val">${(tomadorDoc?.nome || '').toUpperCase()}</div>
-                                        <div class="text-[9px] mt-1">${tomadorDoc?.lgr || ''}, ${tomadorDoc?.nro || ''} - ${tomadorDoc?.bairro || ''} - ${tomadorDoc?.mun || ''} - ${tomadorDoc?.uf || ''}
-                                        <br>CNPJ: ${fmtCnpj(tomadorDoc?.cnpj)} | IE: ${tomadorDoc?.ie || ''} | Fone: ${fmtFone(tomadorDoc?.fone)}
-                                        </div>
+                                    <td class="text-center pt-1 pb-[2px] h-[34px] align-middle">
+                                        <svg id="barcode-cte" style="width:95%;height:32px;"></svg>
                                     </td>
-                                    <td class="w-1-3 border-l align-bottom text-right">
-                                        <div class="text-[8px] font-bold text-gray-600 mb-1">MUNICÍPIO ${tomadorDoc?.mun || ''} UF ${tomadorDoc?.uf || ''}</div>
+                                </tr>
+                                <tr>
+                                    <td class="border-b border-t border-[#000] p-[2px]">
+                                        <div class="danfe-label">CHAVE DE ACESSO</div>
+                                        <div class="danfe-val text-center tracking-[1px] text-[8.5px] whitespace-nowrap">${fmtChave(chNFe)}</div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="p-[2px] text-center font-family-arial text-[6.5px] text-gray-700 leading-tight">
+                                        Consulta de autenticidade no portal nacional da NF-e<br>
+                                        www.nfe.fazenda.gov.br/portal ou no site da Sefaz Autorizadora
                                     </td>
                                 </tr>
                             </table>
@@ -3347,122 +3312,193 @@
                     </tr>
                 </table>
 
-                <!-- CARGA -->
-                <table class="d-table mb-1">
+                <table class="d-table border-t-0" style="margin-top: -2px;">
                     <tr>
-                        <td style="width: 50%"><div class="d-label">PRODUTO PREDOMINANTE</div><div class="d-val">${proPred}</div></td>
-                        <td style="width: 30%"><div class="d-label">OUTRAS CARACTERÍSTICAS DA CARGA</div><div class="d-val"></div></td>
-                        <td style="width: 20%"><div class="d-label">VALOR TOTAL DA CARGA</div><div class="d-val text-right">${vCarga.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div></td>
-                    </tr>
-                </table>
-
-                <table class="d-table mb-1">
-                    <tr>
-                        <td class="w-1-4">
-                            <div class="d-label text-center">TP MED UN. MED</div>
-                            <div class="d-val uppercase mt-1">PESO BRUTO</div>
-                            <div class="text-[10px]">${qPesoB?.qtd ? parseFloat(qPesoB.qtd).toLocaleString('pt-BR', { minimumFractionDigits: 4 }) : '0,0000'} KG</div>
-                        </td>
-                        <td class="w-1-4">
-                            <div class="d-label text-center">TP MED UN. MED</div>
-                            <div class="d-val uppercase mt-1">PESO BC</div>
-                            <div class="text-[10px]">${qPesoBC?.qtd ? parseFloat(qPesoBC.qtd).toLocaleString('pt-BR', { minimumFractionDigits: 4 }) : '0,0000'} KG</div>
-                        </td>
-                        <td class="w-1-4">
-                            <div class="d-label text-center">CUBAGEM(M3)</div>
-                            <div class="text-[10px] mt-1 text-center">0,0000</div>
-                        </td>
-                        <td class="w-1-4">
-                            <div class="d-label text-center">QTDE(VOL)</div>
-                            <div class="d-val text-center mt-1">${qVol?.qtd ? parseFloat(qVol.qtd).toLocaleString('pt-BR', { minimumFractionDigits: 4 }) : '0,0000'}</div>
+                        <td style="width: 50%"><div class="danfe-label">NATUREZA DA OPERAÇÃO</div><div class="danfe-val text-center uppercase">${natOp}</div></td>
+                        <td style="width: 50%">
+                            <div class="danfe-label">PROTOCOLO DE AUTORIZAÇÃO DE USO</div>
+                            <div class="danfe-val text-center">${nProt ? nProt + ' - ' + fmtDate(dhRecbto) + ' ' + fmtTime(dhRecbto) : ''}</div>
                         </td>
                     </tr>
                 </table>
 
-                <!-- COMPONENTES SERVIÇO -->
-                <table class="d-table mb-1 h-[60px]">
-                    <tr><td colspan="5" class="d-label text-center border-b" style="background:#f9f9f9">COMPONENTES DO VALOR DA PRESTAÇÃO DO SERVIÇO</td></tr>
+                <table class="d-table border-t-0" style="margin-top: -2px;">
                     <tr>
-                        <!-- 4 colunas de componentes -->
-                        ${[0, 1, 2, 3].map(i => {
-                const cNome = safeComps[i]?.nome || '';
-                const cVal = safeComps[i] ? parseFloat(safeComps[i].valor.replace(',', '.')).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '';
-                return `<td class="w-1-5 border-r p-1 align-top"><div class="d-label">${i === 0 ? 'NOME' : '&nbsp;'}</div><div class="text-[9px] uppercase">${cNome}</div><div class="d-label mt-2">${i === 0 ? 'VALOR' : '&nbsp;'}</div><div class="text-[9px] text-right">${cVal}</div></td>`;
-            }).join('')}
-                        <td class="w-1-5 align-top flex flex-col justify-between h-full p-0">
-                            <div class="p-1 border-b h-1/2 flex flex-col justify-center">
-                                <div class="d-label">VALOR TOTAL DO SERVIÇO</div><div class="font-bold text-[12px] text-center">${parseFloat(vTPrest || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                            </div>
-                            <div class="p-1 h-1/2 flex flex-col justify-center">
-                                <div class="d-label">VALOR A RECEBER</div><div class="font-bold text-[12px] text-center">${parseFloat(vRec || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                            </div>
+                        <td style="width: 25%"><div class="danfe-label">INSCRIÇÃO ESTADUAL</div><div class="danfe-val text-center">${emitIE}</div></td>
+                        <td style="width: 25%"><div class="danfe-label">INSCRIÇÃO MUNICIPAL</div><div class="danfe-val text-center">${emitIM || 'ISENTO'}</div></td>
+                        <td style="width: 25%"><div class="danfe-label">INSCRIÇÃO ESTADUAL DO SUBST. TRIBUT.</div><div class="danfe-val text-center"></div></td>
+                        <td style="width: 25%"><div class="danfe-label">CNPJ / CPF</div><div class="danfe-val text-center">${fmtCnpj(emitCNPJ)}</div></td>
+                    </tr>
+                </table>
+
+                <div class="font-bold text-[7px] mb-[1px] mt-[4px] font-family-arial text-gray-800">DESTINATÁRIO / REMETENTE</div>
+                <table class="d-table">
+                    <tr>
+                        <td style="width: 65%"><div class="danfe-label">NOME / RAZÃO SOCIAL</div><div class="danfe-val uppercase">${(destxNome || '').toUpperCase()}</div></td>
+                        <td style="width: 20%"><div class="danfe-label">CNPJ / CPF</div><div class="danfe-val text-center">${fmtCnpj(destCNPJ)}</div></td>
+                        <td style="width: 15%"><div class="danfe-label">DATA DA EMISSÃO</div><div class="danfe-val text-center">${fmtDate(dhEmi)}</div></td>
+                    </tr>
+                </table>
+                <table class="d-table border-t-0" style="margin-top: -2px;">
+                    <tr>
+                        <td style="width: 50%;"><div class="danfe-label">ENDEREÇO</div><div class="danfe-val uppercase">${destxLgr}, ${destnro} ${destxCpl}</div></td>
+                        <td style="width: 20%;"><div class="danfe-label">BAIRRO / DISTRITO</div><div class="danfe-val uppercase">${destxBairro}</div></td>
+                        <td style="width: 15%;"><div class="danfe-label">CEP</div><div class="danfe-val text-center">${fmtCep(destCEP)}</div></td>
+                        <td style="width: 15%;"><div class="danfe-label">DATA DA SAÍDA/ENTRADA</div><div class="danfe-val text-center">${fmtDate(dhSaiEnt || dhEmi)}</div></td>
+                    </tr>
+                </table>
+                <table class="d-table border-t-0" style="margin-top: -2px;">
+                    <tr>
+                        <td style="width: 45%;"><div class="danfe-label">MUNICÍPIO</div><div class="danfe-val uppercase">${destxMun}</div></td>
+                        <td style="width: 5%;"><div class="danfe-label">UF</div><div class="danfe-val text-center">${destUF}</div></td>
+                        <td style="width: 20%;"><div class="danfe-label">FONE / FAX</div><div class="danfe-val text-center">${fmtFone(destfone)}</div></td>
+                        <td style="width: 15%;"><div class="danfe-label">INSCRIÇÃO ESTADUAL</div><div class="danfe-val text-center">${destIE}</div></td>
+                        <td style="width: 15%;"><div class="danfe-label">HORA DA SAÍDA/ENTRADA</div><div class="danfe-val text-center">${fmtTime(dhSaiEnt || dhEmi)}</div></td>
+                    </tr>
+                </table>
+
+                <div class="font-bold text-[7px] mb-[1px] mt-[4px] font-family-arial text-gray-800">CÁLCULO DO IMPOSTO</div>
+                <table class="d-table">
+                    <tr>
+                        <td style="width: 14%"><div class="danfe-label">BASE DE CÁLC. DO ICMS</div><div class="danfe-val text-right">${fmtNum(vBC)}</div></td>
+                        <td style="width: 12%"><div class="danfe-label">VALOR DO ICMS</div><div class="danfe-val text-right">${fmtNum(vICMS)}</div></td>
+                        <td style="width: 14%"><div class="danfe-label">BASE DE CÁLC. ICMS S.T.</div><div class="danfe-val text-right">${fmtNum(vBCST)}</div></td>
+                        <td style="width: 14%"><div class="danfe-label">VALOR DO ICMS SUBST.</div><div class="danfe-val text-right">${fmtNum(vST)}</div></td>
+                        <td style="width: 12%"><div class="danfe-label">V. IMP. IMPORTAÇÃO</div><div class="danfe-val text-right">${fmtNum(vII)}</div></td>
+                        <td style="width: 11%"><div class="danfe-label">V. ICMS UF REMET.</div><div class="danfe-val text-right">0,00</div></td>
+                        <td style="width: 11%"><div class="danfe-label">V. FCP UF DEST.</div><div class="danfe-val text-right">${fmtNum(vFCP)}</div></td>
+                        <td style="width: 12%"><div class="danfe-label">V. TOTAL PRODUTOS</div><div class="danfe-val text-right">${fmtNum(vProd)}</div></td>
+                    </tr>
+                    <tr>
+                        <td><div class="danfe-label">VALOR DO FRETE</div><div class="danfe-val text-right">${fmtNum(vFrete)}</div></td>
+                        <td><div class="danfe-label">VALOR DO SEGURO</div><div class="danfe-val text-right">${fmtNum(vSeg)}</div></td>
+                        <td><div class="danfe-label">DESCONTO</div><div class="danfe-val text-right">${fmtNum(vDesc)}</div></td>
+                        <td><div class="danfe-label">OUTRAS DESPESAS</div><div class="danfe-val text-right">${fmtNum(vOutro)}</div></td>
+                        <td><div class="danfe-label">VALOR TOTAL IPI</div><div class="danfe-val text-right">${fmtNum(vIPI)}</div></td>
+                        <td><div class="danfe-label">V. ICMS UF DEST.</div><div class="danfe-val text-right">0,00</div></td>
+                        <td><div class="danfe-label">V. TOT. TRIB</div><div class="danfe-val text-right">${fmtNum(vTotTrib)}</div></td>
+                        <td><div class="danfe-label">V. TOTAL DA NOTA</div><div class="danfe-val text-right">${fmtNum(vNF)}</div></td>
+                    </tr>
+                </table>
+
+                <div class="font-bold text-[7px] mb-[1px] mt-[4px] font-family-arial text-gray-800">TRANSPORTADOR / VOLUMES TRANSPORTADOS</div>
+                <table class="d-table">
+                    <tr>
+                        <td style="width: 35%"><div class="danfe-label">NOME / RAZÃO SOCIAL</div><div class="danfe-val uppercase">${(transpxNome || '').toUpperCase()}</div></td>
+                        <td style="width: 15%"><div class="danfe-label">FRETE POR CONTA</div><div class="text-[7.5px] font-bold font-family-arial" style="white-space:nowrap; overflow:hidden; text-overflow: ellipsis;">${mapModFrete(modFrete)}</div></td>
+                        <td style="width: 12%"><div class="danfe-label">CÓDIGO ANTT</div><div class="danfe-val text-center">${veicRNTRC}</div></td>
+                        <td style="width: 13%"><div class="danfe-label">PLACA DO VEÍCULO</div><div class="danfe-val text-center">${veicPlaca}</div></td>
+                        <td style="width: 5%"><div class="danfe-label">UF</div><div class="danfe-val text-center">${veicUF}</div></td>
+                        <td style="width: 20%"><div class="danfe-label">CNPJ / CPF</div><div class="danfe-val text-center">${fmtCnpj(transpCNPJ)}</div></td>
+                    </tr>
+                </table>
+                <table class="d-table border-t-0" style="margin-top: -2px;">
+                     <tr>
+                        <td style="width: 45%;"><div class="danfe-label">ENDEREÇO</div><div class="danfe-val uppercase">${transpEnd}</div></td>
+                        <td style="width: 30%;"><div class="danfe-label">MUNICÍPIO</div><div class="danfe-val uppercase">${transpMun}</div></td>
+                        <td style="width: 5%;"><div class="danfe-label">UF</div><div class="danfe-val text-center">${transpUF}</div></td>
+                        <td style="width: 20%;"><div class="danfe-label">INSCRIÇÃO ESTADUAL</div><div class="danfe-val text-center">${transpIE}</div></td>
+                    </tr>
+                </table>
+                <table class="d-table border-t-0" style="margin-top: -2px;">
+                    <tr>
+                        <td style="width: 10%;"><div class="danfe-label">QUANTIDADE</div><div class="danfe-val text-center">${volQVol}</div></td>
+                        <td style="width: 25%;"><div class="danfe-label">ESPÉCIE</div><div class="danfe-val uppercase">${volEsp}</div></td>
+                        <td style="width: 25%;"><div class="danfe-label">MARCA</div><div class="danfe-val uppercase">${volMarca}</div></td>
+                        <td style="width: 15%;"><div class="danfe-label">NUMERAÇÃO</div><div class="danfe-val text-center">${volNVol}</div></td>
+                        <td style="width: 12.5%;"><div class="danfe-label">PESO BRUTO</div><div class="danfe-val text-right">${fmtNum(volPesoB, 3)}</div></td>
+                        <td style="width: 12.5%;"><div class="danfe-label">PESO LÍQUIDO</div><div class="danfe-val text-right">${fmtNum(volPesoL, 3)}</div></td>
+                    </tr>
+                </table>
+
+                <div class="font-bold text-[7px] mb-[1px] mt-[4px] font-family-arial text-gray-800">DADOS DOS PRODUTOS / SERVIÇOS</div>
+                <table class="w-full border-collapse border border-[#000] mb-2" style="width: 100%;">
+                    <thead class="text-[5.5px] uppercase text-[#111]" style="font-family: Arial, sans-serif;">
+                        <tr>
+                            <td class="border border-[#000] text-center px-[2px] py-[2px]" style="white-space: nowrap;">CÓDIGO PRODUTO</td>
+                            <td class="border border-[#000] text-center px-[2px] py-[2px]">DESCRIÇÃO DO PRODUTO / SERVIÇO</td>
+                            <td class="border border-[#000] text-center px-[2px] py-[2px]">NCM/SH</td>
+                            <td class="border border-[#000] text-center px-[2px] py-[2px]">O/CST</td>
+                            <td class="border border-[#000] text-center px-[2px] py-[2px]">CFOP</td>
+                            <td class="border border-[#000] text-center px-[2px] py-[2px]">UN</td>
+                            <td class="border border-[#000] text-center px-[2px] py-[2px]">QUANT</td>
+                            <td class="border border-[#000] text-center px-[2px] py-[2px]">VALOR UNIT</td>
+                            <td class="border border-[#000] text-center px-[2px] py-[2px]">VALOR TOTAL</td>
+                            <td class="border border-[#000] text-center px-[2px] py-[2px]">B.CALC ICMS</td>
+                            <td class="border border-[#000] text-center px-[2px] py-[2px]">VALOR ICMS</td>
+                            <td class="border border-[#000] text-center px-[2px] py-[2px]">VALOR IPI</td>
+                            <td class="border border-[#000] text-center px-[2px] py-[2px]">ALÍQ ICMS</td>
+                            <td class="border border-[#000] text-center px-[2px] py-[2px]">ALÍQ IPI</td>
+                        </tr>
+                    </thead>
+                    <tbody class="align-top font-family-arial text-gray-800">
+                        ${dets.map(d => `
+                            <tr class="text-[7.5px] leading-[1.1] text-center">
+                                <td class="text-left border-r border-[#000] px-[2px]" style="border-right-style: dotted;">${d.cProd}</td>
+                                <td class="text-left border-r border-[#000] px-[2px] uppercase" style="border-right-style: dotted;">${d.xProd.replace(/\\n/g, '<br>')}</td>
+                                <td class="border-r border-[#000] px-[2px]" style="border-right-style: dotted;">${d.NCM}</td>
+                                <td class="border-r border-[#000] px-[2px]" style="border-right-style: dotted;">${d.CST}</td>
+                                <td class="border-r border-[#000] px-[2px]" style="border-right-style: dotted;">${d.CFOP}</td>
+                                <td class="border-r border-[#000] px-[2px]" style="border-right-style: dotted;">${d.uCom}</td>
+                                <td class="text-right border-r border-[#000] px-[2px]" style="border-right-style: dotted;">${fmtNum(d.qCom, 4)}</td>
+                                <td class="text-right border-r border-[#000] px-[2px]" style="border-right-style: dotted;">${fmtNum(d.vUnCom, 4)}</td>
+                                <td class="text-right border-r border-[#000] px-[2px]" style="border-right-style: dotted;">${fmtNum(d.vProd)}</td>
+                                <td class="text-right border-r border-[#000] px-[2px]" style="border-right-style: dotted;">${fmtNum(d.vBCICMS)}</td>
+                                <td class="text-right border-r border-[#000] px-[2px]" style="border-right-style: dotted;">${fmtNum(d.vICMS)}</td>
+                                <td class="text-right border-r border-[#000] px-[2px]" style="border-right-style: dotted;">${fmtNum(d.vIPI)}</td>
+                                <td class="text-right border-r border-[#000] px-[2px]" style="border-right-style: dotted;">${fmtNum(d.pICMS)}</td>
+                                <td class="text-right px-[2px]">${fmtNum(d.pIPI)}</td>
+                            </tr>
+                        `).join('')}
+                        <!-- Linha vazia para preencher o espaço A4 com as bordas das colunas -->
+                        <tr style="height: 300px;">
+                            <td class="border-r border-[#000] px-[2px]" style="border-right-style: dotted;">&nbsp;</td>
+                            <td class="border-r border-[#000] px-[2px]" style="border-right-style: dotted;"></td>
+                            <td class="border-r border-[#000] px-[2px]" style="border-right-style: dotted;"></td>
+                            <td class="border-r border-[#000] px-[2px]" style="border-right-style: dotted;"></td>
+                            <td class="border-r border-[#000] px-[2px]" style="border-right-style: dotted;"></td>
+                            <td class="border-r border-[#000] px-[2px]" style="border-right-style: dotted;"></td>
+                            <td class="border-r border-[#000] px-[2px]" style="border-right-style: dotted;"></td>
+                            <td class="border-r border-[#000] px-[2px]" style="border-right-style: dotted;"></td>
+                            <td class="border-r border-[#000] px-[2px]" style="border-right-style: dotted;"></td>
+                            <td class="border-r border-[#000] px-[2px]" style="border-right-style: dotted;"></td>
+                            <td class="border-r border-[#000] px-[2px]" style="border-right-style: dotted;"></td>
+                            <td class="border-r border-[#000] px-[2px]" style="border-right-style: dotted;"></td>
+                            <td class="border-r border-[#000] px-[2px]" style="border-right-style: dotted;"></td>
+                            <td class="px-[2px]"></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="font-bold text-[7px] mb-[1px] font-family-arial text-gray-800">DADOS ADICIONAIS</div>
+                <table class="d-table" style="min-height: 80px;">
+                    <tr>
+                        <td style="width: 65%; height: 80px;" class="p-1">
+                            <strong class="text-[6px] font-family-arial block mb-1">INFORMAÇÕES COMPLEMENTARES</strong>
+                            <div class="text-[7px] font-family-arial text-gray-800 leading-tight">${(infCpl || '').replace(/\\n/g, '<br>')}</div>
+                            <div class="text-[7px] font-family-arial text-gray-800 leading-tight mt-1">${(infAdFisco || '').replace(/\\n/g, '<br>')}</div>
+                        </td>
+                        <td style="width: 35%; height: 80px;" class="p-1">
+                            <strong class="text-[6px] font-family-arial block">RESERVADO AO FISCO</strong>
                         </td>
                     </tr>
                 </table>
 
-                <!-- TRIBUTOS -->
-                <table class="d-table mb-1">
-                    <tr><td colspan="5" class="d-label text-center border-b" style="background:#f9f9f9">INFORMAÇÕES RELATIVAS AO IMPOSTO</td></tr>
-                    <tr>
-                        <td style="width: 30%"><div class="d-label">SITUAÇÃO TRIBUTÁRIA</div><div class="text-[10px] mt-1">${CST} - Tributação</div></td>
-                        <td style="width: 15%"><div class="d-label">BASE DE CÁLCULO</div><div class="d-val mt-1">${parseFloat(vBC).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div></td>
-                        <td style="width: 15%"><div class="d-label">ALÍQ ICMS</div><div class="d-val mt-1">${parseFloat(pICMS).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div></td>
-                        <td style="width: 20%"><div class="d-label">VALOR ICMS</div><div class="d-val mt-1">${parseFloat(vICMS).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div></td>
-                        <td style="width: 20%"><div class="d-label">VALOR ICMS ST</div><div class="d-val mt-1">0,00</div></td>
-                    </tr>
-                </table>
-
-                <!-- DOC ORIGINARIOS -->
-                <table class="d-table mb-1 h-[80px]">
-                    <tr><td class="d-label text-center border-b" style="background:#f9f9f9">DOCUMENTOS ORIGINÁRIOS</td></tr>
-                    <tr>
-                        <td class="align-top p-2">
-                            ${nfeList}
-                            <div style="clear:both"></div>
-                        </td>
-                    </tr>
-                </table>
-                
-                <!-- OBS GERAIS -->
-                <table class="d-table mb-1 h-[60px]">
-                    <tr><td class="d-label text-center border-b" style="background:#f9f9f9">OBSERVAÇÕES GERAIS</td></tr>
-                    <tr><td class="align-top p-1 text-[9px]">${allObs}</td></tr>
-                </table>
-
-                <!-- DADOS RODOVIARIO -->
-                <table class="d-table mb-1">
-                    <tr><td colspan="2" class="d-label text-center border-b" style="background:#f9f9f9">DADOS ESPECÍFICOS DO MODAL RODOVIÁRIO</td></tr>
-                    <tr>
-                        <td style="width: 20%"><div class="d-label">RNTRC DA EMPRESA</div><div class="d-val">${rntrc}</div></td>
-                        <td style="width: 80%"><div class="text-[8px] text-center mt-2">ESTE CONHECIMENTO DE TRANSPORTE ATENDE À LEGISLAÇÃO DE TRANSPORTE RODOVIÁRIO EM VIGOR</div></td>
-                    </tr>
-                </table>
-
-                <div class="text-[7px] mt-1 pr-1 text-right w-full text-gray-500">Impresso via NutriPort</div>
+                <div class="text-[6px] mt-1 pr-1 text-right w-full text-gray-500 font-family-arial italic">Impresso via NutriPort em ${new Date().toLocaleString('pt-BR')}</div>
             </div>
             `;
 
             document.getElementById('dacte-content').innerHTML = html;
 
-            // Generate Barcode if simple lib available or skip
-            // Using a basic fallback if JsBarcode is not included, we won't render the actual svg, just UI container.
+            // Generate Barcode Se window.JsBarcode está disponível
             if (window.JsBarcode) {
                 try {
-                    window.JsBarcode("#barcode-cte", chCTe, { format: "CODE128", displayValue: false, height: 40, width: 1, margin: 0 });
+                    window.JsBarcode("#barcode-cte", chNFe, { format: "CODE128", displayValue: false, height: 35, width: 1, margin: 0 });
                 } catch (e) { }
             }
 
-            if (window.QRCode) {
-                try {
-                    const qrUrl = `https://dfe-portal.svrs.rs.gov.br/cte/qrCode?chCTe=${chCTe}&tpAmb=${tpAmb || '1'}`;
-                    new QRCode(document.getElementById("qrcode-cte"), {
-                        text: qrUrl,
-                        width: 70,
-                        height: 70,
-                        correctLevel: QRCode.CorrectLevel.L
-                    });
-                } catch (e) { console.error('Erro ao gerar QRCode:', e); }
-            }
+            // Rastrear se o edit-modal estava aberto antes de abrir o dacte
+            state._editModalWasOpen = document.getElementById('edit-modal').classList.contains('open');
 
             document.getElementById('dacte-modal').classList.add('open');
             document.getElementById('dacte-modal-overlay').classList.add('open');
@@ -3470,11 +3506,27 @@
             document.getElementById('edit-modal-overlay').classList.remove('open');
         };
 
+        window.printDacte = () => {
+            const content = document.getElementById("dacte-content").innerHTML;
+            const w = window.open('', '_blank', 'width=900,height=1000');
+            w.document.write(`<html><head><title>DANFE - NF Consumo</title>
+                <script src="https://cdn.tailwindcss.com"><\/script>
+                <style>body{background:#fff;margin:0;padding:10px;} @media print{@page{margin:0.5cm;}body{padding:0;margin:0;}}</style>
+                </head><body onload="setTimeout(()=>{window.print();window.close();},900)">
+                <div style="width:100%;max-width:900px;margin:0 auto">${content}</div>
+                </body></html>`);
+            w.document.close();
+        };
+
         const closeDacte = () => {
             document.getElementById('dacte-modal').classList.remove('open');
             document.getElementById('dacte-modal-overlay').classList.remove('open');
-            document.getElementById('edit-modal').classList.add('open');
-            document.getElementById('edit-modal-overlay').classList.add('open');
+            // Só reabre o edit-modal se ele estava aberto antes
+            if (state._editModalWasOpen) {
+                document.getElementById('edit-modal').classList.add('open');
+                document.getElementById('edit-modal-overlay').classList.add('open');
+            }
+            state._editModalWasOpen = false;
         };
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -3699,6 +3751,7 @@
                 document.getElementById('dacte-modal-close-btn').addEventListener('click', closeDacte);
                 document.getElementById('dacte-modal-close-view-btn').addEventListener('click', closeDacte);
                 document.getElementById('dacte-modal-overlay').addEventListener('click', closeDacte);
+                document.getElementById('dacte-print-btn').addEventListener('click', window.printDacte);
             }
 
             document.getElementById('edit-form').addEventListener('submit', async e => {
@@ -4024,7 +4077,7 @@
                             if (fStatus !== 'OK' && fStatus !== 'Sem XML') {
                                 if (parseNum(item.vltotal) !== parseNum(item.vltotal_xml)) {
                                     fStatus = 'Divergente (Valor)';
-                                } else if (parseNum(item.vlicms) !== parseNum(item.vlicms_xml)) {
+                                } else if (parseNum(item.vlicms) !== 0 && parseNum(item.vlicms) !== parseNum(item.vlicms_xml)) {
                                     fStatus = 'Divergente (ICMS)';
                                 } else if (item.codfilial != item.codfilialnf) {
                                     fStatus = 'Divergente (Tomador Dif)';
@@ -4260,7 +4313,7 @@
                             const cnpjFilial = existente.cnpj_filial || '';
                             const diffTomador = !!(pf.cnpjTomador && cnpjFilial && String(pf.cnpjTomador).replace(/^0+/, '') !== String(cnpjFilial).replace(/^0+/, ''));
                             const diffTot = Math.abs(vltotalDb - pf.vltotalXml) > 0.01;
-                            const diffIcms = Math.abs(vlicmsDb - pf.vlicmsXml) > 0.01;
+                            const diffIcms = vlicmsDb !== 0 && Math.abs(vlicmsDb - pf.vlicmsXml) > 0.01;
 
                             let novoStatus = 'OK';
                             let obs = [];

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Configurações da Conta - FinanZyNapse</title>
+    <title>Configurações da Conta - NutriPort Comercial</title>
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -21,7 +21,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
-        /* === PALETA DE CORES PROFISSIONAL (LARANJA) === */
+        /* === PALETA DE CORES PROFISSIONAL (VERDE) === */
         :root {
             --color-bg: #f8fafc;
             /* slate-50 */
@@ -36,12 +36,12 @@
             /* slate-400 */
             --color-surface-hover: #f1f5f9;
             /* slate-100 */
-            --color-primary: #ea580c;
-            /* orange-600 */
-            --color-primary-hover: #c2410c;
-            /* orange-700 */
+            --color-primary: #b8860b;
+            /* gold */
+            --color-primary-hover: #9a7209;
+            /* gold-hover */
             --color-primary-text: #ffffff;
-            --color-primary-focus-ring: rgba(234, 88, 12, 0.3);
+            --color-primary-focus-ring: rgba(184, 134, 11, 0.3);
         }
 
         html[data-theme="dark"] {
@@ -58,11 +58,11 @@
             --color-text-tertiary: #64748b;
             /* slate-500 */
             --color-surface-hover: #293548;
-            --color-primary: #f97316;
-            /* orange-500 */
-            --color-primary-hover: #ea580c;
-            /* orange-600 */
-            --color-primary-focus-ring: rgba(249, 115, 22, 0.4);
+            --color-primary: #c4982a;
+            /* gold-500 */
+            --color-primary-hover: #b8860b;
+            /* gold-600 */
+            --color-primary-focus-ring: rgba(184, 134, 11, 0.4);
         }
 
         /* === CONTROLE DE VISIBILIDADE E CARREGAMENTO === */
@@ -256,7 +256,7 @@
 
     <script>
         (function () {
-            const THEME_KEY = 'finanzynapse_theme';
+            const THEME_KEY = 'gestaovscontabil_theme';
             try {
                 const storedTheme = localStorage.getItem(THEME_KEY);
                 if (storedTheme) {
@@ -368,12 +368,12 @@
 
     <script type="module">
         // === CONFIGURAÇÃO SUPABASE ===
-        const SUPABASE_URL = 'https://hzljpmjhmrgwjjskubii.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh6bGpwbWpobXJnd2pqc2t1YmlpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMzUxMTAsImV4cCI6MjA4OTYxMTExMH0.8AVmg5kBhWI_KWjqqfDKzH9SSn0Vwfi1yAfywvdjt4Q';
+        const SUPABASE_URL = 'https://jmcwiszplkjksdvqyhbw.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptY3dpc3pwbGtqa3NkdnF5aGJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODczODIsImV4cCI6MjA5MTE2MzM4Mn0.G85OrkSFtjTXmaHvEPBkWXZQQbDKsjMBD97_V3Z6yw0';
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // === CONSTANTES E VARIÁVEIS GLOBAIS ===
-        const THEME_KEY = 'finanzynapse_theme';
+        const THEME_KEY = 'gestaovscontabil_theme';
         let userSession = null;
         let originalProfileData = {};
 
@@ -551,6 +551,11 @@
         window.addEventListener('DOMContentLoaded', init);
     </script>
 
+    <script defer
+        src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516"
+        integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg=="
+        data-cf-beacon='{"version":"2024.11.0","token":"97ac66ee4a66456e998bdfa7fced6603","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}'
+        crossorigin="anonymous"></script>
 </body>
 
 </html>
