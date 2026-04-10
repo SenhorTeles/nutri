@@ -1774,25 +1774,25 @@
                     <div class="flex items-center gap-1" id="main-view-filters">
                         <button id="view-divergente-btn" class="filter-pill active" data-view="divergente"
                             style="--pill-active-bg:#dc2626;--pill-active-color:#fff" title="Divergentes">
-                            <i class="fa-solid fa-triangle-exclamation"></i> Diverg.</button>
+                            <i class="fa-solid fa-triangle-exclamation"></i> Divergentes</button>
                         <button id="view-nao-encontrado-btn" class="filter-pill" data-view="nao_encontrado"
                             style="--pill-active-bg:#4b5563;--pill-active-color:#fff" title="Não Encontrados no Sieg">
-                            <i class="fa-solid fa-ghost"></i> N/Enc.</button>
+                            <i class="fa-solid fa-ghost"></i> Não Encontrados</button>
                         <button id="view-ok-btn" class="filter-pill" data-view="ok"
                             style="--pill-active-bg:#16a34a;--pill-active-color:#fff" title="Notas OK">
                             <i class="fa-solid fa-circle-check"></i> OK</button>
                         <button id="view-tomador-dif-btn" class="filter-pill" data-view="tomador_dif"
                             style="--pill-active-bg:#ea580c;--pill-active-color:#fff" title="Tomador diferente da Filial NF">
-                            <i class="fa-solid fa-shuffle"></i> Tom≠Fil</button>
+                            <i class="fa-solid fa-shuffle"></i> Tomador ≠ Filial</button>
                         <button id="view-sem-xml-btn" class="filter-pill" data-view="sem_xml"
                             style="--pill-active-bg:#eab308;--pill-active-color:#fff" title="Sem XML importado">
-                            <i class="fa-solid fa-file-circle-question"></i> S/XML</button>
+                            <i class="fa-solid fa-file-circle-question"></i> Sem XML</button>
                         <button id="view-nao-importada-btn" class="filter-pill" data-view="nao_importada"
                             style="--pill-active-bg:#7c3aed;--pill-active-color:#fff" title="XML importado mas não encontrada no WinThor">
-                            <i class="fa-solid fa-cloud-arrow-up"></i> N/Imp.</button>
+                            <i class="fa-solid fa-cloud-arrow-up"></i> Não Importada</button>
                         <button id="view-validados-btn" class="filter-pill" data-view="validados"
                             style="--pill-active-bg:#2563eb;--pill-active-color:#fff" title="Validados no WinThor">
-                            <i class="fa-solid fa-badge-check"></i> Valid.</button>
+                            <i class="fa-solid fa-badge-check"></i> Validados</button>
                     </div>
                     <span id="results-info" class="text-xs font-medium flex-shrink-0"
                         style="color: var(--color-text-secondary);"></span>
@@ -1832,15 +1832,15 @@
 
                     <!-- Ações principais -->
                     <button id="btn-importar-xml" class="btn btn-secondary btn-sm" style="color:#f59e0b; border-color:#fcd34d;"
-                        title="Importar XML"><i class="fa-solid fa-file-import mr-1"></i>XML</button>
+                        title="Importar XML"><i class="fa-solid fa-file-import mr-1"></i>Importar XML</button>
                     <button id="btn-busca-nv" class="btn btn-secondary btn-sm" style="color:#d946ef; border-color:#f0abfc;"
-                        title="Busca NV - Validar lista de NFs"><i class="fa-solid fa-list-ol mr-1"></i>NV</button>
+                        title="Busca NV - Validar lista de NFs"><i class="fa-solid fa-list-ol mr-1"></i>Busca NV</button>
                     <button id="btn-busca-isolada" class="btn btn-secondary btn-sm"
                         style="color:#0ea5e9; border-color:#bae6fd;" title="Buscar NF específica no WinThor">
-                        <i class="fa-solid fa-cloud-arrow-down mr-1"></i>Busca</button>
+                        <i class="fa-solid fa-cloud-arrow-down mr-1"></i>Busca Isolada</button>
                     <button id="btn-validar-todos-ok" class="btn btn-primary btn-sm"
                         style="background-color:#16a34a;border-color:#16a34a"
-                        title="Validar TODOS os OK no WinThor"><i class="fa-solid fa-rocket mr-1"></i>Validar OK</button>
+                        title="Validar TODOS os OK no WinThor"><i class="fa-solid fa-rocket mr-1"></i>Validar Todos OK</button>
 
                     <!-- Separador visual -->
                     <div class="w-px h-5 bg-gray-300 mx-0.5"></div>
@@ -3975,23 +3975,77 @@
             // ==========================================
             document.getElementById('btn-importar-xml').addEventListener('click', async () => {
                 const { value: files } = await Swal.fire({
-                    title: 'Importar XML',
-                    html: `<p style="font-size:0.9rem;color:#6b7280">Selecione os arquivos XML (NF Consumo) para vincular aos registros <strong>"Sem XML"</strong>.</p>
-                           <p style="font-size:0.8rem;color:#9ca3af;margin-top:4px">Os XMLs serão parseados e vinculados automaticamente pela chave de acesso.</p>`,
-                    input: 'file',
-                    inputAttributes: {
-                        accept: '.xml',
-                        multiple: true
-                    },
+                    width: '500px',
+                    title: '<span style="color:#f59e0b"><i class="fa-solid fa-file-import mr-2"></i> Importar XML</span>',
+                    html: `
+                        <div class="text-center text-sm" style="font-family: inherit;">
+                            <p class="text-gray-500 mb-4" style="font-size: 0.9rem">Atualize registros <strong>"Sem XML"</strong> ou adicione notas como <strong>"Não Importadas"</strong>.</p>
+                            
+                            <div id="xml-drop-area" class="border-2 border-dashed border-gray-300 rounded-xl p-8 bg-gray-50 hover:bg-gray-100 hover:border-amber-400 transition-all cursor-pointer relative flex flex-col items-center justify-center min-h-[160px]">
+                                <i class="fa-solid fa-cloud-arrow-up text-5xl text-gray-300 mb-3 drop-icon transition-colors"></i>
+                                <span class="font-semibold text-gray-700 text-base">Clique para escolher</span>
+                                <span class="text-gray-500 text-xs mt-1">ou arraste e solte os arquivos XML aqui</span>
+                                <input type="file" id="xml-hidden-input" multiple accept=".xml" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                            </div>
+                            
+                            <div id="xml-selected-files" class="mt-4 text-left hidden">
+                                <p class="font-semibold text-gray-700 text-xs mb-1 ml-1">Arquivos selecionados:</p>
+                                <ul id="xml-files-list" class="text-xs text-gray-600 max-h-28 overflow-y-auto bg-gray-50 p-2 rounded-lg border border-gray-200 custom-scrollbar shadow-inner"></ul>
+                            </div>
+                        </div>
+                    `,
                     showCancelButton: true,
                     confirmButtonColor: '#f59e0b',
-                    confirmButtonText: '<i class="fa-solid fa-upload mr-2"></i> Importar',
+                    confirmButtonText: '<i class="fa-solid fa-upload mr-1"></i> Iniciar Importação',
                     cancelButtonText: 'Cancelar',
+                    didOpen: () => {
+                        const fileInput = document.getElementById('xml-hidden-input');
+                        const dropArea = document.getElementById('xml-drop-area');
+                        const selectedFilesContainer = document.getElementById('xml-selected-files');
+                        const filesList = document.getElementById('xml-files-list');
+                        
+                        const updateUI = (files) => {
+                            if (files && files.length > 0) {
+                                dropArea.classList.remove('border-gray-300', 'bg-gray-50');
+                                dropArea.classList.add('border-amber-400', 'bg-amber-50/50');
+                                dropArea.querySelector('.drop-icon').classList.replace('text-gray-300', 'text-amber-400');
+                                
+                                selectedFilesContainer.classList.remove('hidden');
+                                filesList.innerHTML = '';
+                                const maxToShow = 6;
+                                Array.from(files).slice(0, maxToShow).forEach(f => {
+                                    filesList.innerHTML += '<li class="truncate py-1 px-2 hover:bg-gray-100 rounded flex items-center transition-colors"><i class="fa-solid fa-file-code text-amber-500 mr-2 opacity-80"></i>' + f.name + '</li>';
+                                });
+                                if (files.length > maxToShow) {
+                                    filesList.innerHTML += '<li class="font-bold text-amber-600 mt-1 px-2 pt-1 border-t border-gray-200">+ ' + (files.length - maxToShow) + ' arquivo(s) oculto(s)...</li>';
+                                }
+                            } else {
+                                dropArea.classList.add('border-gray-300', 'bg-gray-50');
+                                dropArea.classList.remove('border-amber-400', 'bg-amber-50/50');
+                                dropArea.querySelector('.drop-icon').classList.replace('text-amber-400', 'text-gray-300');
+                                selectedFilesContainer.classList.add('hidden');
+                            }
+                        };
+
+                        fileInput.addEventListener('change', (e) => updateUI(e.target.files));
+                        
+                        // Drag Events for styling
+                        dropArea.addEventListener('dragenter', () => dropArea.classList.add('bg-gray-200'));
+                        dropArea.addEventListener('dragleave', () => dropArea.classList.remove('bg-gray-200'));
+                        dropArea.addEventListener('drop', () => dropArea.classList.remove('bg-gray-200'));
+                    },
+                    preConfirm: () => {
+                        const fileInput = document.getElementById('xml-hidden-input');
+                        if (!fileInput.files || fileInput.files.length === 0) {
+                            Swal.showValidationMessage('Por favor, jogue ou selecione pelo menos um XML!');
+                            return false;
+                        }
+                        return fileInput.files;
+                    }
                 });
 
                 if (!files) return;
-                const fileList = files.length ? Array.from(files) : [files];
-
+                const fileList = Array.from(files);
                 if (fileList.length === 0) return;
 
                 Swal.fire({
