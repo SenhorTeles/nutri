@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saldo IPI - Gestão VS Contábil Soollar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <style>
+        :root {
+            --color-bg: #f8fafc;
+            --color-surface: #ffffff;
+            --color-border: #e5e7eb;
+            --color-border-hover: #d1d5db;
+            --color-text-primary: #111827;
+            --color-text-secondary: #4b5563;
+            --color-text-tertiary: #9ca3af;
+            --color-surface-hover: #f3f4f6;
+            --color-primary: #EE7F01;
+            --color-primary-hover: #c25b00;
+            --color-primary-text: #ffffff;
+            --color-primary-focus-ring: rgba(238, 127, 1, 0.4);
+            --color-primary-soft-bg: #fdf2e8;
+            --radius: 0.5rem;
+            --transition: 0.2s ease-in-out;
+        }
+
+        html[data-theme="dark"] {
+            --color-bg: #18181b;
+            --color-surface: #27272a;
+            --color-border: #3f3f46;
+            --color-border-hover: #52525b;
+            --color-text-primary: #f8fafc;
+            --color-text-secondary: #a1a1aa;
+            --color-text-tertiary: #71717a;
+            --color-surface-hover: #3a3a40;
+            --color-primary: #EE7F01;
+            --color-primary-hover: #c25b00;
+            --color-primary-text: #111827;
+            --color-primary-focus-ring: rgba(238, 127, 1, 0.4);
+            --color-primary-soft-bg: #432400;
+        }
+
+        html {
+            font-size: 15px;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--color-bg);
+            color: var(--color-text-primary);
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body.loaded {
+            opacity: 1;
+        }
+
+        .loader-container {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--color-bg);
+            z-index: 9999;
+            transition: opacity 0.3s ease-in-out;
+            opacity: 1;
+        }
+
+        .loader-container.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .preloader-container {
+            position: relative;
+            width: 150px;
+            height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .preloader-logo {
+            width: 80px;
+            height: auto;
+            z-index: 10;
+            animation: pulse 2s infinite ease-in-out;
+        }
+
+        .preloader-spinner {
+            position: absolute;
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            border: 3px solid transparent;
+            border-top-color: var(--color-primary);
+            animation: spin 1.5s linear infinite;
+        }
+
+        .preloader-spinner::before,
+        .preloader-spinner::after {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            border-radius: 50%;
+            border: 3px solid color-mix(in srgb, var(--color-primary) 30%, transparent);
+            animation: sonar 2s infinite;
+            opacity: 0;
+        }
+
+        .preloader-spinner::after {
+            animation-delay: 1s;
+        }
+
+        .loader-container p {
+            margin-top: 20px;
+            color: var(--color-text-secondary);
+            font-size: 1rem;
+            letter-spacing: 1px;
+            animation: fadeIn 2s infinite alternate;
+            text-align: center;
+            max-width: 80%;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes sonar {
+            0% {
+                transform: scale(0.5);
+                opacity: 0;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(1.2);
+                opacity: 0;
+            }
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0.5;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .thin-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        .thin-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .thin-scrollbar::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 0);
+            border-radius: 10px;
+        }
+
+        .thin-scrollbar:hover::-webkit-scrollbar-thumb {
+            background-color: var(--color-border-hover);
+        }
+
+        .thin-scrollbar {
+            scrollbar-width: thin;
+            scrollbar-color: var(--color-border-hover) transparent;
+        }
+
+        .content-card {
+            background-color: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius);
+            box-shadow: 0 2px 4px -2px rgb(0 0 0 / 0.05);
+        }
+
+        .form-input {
+            width: 100%;
+            background-color: var(--color-surface);
+            border: 1px solid var(--color-border);
+            color: var(--color-text-primary);
+            border-radius: 0.375rem;
+            transition: border-color var(--transition), box-shadow var(--transition);
+            padding: 0.625rem 0.875rem;
+            font-size: 0.875rem;
+        }
+
+        .form-input:focus {
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px var(--color-primary-focus-ring);
+            outline: none;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.625rem 1.25rem;
+            font-weight: 500;
+            border-radius: 0.375rem;
+            border: 1px solid transparent;
+            transition: all var(--transition);
+            font-size: 0.875rem;
+            cursor: pointer;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background-color: var(--color-primary);
+            color: var(--color-primary-text);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background-color: var(--color-primary-hover);
+        }
+
+        .btn-secondary {
+            background-color: var(--color-surface);
+            color: var(--color-text-secondary);
+            border-color: var(--color-border);
+            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background-color: var(--color-surface-hover);
+            border-color: var(--color-border-hover);
+            color: var(--color-text-primary);
+        }
+
+        tbody tr {
+            transition: background-color var(--transition);
+            cursor: pointer;
+        }
+
+        tbody tr:hover {
+            background-color: var(--color-surface-hover);
+        }
+
+        thead th {
+            padding: 0.8rem 1rem;
+            font-size: 0.75rem;
+        }
+
+        tbody td {
+            padding: 0.75rem 1rem;
+            font-size: 0.875rem;
+        }
+
+        .modal-container {
+            transition: opacity 0.25s ease;
+        }
+
+        .modal-box {
+            transition: all 0.25s ease;
+            max-width: 35rem;
+        }
+
+        .modal-container.hidden {
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        .modal-container.hidden .modal-box {
+            transform: translateY(-20px) scale(0.98);
+        }
+
+        .card-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        .card-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--color-border);
+        }
+
+        .floating-form-group {
+            position: relative;
+        }
+
+        .floating-input {
+            background-color: var(--color-surface-hover) !important;
+            border-radius: 0.375rem;
+            border: 1px solid var(--color-surface-hover) !important;
+            padding: 1.4rem 0.875rem 0.4rem 0.875rem !important;
+            transition: border-color var(--transition);
+            font-size: 0.875rem;
+            height: 50px;
+            width: 100%;
+            color: var(--color-text-primary);
+        }
+
+        .floating-input:focus {
+            outline: none;
+            border-color: var(--color-primary) !important;
+        }
+
+        .floating-label {
+            position: absolute;
+            top: 0.8rem;
+            left: 0.875rem;
+            font-size: 0.875rem;
+            color: var(--color-text-secondary);
+            pointer-events: none;
+            transition: all 0.2s ease-out;
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+            z-index: 1;
+        }
+
+        .floating-input:focus+.floating-label,
+        .floating-input:not(:placeholder-shown)+.floating-label {
+            top: 0.3rem;
+            font-size: 0.7rem;
+            color: var(--color-primary);
+        }
+
+        select.floating-input {
+            appearance: none;
+            padding-right: 2rem !important;
+        }
+
+        .select-icon {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--color-text-secondary);
+            pointer-events: none;
+        }
+
+        .status-banner {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .status-banner.processing {
+            background-color: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fbbf24;
+        }
+
+        html[data-theme="dark"] .status-banner.processing {
+            background-color: #4a3f1d;
+            color: #facc15;
+            border-color: #854d0e;
+        }
+
+        .status-banner.success {
+            background-color: #dcfce7;
+            color: #166534;
+            border: 1px solid #86efac;
+        }
+
+        html[data-theme="dark"] .status-banner.success {
+            background-color: #1a3c2a;
+            color: #4ade80;
+            border-color: #166534;
+        }
+
+        .status-banner.error {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+
+        html[data-theme="dark"] .status-banner.error {
+            background-color: #452323;
+            color: #f87171;
+            border-color: #7f1d1d;
+        }
+    </style>
+    <script>
+        (function () {
+            try { if (JSON.parse(localStorage.getItem('gestaovscontabil_theme'))?.mode === 'escuro') { document.documentElement.setAttribute('data-theme', 'dark'); } } catch (e) { }
+        })();
+    </script>
+</head>
+
+<body class="p-4 sm:p-6 lg:p-8">
+    <div id="loader" class="loader-container">
+        <div class="preloader-container">
+            <img src="https://i.imgur.com/kJvm1nt.png" alt="Soollar Financeiro" class="preloader-logo">
+            <div class="preloader-spinner"></div>
+        </div>
+        <p id="loader-text">Carregando...</p>
+    </div>
+
+    <div class="max-w-screen-xl mx-auto space-y-6">
+        <header>
+            <h1 class="text-3xl font-bold tracking-tight">Saldo IPI</h1>
+            <p class="mt-1 text-base" style="color: var(--color-text-secondary);">Consulte e edite os saldos de IPI
+                apurados diretamente do WinThor. <strong>Dê duplo clique</strong> em uma linha para editar.</p>
+        </header>
+
+        <main class="space-y-4">
+            <div class="content-card p-3 flex flex-col md:flex-row items-center justify-between gap-3">
+                <div id="active-filters-display" class="text-sm font-medium px-2"
+                    style="color: var(--color-text-secondary)">
+                    Clique em "Pesquisar Saldo" para consultar os dados do WinThor.
+                </div>
+                <div class="flex flex-col sm:flex-row gap-2 w-full md:w-auto ml-auto">
+                    <button id="export-excel-btn" class="btn btn-secondary flex-shrink-0 w-full sm:w-auto hidden hover:bg-green-50 transition-colors" style="color: #16a34a; border-color: #16a34a;">
+                        <i class="fa-solid fa-file-excel mr-2"></i>Exportar Excel
+                    </button>
+                    <button id="open-search-btn" class="btn btn-primary flex-shrink-0 w-full sm:w-auto">
+                        <i class="fa-solid fa-magnifying-glass mr-2"></i>Pesquisar Saldo
+                    </button>
+                </div>
+            </div>
+
+
+
+            <div class="content-card">
+                <div class="overflow-x-auto thin-scrollbar">
+                    <table class="w-full text-sm text-left">
+                        <thead class="text-xs uppercase"
+                            style="background-color: var(--color-surface-hover); color: var(--color-text-tertiary);">
+                            <tr>
+                                <th scope="col" class="w-1/4">Filial</th>
+                                <th scope="col" class="w-1/4 text-center">Ano</th>
+                                <th scope="col" class="w-1/4 text-center">Mês</th>
+                                <th scope="col" class="w-1/4 text-right">Valor IPI</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body" class="divide-y" style="border-color: var(--color-border);"></tbody>
+                    </table>
+                    <div id="empty-state" class="text-center p-12 hidden">
+                        <i class="fa-solid fa-magnifying-glass text-4xl" style="color: var(--color-border-hover);"></i>
+                        <h3 class="mt-3 text-base font-semibold">Nenhum saldo encontrado</h3>
+                        <p id="empty-state-text" class="mt-1 text-sm" style="color: var(--color-text-secondary);">Clique
+                            em "Pesquisar Saldo" para consultar os dados do WinThor.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Search Modal -->
+    <div id="search-modal"
+        class="modal-container fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 hidden">
+        <div class="modal-box content-card w-full flex flex-col">
+            <form id="search-form">
+                <header class="card-header flex justify-between items-center">
+                    <h2 class="text-lg font-semibold">Pesquisar Saldo</h2>
+                    <button type="button"
+                        class="close-search-btn text-xl hover:text-[var(--color-primary)] transition-colors"
+                        style="color: var(--color-text-tertiary);">&times;</button>
+                </header>
+                <div class="card-body overflow-y-auto thin-scrollbar space-y-5">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                        <div class="floating-form-group">
+                            <input type="text" id="filter-filial" class="floating-input" placeholder=" ">
+                            <label for="filter-filial" class="floating-label"><i
+                                    class="fa-solid fa-building fa-fw"></i>Filial (Opcional)</label>
+                        </div>
+                        <div class="floating-form-group">
+                            <input type="number" id="filter-ano" class="floating-input" placeholder=" " min="2000"
+                                max="2099" required>
+                            <label for="filter-ano" class="floating-label"><i
+                                    class="fa-solid fa-calendar-days fa-fw"></i>Ano</label>
+                        </div>
+                        <div class="floating-form-group">
+                            <select id="filter-mes" class="floating-input" required>
+                                <option value="" disabled selected></option>
+                                <option value="1">01 - Janeiro</option>
+                                <option value="2">02 - Fevereiro</option>
+                                <option value="3">03 - Março</option>
+                                <option value="4">04 - Abril</option>
+                                <option value="5">05 - Maio</option>
+                                <option value="6">06 - Junho</option>
+                                <option value="7">07 - Julho</option>
+                                <option value="8">08 - Agosto</option>
+                                <option value="9">09 - Setembro</option>
+                                <option value="10">10 - Outubro</option>
+                                <option value="11">11 - Novembro</option>
+                                <option value="12">12 - Dezembro</option>
+                            </select>
+                            <label for="filter-mes" class="floating-label"><i
+                                    class="fa-solid fa-calendar-week fa-fw"></i>Mês</label>
+                            <i class="fa-solid fa-chevron-down select-icon text-xs"></i>
+                        </div>
+                    </div>
+                </div>
+                <footer class="card-footer flex justify-end gap-3"
+                    style="background-color: var(--color-surface-hover);">
+                    <button type="button" class="btn btn-secondary close-search-btn">Cancelar</button>
+                    <button type="submit" class="btn btn-primary w-32">
+                        <span>Pesquisar</span>
+                    </button>
+                </footer>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="edit-modal"
+        class="modal-container fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 hidden">
+        <div class="modal-box content-card w-full flex flex-col" style="max-width: 28rem;">
+            <header class="card-header flex justify-between items-center">
+                <h2 class="text-lg font-semibold"><i
+                        class="fa-solid fa-pen-to-square mr-2 text-[var(--color-primary)]"></i>Editar Valor IPI</h2>
+                <button type="button" class="close-edit-btn text-xl hover:text-[var(--color-primary)] transition-colors"
+                    style="color: var(--color-text-tertiary);">&times;</button>
+            </header>
+            <div class="card-body space-y-4">
+                <div class="grid grid-cols-3 gap-3 text-sm">
+                    <div class="p-3 rounded-md" style="background-color: var(--color-surface-hover);">
+                        <div class="text-xs font-medium uppercase" style="color: var(--color-text-tertiary);">Filial
+                        </div>
+                        <div id="edit-filial" class="font-bold text-lg mt-1"></div>
+                    </div>
+                    <div class="p-3 rounded-md" style="background-color: var(--color-surface-hover);">
+                        <div class="text-xs font-medium uppercase" style="color: var(--color-text-tertiary);">Ano</div>
+                        <div id="edit-ano" class="font-bold text-lg mt-1"></div>
+                    </div>
+                    <div class="p-3 rounded-md" style="background-color: var(--color-surface-hover);">
+                        <div class="text-xs font-medium uppercase" style="color: var(--color-text-tertiary);">Mês</div>
+                        <div id="edit-mes" class="font-bold text-lg mt-1"></div>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1.5" style="color: var(--color-text-secondary);">Valor
+                        Atual</label>
+                    <div id="edit-valor-atual" class="text-xl font-bold" style="color: var(--color-primary);"></div>
+                </div>
+                <div class="floating-form-group">
+                    <input type="text" id="edit-novo-valor" class="floating-input text-xl font-bold" placeholder=" "
+                        style="height: 60px; font-size: 1.25rem;">
+                    <label for="edit-novo-valor" class="floating-label"><i
+                            class="fa-solid fa-dollar-sign fa-fw"></i>Novo Valor IPI</label>
+                </div>
+            </div>
+            <footer class="card-footer flex justify-end gap-3" style="background-color: var(--color-surface-hover);">
+                <button type="button" class="btn btn-secondary close-edit-btn">Cancelar</button>
+                <button type="button" id="apply-edit-btn" class="btn" style="background-color: #dc2626; color: white;">
+                    <i class="fa-solid fa-triangle-exclamation mr-2"></i>Aplicar Alteração
+                </button>
+            </footer>
+        </div>
+    </div>
+
+    <script type="module">
+        const SUPABASE_URL = 'https://hzljpmjhmrgwjjskubii.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh6bGpwbWpobXJnd2pqc2t1YmlpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMzUxMTAsImV4cCI6MjA4OTYxMTExMH0.8AVmg5kBhWI_KWjqqfDKzH9SSn0Vwfi1yAfywvdjt4Q';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const MESES = ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+
+        const formatMoney = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
+
+        let currentData = [];
+        let editingItem = null;
+        let currentUserData = { nome: 'Usuário Padrão', email: '' };
+
+        // Carregar dados do usuário logado (via Supabase Auth)
+        const carregarUsuarioAtual = async () => {
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session && session.user && session.user.email) {
+                    currentUserData.email = session.user.email;
+                    const { data } = await supabase.from('UFC').select('"Nome Completo"').eq('"Melhor e-mail"', session.user.email).single();
+                    if (data && data["Nome Completo"]) {
+                        currentUserData.nome = data["Nome Completo"];
+                    }
+                    console.log('Usuário carregado:', currentUserData.nome, currentUserData.email);
+                }
+            } catch (e) {
+                console.warn('Não foi possível carregar dados do usuário:', e);
+            }
+        };
+        carregarUsuarioAtual();
+
+        // ---- UI Helpers ----
+        function showLoader(text = 'Carregando...') {
+            document.getElementById('loader-text').textContent = text;
+            const loader = document.getElementById('loader');
+            loader.classList.remove('hidden');
+            loader.style.opacity = '1';
+        }
+        function hideLoader() {
+            const loader = document.getElementById('loader');
+            loader.style.opacity = '0';
+            setTimeout(() => { loader.classList.add('hidden'); }, 300);
+        }
+
+        // ---- Render Table ----
+        function renderTable(data) {
+            currentData = data;
+            const tbody = document.getElementById('table-body');
+            const empty = document.getElementById('empty-state');
+            tbody.innerHTML = '';
+
+            if (!data || data.length === 0) {
+                empty.classList.remove('hidden');
+                document.getElementById('empty-state-text').textContent = 'Nenhum saldo encontrado para os filtros selecionados.';
+                document.getElementById('export-excel-btn').classList.add('hidden');
+                return;
+            }
+            empty.classList.add('hidden');
+            document.getElementById('export-excel-btn').classList.remove('hidden');
+
+            data.forEach(item => {
+                const row = document.createElement('tr');
+                row.title = 'Dê duplo clique para editar';
+                row.innerHTML = `
+                    <td class="font-medium align-middle">
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[var(--color-surface-hover)] border border-[var(--color-border)]">
+                            <i class="fa-solid fa-building text-[var(--color-text-secondary)] text-xs"></i>
+                            ${item.codfilial}
+                        </span>
+                    </td>
+                    <td class="align-middle text-center">${item.ano}</td>
+                    <td class="align-middle text-center capitalize">${MESES[item.mes] || item.mes}</td>
+                    <td class="align-middle text-right font-semibold" style="color: var(--color-primary)">${formatMoney(item.valoripi)}</td>
+                `;
+                row.addEventListener('dblclick', () => openEditModal(item));
+                tbody.appendChild(row);
+            });
+        }
+
+        // ---- Search Flow ----
+        async function loadFromSupabase(filter) {
+            let q = supabase.from('saldo_ipi').select('*').eq('ano', filter.ano).eq('mes', filter.mes).order('codfilial', { ascending: true });
+            if (filter.filial) q = q.eq('codfilial', filter.filial);
+            const { data, error } = await q;
+            if (error) { console.error(error); return []; }
+            return data || [];
+        }
+
+        async function pollFilaStatus(filaId) {
+            let polls = 0;
+            return new Promise((resolve) => {
+                const iv = setInterval(async () => {
+                    polls++;
+                    const { data, error } = await supabase.from('fila_ipi').select('status, obs').eq('id', filaId).single();
+                    if (error) { clearInterval(iv); resolve({ success: false, msg: error.message }); return; }
+                    if (data.status === 'Concluido') { clearInterval(iv); resolve({ success: true, msg: data.obs || 'Concluído!' }); return; }
+                    if (data.status === 'Erro') { clearInterval(iv); resolve({ success: false, msg: data.obs || 'Erro desconhecido.' }); return; }
+                    if (polls >= 60) { clearInterval(iv); resolve({ success: false, msg: 'Tempo limite. Verifique se o Python está rodando.' }); }
+                }, 2000);
+            });
+        }
+
+        document.getElementById('search-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const ano = parseInt(document.getElementById('filter-ano').value);
+            const mes = parseInt(document.getElementById('filter-mes').value);
+            const filial = document.getElementById('filter-filial').value.trim();
+            if (!ano || !mes) return;
+
+            document.getElementById('search-modal').classList.add('hidden');
+
+            let texts = [];
+            if (filial) texts.push('Filial: ' + filial);
+            texts.push('Ano: ' + ano, 'Mês: ' + MESES[mes]);
+            document.getElementById('active-filters-display').innerHTML = '<i class="fa-solid fa-filter mr-1 text-[var(--color-primary)]"></i> ' + texts.join(' | ');
+
+            showLoader('Limpando dados antigos no Supabase e solicitando nova pesquisa ao WinThor...');
+
+            // 1. Apagar TODOS os dados antigos no Supabase
+            await supabase.from('saldo_ipi').delete().neq('ano', 0);
+
+            // 2. Inserir na fila
+            const payload = { ano, mes, status: 'Pendente' };
+            if (filial) payload.codfilial = filial;
+            const { data: ins, error: insErr } = await supabase.from('fila_ipi').insert([payload]).select('id').single();
+            if (insErr) { hideLoader(); Swal.fire('Erro', 'Erro: ' + insErr.message, 'error'); return; }
+
+            showLoader('Aguardando o servidor buscar os dados no WinThor...');
+
+            // 3. Polling
+            const result = await pollFilaStatus(ins.id);
+            if (result.success) {
+                const dados = await loadFromSupabase({ ano, mes, filial });
+                renderTable(dados);
+                hideLoader();
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Pesquisa Concluída',
+                    text: result.msg,
+                    timer: 3000,
+                    showConfirmButton: false
+                });
+            } else {
+                hideLoader();
+                Swal.fire('Erro', result.msg, 'error');
+            }
+        });
+
+        // ---- Edit Flow (double-click) ----
+        function openEditModal(item) {
+            editingItem = item;
+            document.getElementById('edit-filial').textContent = item.codfilial;
+            document.getElementById('edit-ano').textContent = item.ano;
+            document.getElementById('edit-mes').textContent = MESES[item.mes] || item.mes;
+            document.getElementById('edit-valor-atual').textContent = formatMoney(item.valoripi);
+            document.getElementById('edit-novo-valor').value = '';
+            document.getElementById('edit-modal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('edit-novo-valor').focus(), 100);
+        }
+
+        document.getElementById('edit-novo-valor').addEventListener('input', function (e) {
+            let value = e.target.value.replace(/\D/g, ''); // Remove tudo que não for dígito
+            if (value === '') {
+                e.target.value = '';
+                return;
+            }
+            let floatVal = parseFloat(value) / 100;
+            e.target.value = floatVal.toLocaleString('pt-BR', { style: 'decimal', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        });
+
+        document.getElementById('apply-edit-btn').addEventListener('click', async () => {
+            if (!editingItem) return;
+
+            const valStr = document.getElementById('edit-novo-valor').value;
+            if (!valStr) {
+                Swal.fire({ icon: 'warning', title: 'Valor inválido', text: 'Digite o novo valor do IPI.', confirmButtonColor: '#EE7F01' });
+                return;
+            }
+
+            const rawVal = valStr.trim().replace(/\./g, '').replace(',', '.');
+            const novoValor = parseFloat(rawVal);
+
+            if (isNaN(novoValor)) {
+                Swal.fire({ icon: 'warning', title: 'Valor inválido', text: 'Digite um valor numérico válido.', confirmButtonColor: '#EE7F01' });
+                return;
+            }
+
+            const confirmed = await Swal.fire({
+                icon: 'warning',
+                title: 'Tem certeza?',
+                html: `
+                    <div style="text-align:left; font-size: 0.95rem;">
+                        <p><strong>Filial:</strong> ${editingItem.codfilial}</p>
+                        <p><strong>Período:</strong> ${MESES[editingItem.mes]}/${editingItem.ano}</p>
+                        <p><strong>Valor Atual:</strong> ${formatMoney(editingItem.valoripi)}</p>
+                        <p><strong>Novo Valor:</strong> ${formatMoney(novoValor)}</p>
+                        <br>
+                        <p style="color: #dc2626; font-weight: bold;">⚠️ Essa alteração será aplicada diretamente no WinThor.<br>NÃO TEM VOLTA!</p>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'Sim, aplicar!',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#6b7280',
+                reverseButtons: true
+            });
+
+            if (!confirmed.isConfirmed) return;
+
+            document.getElementById('edit-modal').classList.add('hidden');
+            showLoader('Enviando alteração para o WinThor...');
+
+            // Inserir na fila de UPDATE (com dados do usuário para auditoria)
+            const { data: upd, error: updErr } = await supabase.from('fila_ipi').insert([{
+                codfilial: editingItem.codfilial,
+                mes: editingItem.mes,
+                ano: editingItem.ano,
+                status: 'PendenteUpdate',
+                obs: String(novoValor),
+                user_nome: currentUserData.nome,
+                user_email: currentUserData.email
+            }]).select('id').single();
+
+            if (updErr) { hideLoader(); Swal.fire('Erro', 'Erro: ' + updErr.message, 'error'); return; }
+
+            // Polling para o update
+            let polls = 0;
+            const iv = setInterval(async () => {
+                polls++;
+                const { data } = await supabase.from('fila_ipi').select('status, obs').eq('id', upd.id).single();
+                if (!data) return;
+
+                if (data.status === 'UpdateConcluido') {
+                    clearInterval(iv);
+                    // Atualizar localmente
+                    editingItem.valoripi = novoValor;
+                    await supabase.from('saldo_ipi').update({ valoripi: novoValor }).eq('codfilial', editingItem.codfilial).eq('mes', editingItem.mes).eq('ano', editingItem.ano);
+                    renderTable(currentData);
+                    hideLoader();
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Sucesso!',
+                        text: 'Valor atualizado no WinThor com sucesso!',
+                        timer: 3000,
+                        showConfirmButton: false
+                    });
+                } else if (data.status === 'Erro') {
+                    clearInterval(iv);
+                    hideLoader();
+                    Swal.fire('Erro', 'Erro ao atualizar WinThor: ' + (data.obs || 'desconhecido'), 'error');
+                } else if (polls >= 60) {
+                    clearInterval(iv);
+                    hideLoader();
+                    Swal.fire('Erro', 'Tempo limite excedido. Verifique o Python.', 'error');
+                }
+            }, 2000);
+        });
+
+        // ---- Export Excel ----
+        document.getElementById('export-excel-btn').addEventListener('click', () => {
+            if (!currentData || currentData.length === 0) {
+                Swal.fire({ icon: 'warning', title: 'Sem dados', text: 'Não há dados para exportar.' });
+                return;
+            }
+
+            try {
+                const wsData = currentData.map(item => ({
+                    'Filial': item.codfilial,
+                    'Ano': item.ano,
+                    'Mês': MESES[item.mes] || item.mes,
+                    'Valor IPI': item.valoripi
+                }));
+
+                const ws = XLSX.utils.json_to_sheet(wsData);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Saldo IPI");
+                
+                let fileName = 'Saldo_IPI';
+                if (currentData.length > 0) {
+                    fileName += `_${currentData[0].ano}_${String(currentData[0].mes).padStart(2, '0')}`;
+                }
+                fileName += '.xlsx';
+
+                XLSX.writeFile(wb, fileName);
+            } catch (err) {
+                console.error(err);
+                Swal.fire('Erro', 'Ocorreu um erro ao gerar o arquivo Excel.', 'error');
+            }
+        });
+
+        // ---- Modal Controls ----
+        document.getElementById('open-search-btn').addEventListener('click', () => {
+            document.getElementById('search-modal').classList.remove('hidden');
+            document.getElementById('filter-filial').focus();
+        });
+        document.querySelectorAll('.close-search-btn').forEach(b => b.addEventListener('click', () => document.getElementById('search-modal').classList.add('hidden')));
+        document.querySelectorAll('.close-edit-btn').forEach(b => b.addEventListener('click', () => document.getElementById('edit-modal').classList.add('hidden')));
+
+        // ---- Init ----
+        window.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('empty-state').classList.remove('hidden');
+            setTimeout(() => { hideLoader(); document.body.classList.add('loaded'); }, 300);
+        });
+    </script>
+</body>
+
+</html>

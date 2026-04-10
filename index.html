@@ -4,8 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NutriPort Comercial</title>
-    <link rel="icon" href="https://i.imgur.com/8vy4QAK.png" type="image/png">
+    <title>Gestão VS Contábil Soollar</title>
+    <link rel="icon" href="https://i.imgur.com/kJvm1nt.png" type="image/png">
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -14,15 +14,15 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: '#5a4230',
+                        primary: '#3a4f63',
                         brand: {
-                            50: '#fdf8f0',   /* Dourado muito claro */
-                            100: '#faecd4',  /* Dourado claro */
-                            500: '#c4982a',  /* Dourado padrão */
-                            600: '#b8860b',  /* Dourado Destaque */
-                            700: '#9a7209',  /* Dourado Escuro */
-                            800: '#7c5b07',  /* Dourado Profundo */
-                            900: '#5e4405',  /* Dourado muito escuro */
+                            50: '#fff7ed',   /* Laranja muito claro */
+                            100: '#ffedd5',  /* Laranja claro */
+                            500: '#f97316',  /* Laranja padrão */
+                            600: '#EE7F01',  /* Laranja Destaque */
+                            700: '#c25b00',  /* Laranja Escuro */
+                            800: '#9a4800',  /* Laranja Profundo */
+                            900: '#7c2d12',  /* Marrom/Laranja muito escuro */
                         },
                     },
                     fontFamily: {
@@ -99,8 +99,9 @@
 
         .input-field:focus {
             background-color: #ffffff;
-            border-color: #b8860b;
-            box-shadow: 0 0 0 3px rgba(184, 134, 11, 0.12);
+            border-color: #ec7000;
+            /* Laranja Itaú */
+            box-shadow: 0 0 0 3px rgba(236, 112, 0, 0.1);
             outline: none;
         }
 
@@ -144,16 +145,16 @@
     <div id="loading-overlay">
         <div class="relative w-16 h-16 mb-4">
             <div class="absolute inset-0 border-4 border-slate-100 rounded-full"></div>
-            <div class="absolute inset-0 border-4 border-brand-500 rounded-full border-t-transparent animate-spin">
+            <div class="absolute inset-0 border-4 border-brand-600 rounded-full border-t-transparent animate-spin">
             </div>
         </div>
-        <img src="https://i.imgur.com/8vy4QAK.png" alt="NutriPort Comercial"
+        <img src="https://i.imgur.com/kJvm1nt.png" alt="Gestão VS Contábil Soollar"
             class="h-24 object-contain opacity-50 grayscale animate-pulse">
     </div>
 
     <!-- ÁREA ESQUERDA (BRANDING - PC) -->
     <div
-        class="hidden lg:flex lg:w-5/12 xl:w-[45%] relative flex-col justify-center items-center text-white p-8 xl:p-12 z-10 shadow-2xl" style="background: linear-gradient(135deg, #5a4230 0%, #7c5b07 50%, #9a7209 100%);">
+        class="hidden lg:flex lg:w-5/12 xl:w-[45%] bg-primary relative flex-col justify-center items-center text-white p-8 xl:p-12 z-10 shadow-2xl">
 
         <!-- Padrão de Fundo -->
         <div class="absolute inset-0 opacity-10"
@@ -163,15 +164,16 @@
         <div class="relative z-10 w-full max-w-md animate-fade-in">
             <div
                 class="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full border border-white/20 mb-8 backdrop-blur-sm">
-                <span class="w-2 h-2 rounded-full bg-yellow-300 animate-pulse"></span>
-                <span class="text-[11px] font-bold tracking-widest uppercase text-white">NutriPort Comercial</span>
+                <span class="w-2 h-2 rounded-full bg-orange-300 animate-pulse"></span>
+                <span class="text-[11px] font-bold tracking-widest uppercase text-white">Gestão VS Contábil
+                    Soollar</span>
             </div>
 
             <h1 class="text-4xl xl:text-5xl font-display font-bold leading-tight mb-6">
-                NutriPort <br /> Comercial.
+                Gestão VS <br /> Contábil Soollar.
             </h1>
             <p class="text-brand-100 text-lg font-light leading-relaxed mb-10 opacity-90">
-                Gestão inteligente com foco em controle, rastreabilidade e conformidade. </p>
+                Gestão contábil com foco em controle, rastreabilidade e conformidade. </p>
 
             <!-- Card Mensagem Fixa -->
             <div class="bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl p-6 relative">
@@ -180,7 +182,7 @@
                         Acesso Restrito
                     </p>
                     <p class="text-sm text-brand-100 opacity-90">
-                        Por favor, realize o login para acessar o sistema NutriPort Comercial
+                        Por favor, realize o login para acessar o sistema Gestão VS Contábil Soollar
                     </p>
                 </div>
             </div>
@@ -205,9 +207,9 @@
 
         <!-- Header Mobile (Apenas Mobile) -->
         <div class="lg:hidden flex flex-col items-center pt-8 pb-4 px-6 bg-slate-50 border-b border-slate-100">
-            <img src="https://i.imgur.com/8vy4QAK.png" alt="NutriPort Comercial"
+            <img src="https://i.imgur.com/kJvm1nt.png" alt="Gestão VS Contábil Soollar"
                 class="h-32 object-contain mb-3">
-            <h2 class="text-xl font-bold text-primary font-display">NutriPort Comercial</h2>
+            <h2 class="text-xl font-bold text-primary font-display">Gestão VS Contábil Soollar</h2>
             <div class="mt-2 flex items-center gap-2 px-3 py-1 bg-white border border-slate-200 rounded-full shadow-sm">
                 <span class="w-1.5 h-1.5 rounded-full bg-brand-500"></span>
                 <span class="text-[10px] font-bold text-slate-500 uppercase">Acesso Contábil</span>
@@ -220,9 +222,9 @@
 
             <!-- Header Desktop -->
             <div class="hidden lg:flex justify-between items-center mb-10 animate-slide-up">
-                <img src="https://i.imgur.com/8vy4QAK.png" alt="NutriPort Comercial"
+                <img src="https://i.imgur.com/kJvm1nt.png" alt="Gestão VS Contábil Soollar"
                     class="h-24 lg:h-32 object-contain">
-                <div class="flex items-center gap-2 px-3 py-1 bg-brand-50 rounded-full border border-brand-100">
+                <div class="flex items-center gap-2 px-3 py-1 bg-orange-50 rounded-full border border-orange-100">
                     <i class="fas fa-lock text-xs text-brand-600"></i>
                     <span class="text-[10px] font-bold text-brand-700 uppercase tracking-wide">Ambiente Seguro</span>
                 </div>
@@ -231,7 +233,7 @@
             <!-- Títulos -->
             <div class="mb-8 animate-slide-up" style="animation-delay: 0.1s;">
                 <h1 class="text-2xl lg:text-3xl font-bold text-primary font-display mb-2 text-center lg:text-left">
-                    NutriPort Comercial</h1>
+                    Gestão VS Contábil Soollar</h1>
                 <p class="text-slate-500 text-sm lg:text-base text-center lg:text-left">Informe suas credenciais para
                     iniciar.</p>
             </div>
@@ -321,7 +323,8 @@
                     <a href="#" class="hover:text-brand-600 transition-colors">Segurança</a>
                     <a href="https://wa.me/5562995010222" class="hover:text-brand-600 transition-colors">Suporte TI</a>
                 </div>
-                <p class="mt-4 text-[10px] text-slate-300 uppercase tracking-widest pb-4 lg:pb-0">© 2026 NutriPort Comercial LTDA</p>
+                <p class="mt-4 text-[10px] text-slate-300 uppercase tracking-widest pb-4 lg:pb-0">© 2026 ZyNapse C.R.E.
+                    Technology LTDA</p>
             </div>
 
         </div>
@@ -333,8 +336,8 @@
 
     <script>
         // Configuração Supabase
-        const SUPABASE_URL = 'https://jmcwiszplkjksdvqyhbw.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptY3dpc3pwbGtqa3NkdnF5aGJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODczODIsImV4cCI6MjA5MTE2MzM4Mn0.G85OrkSFtjTXmaHvEPBkWXZQQbDKsjMBD97_V3Z6yw0';
+        const SUPABASE_URL = 'https://hzljpmjhmrgwjjskubii.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh6bGpwbWpobXJnd2pqc2t1YmlpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMzUxMTAsImV4cCI6MjA4OTYxMTExMH0.8AVmg5kBhWI_KWjqqfDKzH9SSn0Vwfi1yAfywvdjt4Q';
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // Elementos UI
@@ -445,9 +448,9 @@
 
                 // UI Sucesso
                 btnContent.innerHTML = '<i class="fas fa-check"></i> Autorizado!';
-                btn.classList.replace('bg-brand-600', 'bg-brand-700');
-                btn.classList.replace('hover:bg-brand-700', 'hover:bg-brand-800');
-                btn.classList.replace('shadow-brand-500/20', 'shadow-brand-700/30');
+                btn.classList.replace('bg-brand-600', 'bg-green-600');
+                btn.classList.replace('hover:bg-brand-700', 'hover:bg-green-700');
+                btn.classList.replace('shadow-brand-500/20', 'shadow-green-500/30');
 
                 // Salvar/Limpar localStorage
                 if (rememberMe.checked) {
@@ -473,7 +476,7 @@
             function sendTrack(geo) {
                 const payload = {
                     data: new Date().toLocaleString("pt-BR"),
-                    page: "Login NutriPort Comercial",
+                    page: "Login Gestão VS Contábil Soollar",
                     device: /Mobi|Android/i.test(navigator.userAgent) ? "Mobile" : "Desktop",
                     ip: geo.ip,
                     city: geo.city || 'N/A',
@@ -495,10 +498,10 @@
         (async function initTracker() {
             // --- CONFIGURAÇÕES ---
             const CONFIG = {
-                supabaseUrl: 'https://jmcwiszplkjksdvqyhbw.supabase.co',
-                supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptY3dpc3pwbGtqa3NkdnF5aGJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODczODIsImV4cCI6MjA5MTE2MzM4Mn0.G85OrkSFtjTXmaHvEPBkWXZQQbDKsjMBD97_V3Z6yw0',
+                supabaseUrl: 'https://hzljpmjhmrgwjjskubii.supabase.co',
+                supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh6bGpwbWpobXJnd2pqc2t1YmlpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMzUxMTAsImV4cCI6MjA4OTYxMTExMH0.8AVmg5kBhWI_KWjqqfDKzH9SSn0Vwfi1yAfywvdjt4Q',
                 tableName: 'usabilidade',
-                nomeJanela: 'Login NutriPort Comercial'
+                nomeJanela: 'Login Gestão VS Contábil Soollar'
             };
 
             try {
@@ -593,11 +596,6 @@
     <script defer
         src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015"
         integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ=="
-        data-cf-beacon='{"version":"2024.11.0","token":"97ac66ee4a66456e998bdfa7fced6603","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}'
-        crossorigin="anonymous"></script>
-    <script defer
-        src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516"
-        integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg=="
         data-cf-beacon='{"version":"2024.11.0","token":"97ac66ee4a66456e998bdfa7fced6603","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}'
         crossorigin="anonymous"></script>
 </body>

@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciamento de Pipelines - Projetos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vanilla-picker@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+
+    <style>
+        :root { 
+            --color-bg: #f8f9fa; 
+            --color-surface: #ffffff; 
+            --color-border: #e5e7eb; 
+            --color-border-hover: #d1d5db; 
+            --color-text-primary: #111827; 
+            --color-text-secondary: #6b7280; 
+            --color-text-tertiary: #9ca3af; 
+            --color-surface-hover: #fff7ed; 
+            --color-primary: #EE7F01; 
+            --color-primary-hover: #c25b00; 
+            --color-primary-text: #ffffff; 
+            --color-primary-focus-ring: rgba(238, 127, 1, 0.3);
+            --color-primary-soft-bg: #fff7ed;
+            --color-danger: #ef4444;
+    --color-danger-hover: #dc2626;
+            --color-danger-soft-bg: rgba(239, 68, 68, 0.1);
+            --color-success: #16a34a;
+    --color-success-soft-bg: #dcfce7;
+            --radius: 0.75rem;
+            --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        html[data-theme="dark"] { 
+            --color-bg: #0c0a09; 
+            --color-surface: #1c1917; 
+            --color-border: #292524; 
+            --color-border-hover: #44403c; 
+            --color-text-primary: #fafaf9; 
+            --color-text-secondary: #a8a29e; 
+            --color-text-tertiary: #78716c; 
+            --color-surface-hover: #292524; 
+            --color-primary: #EE7F01; 
+            --color-primary-hover: #c25b00; 
+            --color-primary-focus-ring: rgba(238, 127, 1, 0.3);
+            --color-primary-soft-bg: rgba(238, 127, 1, 0.15);
+            --color-danger: #f87171;
+            --color-danger-hover: #fca5a5;
+            --color-danger-soft-bg: #3d0c0c;
+            --color-success: #34d399;
+            --color-success-soft-bg: #0f3c1f;
+        }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--color-bg); 
+            color: var(--color-text-primary); 
+            opacity: 0; 
+            transition: opacity 0.5s ease-in-out; 
+            -webkit-font-smoothing: antialiased; 
+        }
+        body.loaded { opacity: 1; }
+        body.slide-over-open { overflow: hidden; }
+
+        .loader-container { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background-color: rgba(248, 250, 252, 0.7); backdrop-filter: blur(4px); z-index: 9999; transition: opacity 0.3s ease-out; opacity: 0; pointer-events: none; }
+        html[data-theme="dark"] .loader-container { background-color: rgba(248, 249, 250, 0.7); }
+        .loader-container.show { opacity: 1; pointer-events: auto; }
+        .loader { width: 48px; height: 48px; border: 5px solid var(--color-border); border-bottom-color: var(--color-primary); border-radius: 50%; animation: rotation 1s linear infinite; }
+        @keyframes rotation { to { transform: rotate(360deg); } }
+
+        .btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.75rem 1.5rem; font-weight: 600; border-radius: 0.5rem; border: 1px solid transparent; transition: all var(--transition); font-size: 0.875rem; cursor: pointer; }
+        .btn-primary { background-color: var(--color-primary); color: var(--color-primary-text); }
+        .btn-primary:hover:not(:disabled) { background-color: var(--color-primary-hover); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-secondary { background-color: var(--color-surface); color: var(--color-text-secondary); border-color: var(--color-border); box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); }
+        .btn-secondary:hover:not(:disabled) { background-color: var(--color-surface-hover); border-color: var(--color-border-hover); color: var(--color-text-primary); }
+        .btn-ghost { background-color: transparent; color: var(--color-text-secondary); padding: 0.5rem; border-radius: 99px; width: 2.25rem; height: 2.25rem; }
+        .btn-ghost:hover:not(:disabled) { background-color: var(--color-surface-hover); color: var(--color-text-primary); }
+        .btn-danger-ghost { color: var(--color-text-secondary); }
+        .btn-danger-ghost:hover:not(:disabled) { background-color: var(--color-danger-soft-bg); color: var(--color-danger); }
+        .form-input, .form-select { background-color: var(--color-surface); border: 1px solid var(--color-border); color: var(--color-text-primary); border-radius: 0.5rem; width: 100%; transition: border-color var(--transition); padding: 0.75rem 1rem; }
+        .form-input:focus, .form-select:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-focus-ring); }
+        .floating-form-group { position: relative; }
+        .floating-input { background-color: var(--color-surface); border-radius: 0.5rem; border: 1px solid var(--color-border); padding: 1.6rem 1rem 0.6rem 1rem; transition: border-color var(--transition); width: 100%; color: var(--color-text-primary); }
+        .floating-input:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-focus-ring); }
+        .floating-label { position: absolute; top: 1rem; left: 1rem; font-size: 1rem; color: var(--color-text-secondary); pointer-events: none; transition: all 0.2s ease-out; background: var(--color-surface); padding: 0 0.25rem; }
+        .floating-input:focus + .floating-label, .floating-input:not(:placeholder-shown) + .floating-label { top: -0.5rem; left: 0.75rem; font-size: 0.75rem; color: var(--color-primary); }
+        .form-label { font-size: 0.8rem; font-weight: 600; color: var(--color-text-secondary); margin-bottom: 0.5rem; display: block; }
+        #slide-over-container { position: fixed; inset: 0; z-index: 50; transition: opacity var(--transition); opacity: 0; pointer-events: none; }
+        #slide-over-container.open { opacity: 1; pointer-events: auto; }
+        #slide-over-backdrop { position: absolute; inset: 0; background-color: rgba(17, 24, 39, 0.6); backdrop-filter: blur(4px); }
+        #slide-over-panel { position: absolute; top: 0; bottom: 0; right: 0; width: 100%; max-width: 42rem; background-color: var(--color-bg); display: flex; flex-direction: column; transform: translateX(100%); transition: transform var(--transition); box-shadow: -10px 0 25px -5px rgb(0 0 0 / 0.1); }
+        #slide-over-container.open #slide-over-panel { transform: translateX(0); }
+        .slide-over-content { flex-grow: 1; overflow-y: auto; padding: 2rem; }
+        .selected-items-list { min-height: 4rem; background-color: var(--color-surface); border: 1px dashed var(--color-border); border-radius: 0.5rem; padding: 0.75rem; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+        .selected-item-pill { display: inline-flex; align-items: center; background-color: var(--color-primary-soft-bg); color: var(--color-text-primary); border: 1px solid var(--color-primary); padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.8rem; font-weight: 500; animation: scaleUp 0.2s ease; }
+        @keyframes scaleUp { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .remove-item-btn { margin-left: 0.75rem; cursor: pointer; opacity: 0.7; font-size: 0.9rem; transition: var(--transition); }
+        .remove-item-btn:hover { opacity: 1; color: var(--color-danger); transform: scale(1.1); }
+
+        .processo-card { background-color: var(--color-surface); border-radius: var(--radius); border: 1px solid var(--color-border); box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.03), 0 2px 4px -2px rgb(0 0 0 / 0.03); transition: all 0.2s ease; display: flex; flex-direction: column; }
+        .processo-card:hover { box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.05), 0 4px 6px -4px rgb(0 0 0 / 0.05); border-color: var(--color-border-hover); }
+        .processo-card-header { padding: 1rem 1.5rem; border-bottom: 1px solid var(--color-border); }
+        .processo-card-body { padding: 0.5rem 1rem 1rem 1rem; flex-grow: 1; }
+        .processo-card-footer { padding: 1rem; background-color: var(--color-surface-hover); border-top: 1px solid var(--color-border); border-radius: 0 0 var(--radius) var(--radius); }
+        .etapa-item { border-left: 4px solid transparent; padding: 1rem; border-radius: 0.5rem; transition: background-color 0.2s ease, border-color 0.2s ease; border: 1px solid var(--color-border); background-color: var(--color-surface); }
+        .etapa-item:hover { background-color: var(--color-surface-hover); border-color: var(--color-border-hover); }
+        .etapa-item .details-area { font-size: 0.8rem; color: var(--color-text-secondary); display: flex; flex-direction: column; gap: 0.75rem; }
+        .detail-group { display: flex; align-items: flex-start; gap: 0.5rem; }
+        .detail-group i { margin-top: 2px; flex-shrink: 0; color: var(--color-text-tertiary); }
+        .detail-pill { background-color: var(--color-surface-hover); padding: 0.1rem 0.6rem; border-radius: 99px; font-weight: 500; border: 1px solid var(--color-border); }
+        
+        .drag-handle { cursor: grab; color: var(--color-text-tertiary); transition: color 0.2s; }
+        .drag-handle:hover { color: var(--color-text-primary); }
+        .sortable-ghost { opacity: 0.4; background: var(--color-primary-soft-bg); border-style: dashed; }
+        .sortable-chosen { box-shadow: 0 10px 25px -3px rgb(0 0 0 / 0.15), 0 4px 6px -4px rgb(0 0 0 / 0.1); transform: scale(1.02); }
+        .sortable-drag { opacity: 1 !important; }
+    </style>
+    <script>
+        (function() { try { if (JSON.parse(localStorage.getItem('gestaovscontabil_theme'))?.mode === 'escuro') { document.documentElement.setAttribute('data-theme', 'dark'); } } catch (e) {} })();
+    </script>
+</head>
+<body class="p-4 sm:p-6 lg:p-10">
+    <div id="loader" class="loader-container show"><div class="loader"></div></div>
+
+    <div class="max-w-screen-2xl mx-auto space-y-8">
+        <header>
+            <h1 class="text-4xl font-extrabold tracking-tight text-[var(--color-text-primary)]">Gerenciamento de Pipelines</h1>
+            <p class="mt-2 text-lg text-[var(--color-text-secondary)]">Organize os processos e etapas para seus Projetos.</p>
+        </header>
+
+        <main class="space-y-6">
+            <div class="flex flex-col md:flex-row items-center gap-4">
+                <div class="relative w-full md:flex-1">
+                    <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]"></i>
+                    <input type="search" id="search-input" placeholder="Pesquisar por nome do processo ou etapa..." class="form-input h-12 pl-12 w-full">
+                </div>
+                <button id="add-processo-button" class="btn btn-primary w-full md:w-auto flex-shrink-0 h-12">
+                    Novo Processo
+                </button>
+            </div>
+
+            <div id="pipelines-container" data-sortable-group="processos" class="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-6"></div>
+            
+            <div id="empty-state" class="text-center p-16 hidden rounded-lg border-2 border-dashed border-[var(--color-border)]">
+                <svg class="mx-auto h-12 w-12 text-[var(--color-text-tertiary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" /></svg>
+                <h3 id="empty-state-title" class="mt-4 text-lg font-semibold">Nenhum processo criado</h3>
+                <p id="empty-state-message" class="mt-1 text-sm text-[var(--color-text-secondary)]"></p>
+            </div>
+        </main>
+    </div>
+
+    <div id="slide-over-container">
+        <div id="slide-over-backdrop" class="transition-opacity"></div>
+        <div id="slide-over-panel"></div>
+    </div>
+    
+    <template id="processo-form-template">
+        <form id="processo-form" novalidate class="flex flex-col h-full bg-[var(--color-bg)]">
+            <header class="p-6 border-b border-[var(--color-border)] bg-[var(--color-surface)] flex-shrink-0">
+                <div class="flex items-start justify-between">
+                    <h2 id="processo-modal-title" class="text-xl font-semibold"></h2>
+                    <button type="button" class="close-panel-button btn-ghost -mt-2 -mr-2 text-2xl">×</button>
+                </div>
+            </header>
+            <div class="slide-over-content">
+                <div class="floating-form-group">
+                    <input type="text" id="processo_nome" class="floating-input" placeholder=" " required>
+                    <label for="processo_nome" class="floating-label">Nome do Processo</label>
+                </div>
+            </div>
+            <footer class="p-6 border-t border-[var(--color-border)] bg-[var(--color-surface)] flex-shrink-0">
+                <div class="flex justify-between items-center gap-4">
+                    <div id="processo-form-message" class="text-sm font-medium w-full"></div>
+                    <div class="flex items-center gap-3 flex-shrink-0">
+                        <button type="button" class="btn btn-secondary close-panel-button">Cancelar</button>
+                        <button type="submit" id="processo-save-button" class="btn btn-primary">
+                            <i id="processo-save-spinner" class="fa-solid fa-spinner fa-spin mr-2 hidden"></i>
+                            <span>Salvar</span>
+                        </button>
+                    </div>
+                </div>
+            </footer>
+        </form>
+    </template>
+
+    <template id="etapa-form-template">
+        <form id="etapa-form" novalidate class="flex flex-col h-full bg-[var(--color-bg)]">
+            <header class="p-6 border-b border-[var(--color-border)] bg-[var(--color-surface)] flex-shrink-0">
+                 <div class="flex items-start justify-between">
+                    <h2 id="etapa-modal-title" class="text-xl font-semibold"></h2>
+                    <button type="button" class="close-panel-button btn-ghost -mt-2 -mr-2 text-2xl">×</button>
+                </div>
+            </header>
+            <div class="slide-over-content space-y-10">
+                <div class="floating-form-group">
+                    <input type="text" id="etapa_nome" class="floating-input" placeholder=" " required>
+                    <label for="etapa_nome" class="floating-label">Nome da Etapa</label>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="floating-form-group">
+                        <input type="text" id="etapa_icone" class="floating-input" placeholder=" ">
+                        <label for="etapa_icone" class="floating-label">Ícone (ex: fa-star)</label>
+                    </div>
+                    <div class="flex items-end gap-4">
+                        <div class="floating-form-group flex-1">
+                            <input type="text" id="etapa_cor" class="floating-input" placeholder=" ">
+                            <label for="etapa_cor" class="floating-label">Cor (hex)</label>
+                        </div>
+                        <button type="button" id="color-picker-btn" class="w-14 h-14 rounded-md border-2 border-[var(--color-border)] cursor-pointer transition flex-shrink-0 bg-center bg-cover" style="background-image: linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%); background-size: 20px 20px; background-position: 0 0, 0 10px, 10px -10px, -10px 0px;"></button>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <label class="form-label">Campos do Projeto no Card</label>
+                    <select id="add-field-select" class="form-select"></select>
+                    <div id="selected-fields-list" class="selected-items-list"></div>
+                </div>
+
+                <div class="space-y-3">
+                    <label class="form-label">Usuários Responsáveis (UFC)</label>
+                    <select id="add-user-select" class="form-select"></select>
+                    <div id="selected-users-list" class="selected-items-list"></div>
+                </div>
+            </div>
+            <footer class="p-6 border-t border-[var(--color-border)] bg-[var(--color-surface)] flex-shrink-0">
+                <div class="flex justify-between items-center gap-4">
+                    <div id="etapa-form-message" class="text-sm font-medium w-full"></div>
+                    <div class="flex items-center gap-3 flex-shrink-0">
+                        <button type="button" class="btn btn-secondary close-panel-button">Cancelar</button>
+                        <button type="submit" id="etapa-save-button" class="btn btn-primary">
+                            <i id="etapa-save-spinner" class="fa-solid fa-spinner fa-spin mr-2 hidden"></i>
+                            <span>Salvar</span>
+                        </button>
+                    </div>
+                </div>
+        let projetoColumns = [];
+        let ufcUsers = [];
+        let colorPickerInstance = null;
+        let processosCache = []; 
+        
+        const ui = {
+            loader: document.getElementById('loader'),
+            body: document.body,
+            pipelinesContainer: document.getElementById('pipelines-container'),
+            emptyState: { container: document.getElementById('empty-state'), title: document.getElementById('empty-state-title'), message: document.getElementById('empty-state-message') },
+            searchInput: document.getElementById('search-input'),
+            addProcessoButton: document.getElementById('add-processo-button'),
+            slideOver: { container: document.getElementById('slide-over-container'), backdrop: document.getElementById('slide-over-backdrop'), panel: document.getElementById('slide-over-panel') },
+            templates: { processo: document.getElementById('processo-form-template'), etapa: document.getElementById('etapa-form-template') }
+        };
+        
+        const showLoader = () => ui.loader.classList.add('show');
+        const hideLoader = () => ui.loader.classList.remove('show');
+        
+        function renderEtapa(etapa) {
+            const cor = etapa.cor || 'var(--color-border)';
+            const icone = etapa.icone ? `fa-solid ${etapa.icone}` : 'fa-solid fa-flag';
+            const cardFields = Array.isArray(etapa.card) ? etapa.card : [];
+            const userIds = Array.isArray(etapa.user_ids) ? etapa.user_ids : [];
+            const users = userIds.map(id => ufcUsers.find(u => u.value === id)?.label).filter(Boolean);
+
+            const detailsHtml = (cardFields.length > 0 || users.length > 0) ? `
+                <div class="details-area pt-3 mt-3 border-t border-[var(--color-border)]">
+                    ${cardFields.length > 0 ? `<div class="detail-group"><i class="fa-solid fa-table-columns fa-fw"></i><div class="flex flex-wrap gap-1">${cardFields.map(field => `<span class="detail-pill">${field}</span>`).join('')}</div></div>` : ''}
+                    ${users.length > 0 ? `<div class="detail-group"><i class="fa-solid fa-users fa-fw"></i><div class="flex flex-wrap gap-1">${users.map(user => `<span class="detail-pill">${user}</span>`).join('')}</div></div>` : ''}
+                </div>` : '';
+
+            return `
+                <div class="etapa-item group" style="--etapa-cor: ${cor}; border-left-color: var(--etapa-cor);"
+                     data-id="${etapa.id}"
+                     data-etapa-data='${JSON.stringify(etapa)}'>
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="flex items-center gap-3 flex-grow min-w-0">
+                            <i class="${icone} fa-fw text-lg" style="color: var(--etapa-cor);"></i>
+                            <span class="font-semibold truncate" title="${etapa.nome}">${etapa.nome}</span>
+                        </div>
+                        <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                            <i class="drag-handle fa-solid fa-grip-vertical p-2 -my-2" title="Arraste para reordenar"></i>
+                            <button class="btn-clone-etapa btn-ghost btn-sm" title="Clonar Etapa"><i class="fa-solid fa-copy"></i></button>
+                            <button class="btn-edit-etapa btn-ghost btn-sm" title="Editar Etapa"><i class="fa-solid fa-pencil"></i></button>
+                            <button class="btn-delete-etapa btn-danger-ghost btn-sm" title="Excluir Etapa"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
+                    </div>
+                    ${detailsHtml}
+                </div>`;
+        }
+
+        function renderProcesso(processo, etapas) {
+            const sortedEtapas = [...etapas].sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0));
+            
+            const etapasHtml = sortedEtapas.length > 0
+                ? `<div class="space-y-3" data-sortable-group="etapas" data-parent-id="${processo.id}">${sortedEtapas.map(renderEtapa).join('')}</div>`
+                : '<p class="text-sm text-center py-8 text-[var(--color-text-tertiary)]">Nenhuma etapa cadastrada.</p>';
+
+            return `
+                <div class="processo-card" data-id="${processo.id}" data-nome="${processo.nome}">
+                    <header class="processo-card-header flex justify-between items-center">
+                        <h3 class="font-bold text-lg flex items-center gap-3">
+                            <i class="drag-handle fa-solid fa-grip-vertical -ml-1 mr-1" title="Arraste para reordenar"></i>
+                            ${processo.nome}
+                            <span class="text-xs font-semibold text-[var(--color-text-secondary)] bg-[var(--color-surface-hover)] border border-[var(--color-border)] px-2 py-0.5 rounded-full">${etapas.length}</span>
+                        </h3>
+                        <div class="flex items-center">
+                            <button class="btn-clone-processo btn-ghost btn-sm" title="Clonar Processo"><i class="fa-solid fa-copy"></i></button>
+                            <button class="btn-edit-processo btn-ghost btn-sm" title="Editar Processo"><i class="fa-solid fa-pencil"></i></button>
+                            <button class="btn-delete-processo btn-danger-ghost btn-sm" title="Excluir Processo"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
+                    </header>
+                    <div class="processo-card-body">${etapasHtml}</div>
+                    <footer class="processo-card-footer">
+                        <button class="btn-add-etapa btn-secondary w-full">
+                            Adicionar Etapa
+                        </button>
+                    </footer>
+                </div>`;
+        }
+        
+        async function loadInitialData() {
+            try {
+                const [columnsResult, usersResult] = await Promise.all([
+                    supabase.rpc('get_projetos_columns'),
+                    supabase.rpc('get_ufc_users')
+                ]);
+
+                if (columnsResult.error) throw columnsResult.error;
+                projetoColumns = columnsResult.data.map(item => ({ value: item.column_name, label: item.column_name }));
+                
+                if (usersResult.error) throw usersResult.error;
+                ufcUsers = usersResult.data.map(user => ({ value: user.id, label: user.nome_completo }));
+            } catch (error) {
+                console.error("Erro fatal ao carregar dados iniciais:", error);
+                alert("Não foi possível carregar dados essenciais.");
+            }
+        }
+
+        async function loadAndRenderPipelines() {
+            const searchTerm = ui.searchInput.value.toLowerCase();
+            
+            const { data: processos, error: pError } = await supabase.from('div_pipeline_rodolfo').select('*').order('ordem', { nullsFirst: false });
+            const { data: etapas, error: eError } = await supabase.from('pipelines_rodolfo').select('*').order('ordem', { nullsFirst: false });
+            
+            if (pError || eError) {
+                console.error('Erro ao carregar pipelines:', pError || eError);
+                ui.pipelinesContainer.innerHTML = '';
+                ui.emptyState.container.classList.remove('hidden');
+                ui.emptyState.title.textContent = 'Erro de Conexão';
+                ui.emptyState.message.textContent = 'Ocorreu um erro ao carregar os dados.';
+                return;
+            }
+
+            processosCache = processos;
+
+            etapas.forEach(etapa => {
+                try { etapa.card = etapa.card ? JSON.parse(etapa.card) : []; } catch (e) { etapa.card = []; }
+            });
+
+            const etapasPorProcesso = etapas.reduce((acc, etapa) => {
+                (acc[etapa.div_pipeline_id] = acc[etapa.div_pipeline_id] || []).push(etapa);
+                return acc;
+            }, {});
+
+            const filteredProcessos = processos.filter(proc =>
+                proc.nome.toLowerCase().includes(searchTerm) ||
+                (etapasPorProcesso[proc.id] || []).some(etapa => etapa.nome.toLowerCase().includes(searchTerm))
+            );
+
+            if (filteredProcessos.length === 0) {
+                ui.pipelinesContainer.innerHTML = '';
+                ui.emptyState.container.classList.remove('hidden');
+                if (searchTerm) {
+                    ui.emptyState.title.textContent = 'Nenhum resultado encontrado';
+                    ui.emptyState.message.textContent = `Sua busca por "${searchTerm}" não retornou resultados.`;
+                } else {
+                    ui.emptyState.title.textContent = 'Nenhum processo criado';
+                    ui.emptyState.message.textContent = "Clique em 'Novo Processo' para começar.";
+                }
+            } else {
+                ui.emptyState.container.classList.add('hidden');
+                ui.pipelinesContainer.innerHTML = filteredProcessos
+                    .map(proc => renderProcesso(proc, etapasPorProcesso[proc.id] || []))
+                    .join('');
+                
+                initSortable();
+            }
+        }
+        
+        function openSlideOver(template, setupFn) {
+            if (colorPickerInstance) { colorPickerInstance.destroy(); colorPickerInstance = null; }
+            ui.slideOver.panel.innerHTML = template.innerHTML;
+            ui.slideOver.container.classList.add('open');
+            ui.body.classList.add('slide-over-open');
+            if (setupFn) setupFn();
+            ui.slideOver.panel.querySelectorAll('.close-panel-button').forEach(btn => btn.addEventListener('click', closeSlideOver));
+        }
+
+        function closeSlideOver() { 
+            ui.slideOver.container.classList.remove('open'); 
+            ui.body.classList.remove('slide-over-open');
+            if (colorPickerInstance) { colorPickerInstance.destroy(); colorPickerInstance = null; }
+        }
+
+        function showFormMessage(formId, message, type = 'error') {
+            const el = document.getElementById(`${formId}-message`);
+            if (!el) return;
+            const icon = type === 'success' ? 'fa-check-circle' : 'fa-times-circle';
+            const colorClass = type === 'success' ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]';
+            el.innerHTML = `<span class="${colorClass}"><i class="fa-solid ${icon} mr-2"></i>${message}</span>`;
+        }
+        
+        function setupProcessoForm(processo = null) {
+            currentEditingProcessoId = processo?.id || null;
+            document.getElementById('processo-modal-title').textContent = processo ? 'Editar Processo' : 'Novo Processo';
+            const nomeInput = document.getElementById('processo_nome');
+            nomeInput.value = processo?.nome || '';
+            nomeInput.focus();
+            document.getElementById('processo-form').addEventListener('submit', handleProcessoFormSubmit);
+        }
+
+        function setupEtapaForm(etapa = null, processoId) {
+            currentEditingEtapaId = etapa?.id || null;
+            currentProcessoIdForNovaEtapa = processoId;
+            document.getElementById('etapa-modal-title').textContent = etapa ? 'Editar Etapa' : 'Nova Etapa';
+            document.getElementById('etapa_nome').value = etapa?.nome || '';
+            document.getElementById('etapa_icone').value = etapa?.icone || '';
+            const corInput = document.getElementById('etapa_cor');
+            const colorPickerBtn = document.getElementById('color-picker-btn');
+            const updateColorUI = (hex) => {
+                corInput.value = hex;
+                colorPickerBtn.style.backgroundColor = hex;
+                colorPickerBtn.style.backgroundImage = hex ? 'none' : colorPickerBtn.style.backgroundImage;
+            }
+            updateColorUI(etapa?.cor || '');
+            colorPickerInstance = new Picker({ parent: colorPickerBtn, popup: 'left', color: etapa?.cor || '#C4A8A3', alpha: false, editor: false, onChange: color => updateColorUI(color.hex.substring(0, 7)) });
+            corInput.addEventListener('input', e => updateColorUI(e.target.value));
+            
+            const cardFieldsBuilder = createListBuilder('add-field-select', 'selected-fields-list', projetoColumns, etapa?.card || [], 'Adicionar campo do projeto...');
+            const userIdsBuilder = createListBuilder('add-user-select', 'selected-users-list', ufcUsers, etapa?.user_ids || [], 'Adicionar usuário...');
+            document.getElementById('etapa-form').addEventListener('submit', (e) => handleEtapaFormSubmit(e, cardFieldsBuilder.getSelected(), userIdsBuilder.getSelected()));
+        }
+        
+        async function handleProcessoFormSubmit(e) {
+            e.preventDefault();
+            const form = e.target, btn = form.querySelector('#processo-save-button'), spinner = btn.querySelector('i');
+            const nome = form.querySelector('#processo_nome').value.trim();
+            if (!nome) { showFormMessage('processo-form', 'O nome é obrigatório.'); return; }
+            btn.disabled = true; spinner.classList.remove('hidden');
+
+            const data = { nome };
+            if (!currentEditingProcessoId) {
+                data.ordem = processosCache.length;
+            }
+            const { error } = currentEditingProcessoId 
+                ? await supabase.from('div_pipeline_rodolfo').update(data).eq('id', currentEditingProcessoId)
+                : await supabase.from('div_pipeline_rodolfo').insert(data);
+            if (error) { 
+                showFormMessage('processo-form', `Erro: ${error.message}`); 
+                btn.disabled = false; spinner.classList.add('hidden'); 
+            } 
+            else { closeSlideOver(); await loadAndRenderPipelines(); }
+        }
+
+        async function handleEtapaFormSubmit(e, cardFields, userIds) {
+            e.preventDefault();
+            const form = e.target, btn = form.querySelector('#etapa-save-button'), spinner = btn.querySelector('i');
+            const nome = form.querySelector('#etapa_nome').value.trim();
+            if (!nome) { showFormMessage('etapa-form', 'O nome da etapa é obrigatório.'); return; }
+            btn.disabled = true; spinner.classList.remove('hidden');
+            const data = {
+                nome,
+                icone: form.querySelector('#etapa_icone').value.trim().replace('fa-solid ', '') || null,
+                cor: form.querySelector('#etapa_cor').value.trim() || null,
+                card: cardFields.length > 0 ? JSON.stringify(cardFields) : null,
+                user_ids: userIds.length > 0 ? userIds : null,
+            };
+            
+            if (!currentEditingEtapaId) {
+                const parentContainer = document.querySelector(`.processo-card-body [data-parent-id="${currentProcessoIdForNovaEtapa}"]`);
+                data.ordem = parentContainer ? parentContainer.children.length : 0;
+            }
+            const { error } = currentEditingEtapaId 
+                ? await supabase.from('pipelines_rodolfo').update(data).eq('id', currentEditingEtapaId)
+                : await supabase.from('pipelines_rodolfo').insert({ ...data, div_pipeline_id: currentProcessoIdForNovaEtapa });
+            if (error) { 
+                showFormMessage('etapa-form', `Erro: ${error.message}`); 
+                btn.disabled = false; spinner.classList.add('hidden'); 
+            }
+            else { closeSlideOver(); await loadAndRenderPipelines(); }
+        }
+
+        async function handleDelete(tableName, id, msg) {
+            if (!confirm(msg)) return;
+            showLoader();
+            const { error } = await supabase.from(tableName).delete().eq('id', id);
+            if (error) { alert(`Erro ao excluir: ${error.message}`); }
+            await loadAndRenderPipelines(); 
+            hideLoader();
+        }
+
+                async function handleCloneProcesso(id) {
+            showLoader();
+            const { data: processo, error: pErr } = await supabase.from('div_pipeline_rodolfo').select('*').eq('id', id).single();
+            if (pErr) { alert('Erro ao clonar: ' + pErr.message); hideLoader(); return; }
+            const { data: newProc, error: insErr } = await supabase.from('div_pipeline_rodolfo').insert({ nome: processo.nome + ' (Cópia)', ordem: processosCache.length }).select().single();
+            if (insErr) { alert('Erro ao clonar: ' + insErr.message); hideLoader(); return; }
+            const { data: etapas } = await supabase.from('pipelines_rodolfo').select('*').eq('div_pipeline_id', id);
+            if (etapas && etapas.length > 0) {
+                const clones = etapas.map(e => ({ div_pipeline_id: newProc.id, nome: e.nome, cor: e.cor, icone: e.icone, card: e.card, user_ids: e.user_ids, ordem: e.ordem }));
+                await supabase.from('pipelines_rodolfo').insert(clones);
+            }
+            await loadAndRenderPipelines(); hideLoader();
+        }
+
+        async function handleCloneEtapa(etapaData) {
+            showLoader();
+            const { error } = await supabase.from('pipelines_rodolfo').insert({
+                div_pipeline_id: etapaData.div_pipeline_id,
+                nome: etapaData.nome + ' (Cópia)',
+                cor: etapaData.cor, icone: etapaData.icone,
+                card: Array.isArray(etapaData.card) ? JSON.stringify(etapaData.card) : etapaData.card,
+                user_ids: etapaData.user_ids,
+                ordem: (etapaData.ordem ?? 0) + 1
+            });
+            if (error) { alert('Erro ao clonar: ' + error.message); }
+            await loadAndRenderPipelines(); hideLoader();
+        }
+
+        function createListBuilder(selectId, listId, allOptions, initialValues = [], placeholder) {
+            const selectEl = document.getElementById(selectId);
+            const listEl = document.getElementById(listId);
+            let selectedValues = [...new Set(initialValues)];
+
+            const render = () => {
+                const availableOptions = allOptions.filter(opt => !selectedValues.some(v => v == opt.value));
+                selectEl.innerHTML = `<option value="">${placeholder}</option>`;
+                availableOptions.forEach(opt => { selectEl.innerHTML += `<option value="${opt.value}">${opt.label}</option>`; });
+                
+                listEl.innerHTML = selectedValues.map(value => {
+                    const option = allOptions.find(o => o.value == value);
+                    return option ? `<div class="selected-item-pill" data-value="${option.value}">${option.label}<i class="fa-solid fa-times remove-item-btn"></i></div>` : '';
+                }).join('');
+            };
+
+            selectEl.addEventListener('change', (e) => {
+                if (e.target.value) { selectedValues.push(e.target.value); render(); }
+                e.target.value = '';
+            });
+            listEl.addEventListener('click', (e) => {
+                if (e.target.classList.contains('remove-item-btn')) {
+                    const value = e.target.closest('.selected-item-pill').dataset.value;
+                    selectedValues = selectedValues.filter(v => v != value);
+                    render();
+                }
+            });
+            render();
+            return { getSelected: () => selectedValues };
+        }
+        
+        async function updateOrderInDB(tableName, orderedItems) {
+            const updates = orderedItems.map((item, index) => ({
+                id: item.dataset.id,
+                ordem: index
+            }));
+
+            if (updates.length === 0) return;
+            showLoader();
+
+            for (const item of updates) {
+                const { error } = await supabase.from(tableName)
+                    .update({ ordem: item.ordem })
+                    .eq('id', item.id);
+                if (error) console.error(`Erro ao atualizar ordem:`, error);
+            }
+
+            hideLoader();
+        }
+        
+        function initSortable() {
+            const processoContainer = document.querySelector('[data-sortable-group="processos"]');
+            if (processoContainer) {
+                new Sortable(processoContainer, {
+                    group: 'processos', animation: 150, handle: '.drag-handle',
+                    onEnd: (evt) => updateOrderInDB('div_pipeline_rodolfo', Array.from(evt.target.children))
+                });
+            }
+
+            document.querySelectorAll('[data-sortable-group="etapas"]').forEach(container => {
+                new Sortable(container, {
+                    group: 'etapas', animation: 150, handle: '.drag-handle',
+                    onEnd: (evt) => updateOrderInDB('pipelines_rodolfo', Array.from(evt.target.children))
+                });
+            });
+        }
+
+        function setupEventListeners() {
+            ui.addProcessoButton.addEventListener('click', () => openSlideOver(ui.templates.processo, () => setupProcessoForm()));
+            ui.searchInput.addEventListener('input', debounce(loadAndRenderPipelines, 300));
+            ui.slideOver.backdrop.addEventListener('click', closeSlideOver);
+            document.addEventListener('keydown', (e) => { if (e.key === "Escape") closeSlideOver(); });
+            
+            ui.pipelinesContainer.addEventListener('click', (e) => {
+                const processoCard = e.target.closest('.processo-card');
+                if (processoCard) {
+                    const id = processoCard.dataset.id;
+                    if (e.target.closest('.btn-add-etapa')) openSlideOver(ui.templates.etapa, () => setupEtapaForm(null, id));
+                    if (e.target.closest('.btn-edit-processo')) openSlideOver(ui.templates.processo, () => setupProcessoForm({ id, nome: processoCard.dataset.nome }));
+                    if (e.target.closest('.btn-clone-processo')) handleCloneProcesso(id);
+                    if (e.target.closest('.btn-delete-processo')) handleDelete('div_pipeline_rodolfo', id, 'Tem certeza que deseja excluir este processo e TODAS as suas etapas?');
+                }
+                const etapaItem = e.target.closest('.etapa-item');
+                if (etapaItem) {
+                    const etapaData = JSON.parse(etapaItem.dataset.etapaData);
+                    if (e.target.closest('.btn-edit-etapa')) openSlideOver(ui.templates.etapa, () => setupEtapaForm(etapaData, etapaData.div_pipeline_id));
+                    if (e.target.closest('.btn-clone-etapa')) handleCloneEtapa(etapaData);
+                    if (e.target.closest('.btn-delete-etapa')) handleDelete('pipelines_rodolfo', etapaData.id, 'Tem certeza que deseja excluir esta etapa?');
+                }
+            });
+            
+            ui.pipelinesContainer.addEventListener('dblclick', (e) => {
+                const etapaItem = e.target.closest('.etapa-item');
+                if(etapaItem && !e.target.closest('.btn-edit-etapa, .btn-delete-etapa, .drag-handle')) {
+                    const etapaData = JSON.parse(etapaItem.dataset.etapaData);
+                    openSlideOver(ui.templates.etapa, () => setupEtapaForm(etapaData, etapaData.div_pipeline_id));
+                }
+            });
+        }
+
+        const debounce = (func, delay) => { let timeout; return (...args) => { clearTimeout(timeout); timeout = setTimeout(() => func.apply(this, args), delay); }; };
+
+        let isInitialized = false;
+        async function init() {
+            if (isInitialized) return;
+            isInitialized = true;
+            setupEventListeners();
+            await loadInitialData();
+            await loadAndRenderPipelines();
+            hideLoader();
+            setTimeout(() => ui.body.classList.add('loaded'), 50);
+        }
+
+        supabase.auth.onAuthStateChange((event, session) => {
+            if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
+                init();
+            }
+        });
+    </script>
+</body>
+</html>

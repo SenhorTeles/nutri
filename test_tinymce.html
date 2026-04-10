@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js"></script>
+    <style>
+        .hidden { display: none; }
+        .tox-tinymce { height: 100% !important; width: 100% !important; }
+    </style>
+</head>
+<body>
+    <button onclick="document.getElementById('container').classList.remove('hidden')">Show</button>
+    <button onclick="tinymce.get('editor').mode.set('design')">Edit</button>
+    <div id="container" class="hidden" style="height: 400px; width: 800px; border: 1px solid red;">
+        <textarea id="editor"></textarea>
+    </div>
+    <script>
+        tinymce.init({
+            selector: '#editor',
+            height: '100%',
+            setup: function(editor) {
+                editor.on('init', function() {
+                    editor.mode.set('readonly');
+                });
+            }
+        });
+    </script>
+</body>
+</html>

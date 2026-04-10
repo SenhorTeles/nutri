@@ -1,0 +1,30 @@
+SELECT   n.codfilialnf,
+         n.codfilial,
+         n.modelo,
+         n.serie,
+         n.especie,
+         n.numnota,
+         n.numtransent,
+         n.vltotal, 
+         n.codfornec,
+         f.fornecedor, 
+         f.cgc,
+         n.chavenfe,
+         n.chavecte,
+         n.dtemissao,
+         n.dtent
+         
+  FROM   pcnfent n , pcfornec f  
+ WHERE n.codfornec = f.codfornec(+)
+    
+ AND n.codfilial in ('8')        
+ 
+ AND TRUNC(n.dtent) = TO_DATE('18/03/2026', 'DD/MM/YYYY')
+ 
+ AND n.especie = 'CT'
+ 
+ -- AND n.dtcancel is null
+ 
+ order by n.codfilial , n.numnota
+
+

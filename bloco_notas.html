@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bloco de Notas - ZyNapse</title>
+
+    <!-- Favicon -->
+    <link rel="icon" href="https://i.imgur.com/cuAW6X6.png" type="image/png">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#EE7F01',
+                        'primary-hover': '#c25b00',
+                        bg: '#f8f9fa',
+                        surface: '#ffffff',
+                        border: '#e5e7eb',
+                        'text-main': '#111827',
+                        sec: '#6b7280',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Font Awesome & Google Fonts -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Supabase JS & SheetJS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- TinyMCE -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--color-bg);
+            /* Evita pull-to-refresh no mobile */
+            overscroll-behavior: none;
+        }
+
+        /* Estilo da Sidebar baseado no sistema original */
+        .sidebar-bg {
+            background-color: #3a4f63;
+        }
+
+        .bloco-item {
+            color: #94a3b8;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .bloco-item:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: #ffffff;
+        }
+
+        .bloco-item.active {
+            background-color: rgba(238, 127, 1, 0.15);
+            color: #EE7F01;
+            border-left-color: #EE7F01;
+            font-weight: 600;
+        }
+
+        /* Scrollbar customizada */
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background-color: rgba(156, 163, 175, 0.3);
+            border-radius: 10px;
+        }
+
+        .sidebar-scroll::-webkit-scrollbar-thumb {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Editor Dinâmico */
+        .tox-tinymce {
+            border: none !important;
+            width: 100% !important;
+            height: 100% !important;
+            flex: 1;
+        }
+        .readonly-mode .tox-editor-header {
+            display: none !important;
+        }
+        .readonly-mode .tox-tinymce {
+            background-color: rgba(249, 250, 251, 0.5) !important;
+        }
+    </style>
+</head>
+
+<body class="flex h-screen overflow-hidden text-sm selection:bg-orange-500/10 selection:text-orange-600">
+
+    <!-- OVERLAY MOBILE -->
+    <div id="mobile-overlay" class="fixed inset-0 bg-black/50 z-30 hidden md:hidden transition-opacity opacity-0"
+        onclick="fecharSidebar()"></div>
+
+    <!-- SIDEBAR (Lista de Blocos) -->
+    <aside id="sidebar"
+        class="sidebar-bg w-[280px] h-full fixed md:relative z-40 transform -translate-x-full md:translate-x-0 transition-transform duration-300 flex flex-col border-r border-[#4a6070] shadow-xl md:shadow-none">
+        <!-- Header Sidebar -->
+        <div class="h-16 flex items-center justify-between px-4 border-b border-[#4a6070] shrink-0">
+            <div class="flex items-center gap-2 text-white">
+                <img src="https://i.imgur.com/cuAW6X6.png" alt="Logo" class="h-8 w-auto object-contain">
+                <span class="font-bold uppercase tracking-wider text-[13px] hidden sm:block">Notas Abertas</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="recarregarApi()" class="text-gray-400 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10" title="Recarregar Dados">
+                    <i id="icone-recarregar" class="fa-solid fa-rotate-right"></i>
+                </button>
+                <button class="md:hidden text-gray-400 hover:text-white p-2" onclick="fecharSidebar()">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Botão Novo Bloco & Pesquisa -->
+        <div class="p-4 shrink-0 flex flex-col gap-3">
+            <button onclick="abrirModalNovo()"
+                class="w-full bg-primary hover:bg-primary-hover text-white py-2.5 rounded-lg font-medium flex justify-center items-center gap-2 transition-colors shadow-sm">
+                <i class="fa-solid fa-plus"></i> Novo Bloco
+            </button>
+            <div class="relative">
+                <input type="text" id="input-pesquisa"
+                    class="w-full bg-[#2d3f4f] text-white placeholder-gray-400 border border-[#4a6070] rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:border-primary transition"
+                    placeholder="Pesquisar notas...">
+                <i
+                    class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
+            </div>
+        </div>
+
+        <!-- Lista de Blocos -->
+        <div class="flex-1 overflow-y-auto px-2 pb-4 space-y-1 sidebar-scroll" id="lista-blocos">
+            <div class="flex justify-center mt-10">
+                <i class="fa-solid fa-circle-notch fa-spin text-gray-400 text-2xl"></i>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 flex flex-col h-full bg-surface relative min-w-0">
+        <!-- Header Main -->
+        <header
+            class="h-16 border-b border-border bg-white flex items-center px-4 justify-between shrink-0 shadow-sm z-20">
+            <div class="flex items-center gap-4">
+                <button class="md:hidden text-gray-500 hover:text-gray-800 focus:outline-none" onclick="abrirSidebar()">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
+
+                <div id="bloco-info" class="hidden items-center gap-2 sm:gap-3 animate-fade-in">
+                    <h1 id="nome-bloco-atual"
+                        class="text-lg sm:text-xl font-bold text-text-main truncate max-w-[120px] sm:max-w-xs">
+                        Nome do Bloco
+                    </h1>
+                    <button onclick="renomearBlocoAtual()"
+                        class="text-gray-400 hover:text-primary transition-colors p-1.5 rounded hover:bg-gray-100"
+                        title="Renomear Bloco">
+                        <i class="fa-solid fa-i-cursor text-xs sm:text-sm"></i>
+                    </button>
+                    <div class="w-px h-5 bg-gray-200 mx-1"></div>
+                    <button id="btn-editar-bloco" onclick="alternarEdicaoBloco()"
+                        class="text-blue-500 hover:text-blue-600 transition-colors px-2 py-1 rounded hover:bg-blue-50 flex items-center gap-1.5 font-medium text-xs sm:text-sm border border-blue-200"
+                        title="Editar Conteúdo">
+                        <i class="fa-solid fa-pen-to-square"></i> <span class="hidden sm:inline">Editar</span>
+                    </button>
+                    <button onclick="copiarConteudoBloco()"
+                        class="text-gray-500 hover:text-gray-700 transition-colors px-2 py-1 rounded hover:bg-gray-100 flex items-center gap-1.5 font-medium text-xs sm:text-sm border border-gray-200"
+                        title="Copiar tudo">
+                        <i class="fa-regular fa-copy"></i> <span class="hidden sm:inline">Copiar</span>
+                    </button>
+                    <div class="w-px h-5 bg-gray-200 mx-1"></div>
+                    <button onclick="exportarTXT()" class="text-gray-500 hover:text-gray-700 transition-colors px-2 py-1 rounded hover:bg-gray-100 flex items-center gap-1.5 font-medium text-xs sm:text-sm border border-gray-200" title="Baixar TXT">
+                        <i class="fa-solid fa-file-lines text-gray-500"></i> <span class="hidden sm:inline">TXT</span>
+                    </button>
+                    <button onclick="exportarXLSX()" class="text-gray-500 hover:text-gray-700 transition-colors px-2 py-1 rounded hover:bg-gray-100 flex items-center gap-1.5 font-medium text-xs sm:text-sm border border-gray-200" title="Baixar Excel">
+                        <i class="fa-solid fa-file-excel text-green-600"></i> <span class="hidden sm:inline">XLSX</span>
+                    </button>
+                    <button onclick="deletarBlocoAtual()"
+                        class="text-rose-400 hover:text-rose-600 transition-colors p-1.5 rounded hover:bg-rose-50 ml-1"
+                        title="Apagar Bloco">
+                        <i class="fa-solid fa-trash text-xs sm:text-sm"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <span id="status-salvamento"
+                    class="text-xs font-semibold text-gray-400 bg-gray-100 px-3 py-1 rounded-full opacity-0 transition-opacity duration-300 flex items-center gap-2">
+                    <i class="fa-solid fa-check"></i> Salvo
+                </span>
+            </div>
+        </header>
+
+        <!-- Area do Editor -->
+        <div id="editor-container" class="hidden flex-1 flex-col w-full h-full relative overflow-hidden bg-white">
+            <textarea id="conteudo-bloco"></textarea>
+        </div>
+
+        <!-- Empty State -->
+        <div id="empty-state"
+            class="flex-1 flex flex-col items-center justify-center text-center p-6 text-gray-400 bg-gray-50/50">
+            <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-6">
+                <i class="fa-regular fa-note-sticky text-4xl text-gray-300"></i>
+            </div>
+            <h2 class="text-xl font-bold text-gray-600 mb-2">Nenhum bloco aberto</h2>
+            <p class="max-w-sm text-gray-500">Selecione um bloco no menu lateral ou crie um novo para começar a
+                escrever.</p>
+        </div>
+    </main>
+
+    <!-- Modal Renomear -->
+    <div id="modal-renomear" class="fixed inset-0 z-50 flex items-center justify-center hidden">
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="fecharModalRenomear()"></div>
+        <div class="bg-white rounded-xl shadow-2xl p-6 w-[90%] max-w-sm relative z-10 scale-95 opacity-0 transition-all duration-200"
+            id="modal-box">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">Renomear Bloco</h3>
+            <input type="text" id="input-novo-nome"
+                class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary mb-5 font-medium"
+                placeholder="Digite o novo nome...">
+            <div class="flex justify-end gap-3">
+                <button onclick="fecharModalRenomear()"
+                    class="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-lg font-medium transition">Cancelar</button>
+                <button onclick="salvarNovoNome()"
+                    class="px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded-lg font-medium transition shadow-sm">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Novo Bloco -->
+    <div id="modal-novo" class="fixed inset-0 z-50 flex items-center justify-center hidden">
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="fecharModalNovo()"></div>
+        <div class="bg-white rounded-xl shadow-2xl p-6 w-[90%] max-w-sm relative z-10 scale-95 opacity-0 transition-all duration-200"
+            id="modal-box-novo">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">Criar Novo Bloco</h3>
+            <input type="text" id="input-nome-novo"
+                class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary mb-5 font-medium"
+                placeholder="Nome do novo bloco...">
+            <div class="flex justify-end gap-3">
+                <button onclick="fecharModalNovo()"
+                    class="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-lg font-medium transition">Cancelar</button>
+                <button onclick="confirmarNovoBloco()"
+                    class="px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded-lg font-medium transition shadow-sm">Criar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPTS MÁGICOS -->
+    <script>
+        // ========================================
+        // CONFIGURAÇÃO SUPABASE DA APLICAÇÃO
+        // ========================================
+        const SUPABASE_URL = 'https://gimipcxjfbwnmnsrokgj.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpbWlwY3hqZmJ3bm1uc3Jva2dqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMzODY5MjUsImV4cCI6MjA2ODk2MjkyNX0.gkTBbQbjYRpCvrtebX0V2jK95qKLIV55wVLWKe2A-2U';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // ========================================
+        // ESTADO GLOBAL
+        // ========================================
+        let blocos = [];
+        let blocoAtivoId = null;
+        let timeoutSalvamento;
+        let editorInstance = null;
+
+        // ELEMENTOS DOM
+        const els = {
+            listaBlocos: document.getElementById('lista-blocos'),
+            blocoInfo: document.getElementById('bloco-info'),
+            nomeBlocoAtual: document.getElementById('nome-bloco-atual'),
+            editorContainer: document.getElementById('editor-container'),
+            conteudoBloco: document.getElementById('conteudo-bloco'),
+            emptyState: document.getElementById('empty-state'),
+            statusSalvamento: document.getElementById('status-salvamento'),
+            sidebar: document.getElementById('sidebar'),
+            overlay: document.getElementById('mobile-overlay'),
+            modalRenomear: document.getElementById('modal-renomear'),
+            modalBox: document.getElementById('modal-box'),
+            inputNovoNome: document.getElementById('input-novo-nome'),
+            inputPesquisa: document.getElementById('input-pesquisa'),
+            modalNovo: document.getElementById('modal-novo'),
+            modalBoxNovo: document.getElementById('modal-box-novo'),
+            inputNomeNovo: document.getElementById('input-nome-novo')
+        };
+
+        // ========================================
+        // INICIALIZAÇÃO
+        // ========================================
+        async function init() {
+            await carregarBlocos();
+
+            // Mostra o container temporariamente para o TinyMCE calcular o tamanho
+            els.editorContainer.classList.remove('hidden');
+            els.editorContainer.classList.add('flex');
+            els.editorContainer.style.opacity = '0';
+            els.editorContainer.style.position = 'absolute';
+            els.editorContainer.style.pointerEvents = 'none';
+
+            try {
+                // Inicializa TinyMCE
+                tinymce.init({
+                    selector: '#conteudo-bloco',
+                    promotion: false,
+                    plugins: 'table lists link fullscreen',
+                    toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | table link | removeformat | fullscreen',
+                    menubar: false,
+                    statusbar: false,
+                    width: '100%',
+                    height: '100%',
+                    init_instance_callback: function (editor) {
+                        // Restaura a visibilidade apenas se tiver um bloco ativo
+                        if (!blocoAtivoId) {
+                            els.editorContainer.classList.add('hidden');
+                            els.editorContainer.classList.remove('flex');
+                        }
+                        els.editorContainer.style.opacity = '';
+                        els.editorContainer.style.position = '';
+                        els.editorContainer.style.pointerEvents = '';
+                    },
+                    setup: function (editor) {
+                        editorInstance = editor;
+                        
+                        editor.on('input change', function () {
+                            if(!blocoAtivoId || !modoEdicao) return;
+                            mostrarStatus('Salvando...', 'fa-spinner fa-spin text-orange-500');
+                            clearTimeout(timeoutSalvamento);
+                            timeoutSalvamento = setTimeout(() => { salvarConteudoBloco(); }, 1000);
+                        });
+
+                        // Detector TSV inteligente
+                        editor.on('paste', function (e) {
+                            const clipboardData = e.clipboardData || window.clipboardData;
+                            const pastedText = clipboardData.getData('Text');
+                            const htmlData = clipboardData.getData('text/html');
+                            
+                            // TinyMCE já faz isso, mas deixamos manual se for muito agressiva com TXTs colados do excel
+                            if (htmlData && htmlData.includes('<table')) return;
+                            
+                            if (!htmlData && pastedText) {
+                                const isSql = pastedText.toUpperCase().includes('SELECT ') && pastedText.toUpperCase().includes('FROM ');
+                                if(!isSql) {
+                                    // Adicionamos suporte a espaços múltiplos ou tabs como separadores se for apenas 1 linha
+                                    const lines = pastedText.trim().split('\n');
+                                    let isTsv = lines.some(l => l.includes('\t'));
+                                    let sep = null;
+
+                                    if (isTsv) {
+                                        sep = '\t';
+                                    } else if (lines[0].includes(';')) {
+                                        sep = ';';
+                                    } else if (lines.length === 1 && lines[0].includes('  ')) {
+                                        // Se for 1 linha sem tabs, mas com espaços duplos/múltiplos, tenta adivinhar que são colunas
+                                        // Isso acontece muito ao copiar de PDFs ou alguns sistemas
+                                        sep = /\s{2,}/;
+                                        isTsv = true; // trata como tsv para forçar a tabela
+                                    }
+                                    
+                                    if (sep) {
+                                        const counts = lines.map(l => l.split(sep).length);
+                                        // Verifica se todas as linhas têm o mesmo número de colunas e tem mais de 1 coluna
+                                        const isUniformTable = counts.every(c => c === counts[0]) && counts[0] > 1;
+                                        
+                                        // Aceita como tabela se for TSV com mais de 1 coluna (mesmo sendo 1 linha), ou CSV uniforme
+                                        if (isUniformTable || (isTsv && counts[0] > 1)) {
+                                            let tableHTML = '<table style="width: 100%; border-collapse: collapse; border: 1px solid #d1d5db;"><tbody>';
+                                            lines.forEach(line => {
+                                                tableHTML += '<tr>';
+                                                line.split(sep).forEach(cell => {
+                                                    tableHTML += `<td style="border: 1px solid #d1d5db; padding: 8px; white-space: nowrap;">${cell.trim().replace(/(?:\r\n|\r|\n)/g, '<br>')}</td>`;
+                                                });
+                                                tableHTML += '</tr>';
+                                            });
+                                            tableHTML += '</tbody></table><br/>';
+                                            
+                                            editor.insertContent(tableHTML);
+                                            e.preventDefault();
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
+                });
+            } catch (err) {
+                console.error("Erro ao inicializar o TinyMCE: ", err);
+                // Se falhar o tinymce, exibe o fallback do textarea normal
+                if (!blocoAtivoId) {
+                    els.editorContainer.classList.add('hidden');
+                    els.editorContainer.classList.remove('flex');
+                }
+                els.editorContainer.style.opacity = '';
+                els.editorContainer.style.position = '';
+                els.editorContainer.style.pointerEvents = '';
+                els.conteudoBloco.style.width = '100%';
+                els.conteudoBloco.style.height = '100%';
+                els.conteudoBloco.style.padding = '20px';
+                els.conteudoBloco.style.outline = 'none';
+                els.conteudoBloco.addEventListener('input', function() {
+                    if(!blocoAtivoId || !modoEdicao) return;
+                    mostrarStatus('Salvando...', 'fa-spinner fa-spin text-orange-500');
+                    clearTimeout(timeoutSalvamento);
+                    timeoutSalvamento = setTimeout(() => { salvarConteudoBlocoFallback(); }, 1000);
+                });
+            }
+
+            // Listener de pesquisa
+            if (els.inputPesquisa) {
+                els.inputPesquisa.addEventListener('input', () => { renderizarLista(); });
+            }
+        }
+        
+        async function recarregarApi() {
+            const icon = document.getElementById('icone-recarregar');
+            if (icon) icon.classList.add('fa-spin');
+            
+            await carregarBlocos();
+            
+            if (blocoAtivoId && !modoEdicao) {
+                const b = blocos.find(x => x.id === blocoAtivoId);
+                if (b) {
+                    els.nomeBlocoAtual.textContent = b.nome;
+                    if(editorInstance) {
+                        editorInstance.setContent(b.conteudo || '');
+                    } else {
+                        els.conteudoBloco.value = b.conteudo || '';
+                    }
+                } else {
+                    blocoAtivoId = null;
+                    els.emptyState.classList.remove('hidden');
+                    els.editorContainer.classList.add('hidden');
+                    els.editorContainer.classList.remove('flex');
+                    els.blocoInfo.classList.add('hidden');
+                    els.blocoInfo.classList.remove('flex');
+                }
+            }
+            
+            if (icon) icon.classList.remove('fa-spin');
+        }
+
+        // ========================================
+        // FUNÇÕES DE BANCO DE DADOS
+        // ========================================
+
+        // Puxa todos os blocos do Supabase ordenados do mais recente pro mais antigo
+        async function carregarBlocos() {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('bloco_notas')
+                    .select('*')
+                    .order('atualizado_em', { ascending: false });
+
+                if (error) throw error;
+
+                blocos = data || [];
+                renderizarLista();
+            } catch (error) {
+                console.error("Erro ao carregar blocos:", error);
+                els.listaBlocos.innerHTML = `<div class="text-rose-400 text-center p-4 text-xs">Erro ao carregar notas.<br>${error.message}</div>`;
+            }
+        }
+
+        // Renderiza a sidebar
+        function renderizarLista() {
+            const termo = els.inputPesquisa ? els.inputPesquisa.value.toLowerCase() : '';
+
+            const blocosFiltrados = blocos.filter(b => {
+                const nomeMatch = b.nome.toLowerCase().includes(termo);
+                const conteudoMatch = b.conteudo ? b.conteudo.toLowerCase().includes(termo) : false;
+                return nomeMatch || conteudoMatch;
+            });
+
+            if (blocosFiltrados.length === 0) {
+                els.listaBlocos.innerHTML = `<div class="text-gray-400 text-center p-4 text-sm mt-4">${blocos.length === 0 ? "Nenhum bloco criado ainda." : "Nenhum bloco encontrado."}</div>`;
+                return;
+            }
+
+            els.listaBlocos.innerHTML = blocosFiltrados.map(b => `
+                <div onclick="abrirBloco('${b.id}')" 
+                     class="bloco-item cursor-pointer p-3 rounded-lg flex items-center justify-between group ${b.id === blocoAtivoId ? 'active' : ''}">
+                    <div class="flex items-center gap-3 truncate">
+                        <i class="fa-solid fa-file-lines opacity-70"></i>
+                        <span class="truncate pr-2 font-medium">${b.nome}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Seleciona um bloco para edição
+        function abrirBloco(id) {
+            blocoAtivoId = id;
+            const bloco = blocos.find(b => b.id === id);
+
+            if (bloco) {
+                // Atualiza UI
+                renderizarLista();
+                els.emptyState.classList.add('hidden');
+                els.editorContainer.classList.remove('hidden');
+                els.editorContainer.classList.add('flex');
+                els.blocoInfo.classList.remove('hidden');
+                els.blocoInfo.classList.add('flex');
+
+                // Preenche dados
+                els.nomeBlocoAtual.textContent = bloco.nome;
+                if(editorInstance) {
+                    editorInstance.setContent(bloco.conteudo || '');
+                } else {
+                    els.conteudoBloco.value = bloco.conteudo || '';
+                }
+
+                travarEdicaoBloco();
+
+                // Fecha sidebar no mobile ao selecionar
+                fecharSidebar();
+            }
+        }
+
+        // Modal Novo Bloco
+        function abrirModalNovo() {
+            els.inputNomeNovo.value = '';
+            els.modalNovo.classList.remove('hidden');
+            setTimeout(() => {
+                els.modalNovo.querySelector('.backdrop-blur-sm').classList.add('opacity-100');
+                els.modalBoxNovo.classList.remove('scale-95', 'opacity-0');
+                els.modalBoxNovo.classList.add('scale-100', 'opacity-100');
+                els.inputNomeNovo.focus();
+            }, 10);
+        }
+
+        function fecharModalNovo() {
+            els.modalBoxNovo.classList.remove('scale-100', 'opacity-100');
+            els.modalBoxNovo.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                els.modalNovo.classList.add('hidden');
+            }, 200);
+        }
+
+        async function confirmarNovoBloco() {
+            const nome = els.inputNomeNovo.value.trim();
+            if (!nome) return;
+
+            try {
+                const btn = document.querySelector('button[onclick="confirmarNovoBloco()"]');
+                if (btn) { btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>'; btn.disabled = true; }
+
+                const { data, error } = await supabaseClient
+                    .from('bloco_notas')
+                    .insert([{ nome: nome, conteudo: '' }])
+                    .select();
+
+                if (error) throw error;
+
+                if (data && data.length > 0) {
+                    blocos.unshift(data[0]); // Adiciona no início da lista
+                    fecharModalNovo();
+                    if (els.inputPesquisa) els.inputPesquisa.value = ''; // limpa filtro
+                    abrirBloco(data[0].id);
+                }
+            } catch (error) {
+                console.error("Erro ao criar:", error);
+                alert("Erro ao criar bloco: " + error.message);
+            } finally {
+                const btn = document.querySelector('button[onclick="confirmarNovoBloco()"]');
+                if (btn) { btn.innerHTML = 'Criar'; btn.disabled = false; }
+            }
+        }
+
+        async function salvarConteudoBlocoFallback() {
+            salvarConteudoBloco();
+        }
+
+        // Salva o conteúdo digitado
+        async function salvarConteudoBloco() {
+            if (!blocoAtivoId) return;
+
+            const novoConteudo = editorInstance ? editorInstance.getContent() : els.conteudoBloco.value;
+
+            try {
+                const agora = new Date().toISOString();
+                const { error } = await supabaseClient
+                    .from('bloco_notas')
+                    .update({ conteudo: novoConteudo, atualizado_em: agora })
+                    .eq('id', blocoAtivoId);
+
+                if (error) throw error;
+
+                // Atualiza localmente
+                const index = blocos.findIndex(b => b.id === blocoAtivoId);
+                if (index !== -1) {
+                    blocos[index].conteudo = novoConteudo;
+                    blocos[index].atualizado_em = agora;
+                }
+
+                mostrarStatus('Salvo', 'fa-check text-green-500');
+            } catch (error) {
+                console.error("Erro ao salvar:", error);
+                mostrarStatus('Erro ao salvar', 'fa-xmark text-rose-500');
+            }
+        }
+
+        // Deleta o bloco atual
+        async function deletarBlocoAtual() {
+            if (!blocoAtivoId) return;
+
+            if (confirm("Tem certeza que deseja excluir esta nota permanentemente?")) {
+                try {
+                    const { error } = await supabaseClient
+                        .from('bloco_notas')
+                        .delete()
+                        .eq('id', blocoAtivoId);
+
+                    if (error) throw error;
+
+                    // Remove da lista
+                    blocos = blocos.filter(b => b.id !== blocoAtivoId);
+                    blocoAtivoId = null;
+
+                    // Reseta UI
+                    renderizarLista();
+                    els.emptyState.classList.remove('hidden');
+                    els.editorContainer.classList.add('hidden');
+                    els.editorContainer.classList.remove('flex');
+                    els.blocoInfo.classList.add('hidden');
+                    els.blocoInfo.classList.remove('flex');
+
+                } catch (error) {
+                    alert("Erro ao deletar: " + error.message);
+                }
+            }
+        }
+
+        // ========================================
+        // MODOS DE EDIÇÃO E CÓPIA
+        // ========================================
+        let modoEdicao = false;
+
+        function travarEdicaoBloco() {
+            modoEdicao = false;
+            if(editorInstance) {
+                editorInstance.mode.set('readonly');
+            } else {
+                els.conteudoBloco.readOnly = true;
+                els.conteudoBloco.style.backgroundColor = 'rgba(249, 250, 251, 0.5)';
+            }
+            els.editorContainer.classList.add('readonly-mode');
+
+            const btnEditar = document.getElementById('btn-editar-bloco');
+            if (btnEditar) {
+                btnEditar.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> <span class="hidden sm:inline">Editar</span>';
+                btnEditar.classList.remove('text-green-600', 'border-green-200', 'hover:bg-green-50');
+                btnEditar.classList.add('text-blue-500', 'border-blue-200', 'hover:bg-blue-50');
+            }
+        }
+
+        function alternarEdicaoBloco() {
+            modoEdicao = !modoEdicao;
+            const btnEditar = document.getElementById('btn-editar-bloco');
+
+            if (modoEdicao) {
+                if(editorInstance) {
+                    editorInstance.mode.set('design');
+                    editorInstance.focus();
+                } else {
+                    els.conteudoBloco.readOnly = false;
+                    els.conteudoBloco.style.backgroundColor = '';
+                    els.conteudoBloco.focus();
+                }
+                els.editorContainer.classList.remove('readonly-mode');
+
+                if (btnEditar) {
+                    btnEditar.innerHTML = '<i class="fa-solid fa-check"></i> <span class="hidden sm:inline">Concluir</span>';
+                    btnEditar.classList.remove('text-blue-500', 'border-blue-200', 'hover:bg-blue-50');
+                    btnEditar.classList.add('text-green-600', 'border-green-200', 'hover:bg-green-50');
+                }
+            } else {
+                travarEdicaoBloco();
+                salvarConteudoBloco(); // garante o salvamento ao concluir
+            }
+        }
+
+        async function copiarConteudoBloco() {
+            try {
+                const texto = editorInstance ? editorInstance.getContent({format: 'text'}) : els.conteudoBloco.value;
+                await navigator.clipboard.writeText(texto);
+                mostrarStatus('Copiado para a prancheta!', 'fa-copy text-blue-500');
+            } catch (err) {
+                console.error('Erro ao copiar: ', err);
+                alert("Erro ao copiar o texto. Talvez seja necessário permissão no navegador.");
+            }
+        }
+
+        function exportarXLSX() {
+            if (!blocoAtivoId) return;
+            const bloco = blocos.find(b => b.id === blocoAtivoId);
+            if (!bloco) return;
+            
+            let wb;
+            if (editorInstance) {
+                const tables = editorInstance.getBody().querySelectorAll('table');
+                if (tables.length > 0) {
+                    wb = XLSX.utils.table_to_book(tables[0], {sheet: "Nota"});
+                } else {
+                    wb = XLSX.utils.book_new();
+                    const linhas = editorInstance.getContent({format: 'text'}).split('\n').map(l => [l]);
+                    const ws = XLSX.utils.aoa_to_sheet(linhas);
+                    XLSX.utils.book_append_sheet(wb, ws, "Nota");
+                }
+            } else {
+                wb = XLSX.utils.book_new();
+                const linhas = els.conteudoBloco.value.split('\n').map(l => [l]);
+                const ws = XLSX.utils.aoa_to_sheet(linhas);
+                XLSX.utils.book_append_sheet(wb, ws, "Nota");
+            }
+            XLSX.writeFile(wb, `${bloco.nome || 'bloco_notas'}.xlsx`);
+        }
+
+        function exportarTXT() {
+            if (!blocoAtivoId) return;
+            const bloco = blocos.find(b => b.id === blocoAtivoId);
+            if (!bloco) return;
+            
+            const texto = editorInstance ? editorInstance.getContent({format: 'text'}) : els.conteudoBloco.value;
+            const blob = new Blob([texto], { type: "text/plain;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `${bloco.nome || 'bloco_notas'}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // ========================================
+        // FUNÇÕES DE RENOMEAR (MODAL)
+        // ========================================
+        function renomearBlocoAtual() {
+            if (!blocoAtivoId) return;
+            const bloco = blocos.find(b => b.id === blocoAtivoId);
+
+            els.inputNovoNome.value = bloco.nome;
+            els.modalRenomear.classList.remove('hidden');
+
+            // Pequeno delay para animação de scale
+            setTimeout(() => {
+                els.modalRenomear.querySelector('.backdrop-blur-sm').classList.add('opacity-100');
+                els.modalBox.classList.remove('scale-95', 'opacity-0');
+                els.modalBox.classList.add('scale-100', 'opacity-100');
+                els.inputNovoNome.focus();
+            }, 10);
+        }
+
+        function fecharModalRenomear() {
+            els.modalBox.classList.remove('scale-100', 'opacity-100');
+            els.modalBox.classList.add('scale-95', 'opacity-0');
+
+            setTimeout(() => {
+                els.modalRenomear.classList.add('hidden');
+            }, 200);
+        }
+
+        async function salvarNovoNome() {
+            const novoNome = els.inputNovoNome.value.trim();
+            if (!novoNome || !blocoAtivoId) return;
+
+            try {
+                const btn = document.querySelector('button[onclick="salvarNovoNome()"]');
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+                btn.disabled = true;
+
+                const { error } = await supabaseClient
+                    .from('bloco_notas')
+                    .update({ nome: novoNome })
+                    .eq('id', blocoAtivoId);
+
+                if (error) throw error;
+
+                // Atualiza localmente
+                const bloco = blocos.find(b => b.id === blocoAtivoId);
+                if (bloco) bloco.nome = novoNome;
+
+                els.nomeBlocoAtual.textContent = novoNome;
+                renderizarLista();
+                fecharModalRenomear();
+
+            } catch (error) {
+                console.error(error);
+                alert("Erro ao renomear: " + error.message);
+            } finally {
+                const btn = document.querySelector('button[onclick="salvarNovoNome()"]');
+                btn.innerHTML = 'Salvar';
+                btn.disabled = false;
+            }
+        }
+
+        // Permitir "Enter" nos modais
+        els.inputNovoNome.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') salvarNovoNome();
+        });
+        els.inputNomeNovo.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') confirmarNovoBloco();
+        });
+
+
+        // ========================================
+        // UI & HELPERS
+        // ========================================
+
+        function mostrarStatus(texto, iconClass) {
+            els.statusSalvamento.innerHTML = `<i class="fa-solid ${iconClass}"></i> ${texto}`;
+            els.statusSalvamento.classList.remove('opacity-0');
+
+            // Oculta após 3 segundos, exceto se for o "Salvando..."
+            if (texto !== 'Salvando...') {
+                setTimeout(() => {
+                    els.statusSalvamento.classList.add('opacity-0');
+                }, 3000);
+            }
+        }
+
+        function abrirSidebar() {
+            els.sidebar.classList.remove('-translate-x-full');
+            els.overlay.classList.remove('hidden');
+            setTimeout(() => {
+                els.overlay.classList.remove('opacity-0');
+                els.overlay.classList.add('opacity-100');
+            }, 10);
+        }
+
+        function fecharSidebar() {
+            els.sidebar.classList.add('-translate-x-full');
+            els.overlay.classList.remove('opacity-100');
+            els.overlay.classList.add('opacity-0');
+            setTimeout(() => {
+                els.overlay.classList.add('hidden');
+            }, 300); // Duração da transição
+        }
+
+        // Detecta Ctrl+S para evitar que o navegador tente salvar a página
+        document.addEventListener('keydown', function (e) {
+            if ((window.navigator.platform.match("Mac") ? e.metaKey : e.ctrlKey) && e.keyCode == 83) {
+                e.preventDefault();
+                salvarConteudoBloco();
+            }
+        }, false);
+
+        // Inicializa o app
+        init();
+    </script>
+</body>
+
+</html>

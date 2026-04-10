@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NutriPort Comercial - Usuários</title>
+    <title>Gestão VS Contábil Soollar - Usuários</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -29,11 +29,11 @@
             --color-surface-hover: #f3f4f6;
 
             /* Cores Primárias da Marca */
-            --color-primary: #b8860b;
-            --color-primary-hover: #9a7209;
+            --color-primary: #EE7F01;
+            --color-primary-hover: #c25b00;
             --color-primary-text: #ffffff;
-            --color-primary-focus-ring: rgba(184, 134, 11, 0.4);
-            --color-primary-soft-bg: #fdf8f0;
+            --color-primary-focus-ring: rgba(196, 168, 163, 0.4);
+            --color-primary-soft-bg: #f5f1f0;
 
             /* Cores Semânticas */
             --color-danger: #ef4444;
@@ -64,14 +64,14 @@
             --color-surface-hover: #3a3a40;
 
             /* Cores Primárias da Marca - Tema Escuro */
-            --color-primary: #b8860b;
+            --color-primary: #EE7F01;
             /* Mantém a cor principal, que tem bom contraste no escuro */
-            --color-primary-hover: #9a7209;
-            /* Versão ligeiramente mais escura para hover */
+            --color-primary-hover: #c25b00;
+            /* Versão ligeiramente mais clara para hover */
             --color-primary-text: #111827;
             /* Texto escuro para contraste no botão claro */
-            --color-primary-focus-ring: rgba(184, 134, 11, 0.4);
-            --color-primary-soft-bg: #3d2e0a;
+            --color-primary-focus-ring: rgba(196, 168, 163, 0.4);
+            --color-primary-soft-bg: #3a3534;
 
             /* Cores Semânticas - Tema Escuro */
             --color-danger: #f87171;
@@ -623,8 +623,8 @@
     </div>
 
     <script type="module">
-        const SUPABASE_URL = 'https://jmcwiszplkjksdvqyhbw.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptY3dpc3pwbGtqa3NkdnF5aGJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODczODIsImV4cCI6MjA5MTE2MzM4Mn0.G85OrkSFtjTXmaHvEPBkWXZQQbDKsjMBD97_V3Z6yw0';
+        const SUPABASE_URL = 'https://hzljpmjhmrgwjjskubii.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh6bGpwbWpobXJnd2pqc2t1YmlpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMzUxMTAsImV4cCI6MjA4OTYxMTExMH0.8AVmg5kBhWI_KWjqqfDKzH9SSn0Vwfi1yAfywvdjt4Q';
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         const ACCESS_MAP = {
@@ -633,21 +633,49 @@
                 text: "Painel Principal",
                 tables: "Gestão;Contábil"
             },
-            "confronto-dacte.html": {
-                text: "Confronto DACTe",
+            "lancamentos.html": {
+                text: "Confronto NFe/CTe",
                 tables: "NFe;CTe;Confronto"
             },
-            "confronto_nf_consumo.html": {
-                text: "Confronto NF Consumo",
-                tables: ""
+            "saldo_ipi.html": {
+                text: "Saldo IPI",
+                tables: "saldo_ipi"
             },
-            "confronto_nf_servico.html": {
-                text: "Confronto NF Serviço",
-                tables: ""
+
+            // Grupo: Gerenciamento
+            "ger_claudeyr.html": {
+                text: "Pipeline Claudeyr",
+                tables: "div_pipeline;pipelines"
             },
-            "confronto_danfe.html": {
-                text: "Confronto DANFe",
-                tables: ""
+            "ger_overath.html": {
+                text: "Pipeline Overath",
+                tables: "div_pipeline_overath;pipelinesoverath"
+            },
+            "ger_rodolfo.html": {
+                text: "Pipeline Rodolfo",
+                tables: "div_pipeline_rodolfo;pipelines_rodolfo"
+            },
+            "ger_financeiro.html": {
+                text: "Pipeline Financeiro",
+                tables: "div_financeiro;pipelines_financeiro"
+            },
+
+            // Grupo: Projetos
+            "proj_claudeyr.html": {
+                text: "Projetos Claudeyr",
+                tables: "projetosclaudeyr"
+            },
+            "proj_overath.html": {
+                text: "Projetos Overath",
+                tables: "projetosoverath"
+            },
+            "proj_rodolfo.html": {
+                text: "Projetos Rodolfo",
+                tables: "projetos_rodolfo"
+            },
+            "proj_financeiro.html": {
+                text: "Projetos Financeiro",
+                tables: "projetos_financeiro"
             },
 
             // Grupo: Administração
@@ -857,11 +885,6 @@
 
         window.addEventListener('DOMContentLoaded', init);
     </script>
-    <script defer
-        src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516"
-        integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg=="
-        data-cf-beacon='{"version":"2024.11.0","token":"97ac66ee4a66456e998bdfa7fced6603","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}'
-        crossorigin="anonymous"></script>
 </body>
 
 </html>

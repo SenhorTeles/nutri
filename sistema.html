@@ -7,10 +7,10 @@
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>NutriPort Comercial</title>
+    <title>Gestão VS Contábil Soollar</title>
 
     <!-- Favicon -->
-    <link rel="icon" href="https://i.imgur.com/8vy4QAK.png" type="image/png">
+    <link rel="icon" href="https://i.imgur.com/kJvm1nt.png" type="image/png">
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -20,9 +20,9 @@
             theme: {
                 extend: {
                     colors: {
-                        // Dourado Brand NutriPort
-                        primary: '#b8860b',
-                        'primary-hover': '#9a7209',
+                        // Laranja Brand
+                        primary: '#EE7F01',
+                        'primary-hover': '#c25b00',
 
                         surface: 'var(--color-surface)',
                         'surface-hover': 'var(--color-surface-hover)',
@@ -60,10 +60,10 @@
             /* Tema Claro */
             --color-bg: #f8f9fa;
             --color-surface: #ffffff;
-            --color-surface-hover: #fdf8f0;
-            /* Dourado bem claro no hover */
-            --color-surface-active: #faecd4;
-            /* Dourado claro ativo */
+            --color-surface-hover: #fff7ed;
+            /* Laranja bem claro no hover */
+            --color-surface-active: #ffedd5;
+            /* Laranja claro ativo */
             --color-border: #e5e7eb;
 
             --color-text-primary: #111827;
@@ -78,8 +78,8 @@
             --color-bg: #0c0a09;
             --color-surface: #1c1917;
             --color-surface-hover: #292524;
-            --color-surface-active: #3d2e0a;
-            /* Dourado escuro */
+            --color-surface-active: #431407;
+            /* Laranja escuro */
             --color-border: #292524;
 
             --color-text-primary: #f2f2f2;
@@ -133,6 +133,21 @@
             scrollbar-width: none;
         }
 
+        /* Custom Scrollbar for Sidebar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+        .custom-scrollbar:hover::-webkit-scrollbar-thumb {
+            background-color: rgba(255, 255, 255, 0.4);
+        }
+
         /* Spinner & Loaders */
         .loader-overlay {
             position: fixed;
@@ -154,7 +169,7 @@
             width: 32px;
             height: 32px;
             border: 2px solid var(--color-surface-active);
-            border-top-color: #b8860b;
+            border-top-color: #EE7F01;
             border-radius: 50%;
             animation: spin 0.6s linear infinite;
         }
@@ -167,9 +182,9 @@
 
         /* Sidebar Styling */
         .sidebar {
-            box-shadow: 1px 0 0 0 #3d2e14;
-            background-color: #5a4230 !important;
-            border-right: 1px solid #7a6250;
+            box-shadow: 1px 0 0 0 #2d3f4f;
+            background-color: #3a4f63 !important;
+            border-right: 1px solid #4a6070;
             color: #e2e8f0;
         }
 
@@ -189,18 +204,18 @@
         }
 
         .sidebar .sidebar-item.active {
-            background-color: rgba(184, 134, 11, 0.2) !important;
-            color: #c4982a !important;
+            background-color: rgba(238, 127, 1, 0.15) !important;
+            color: #EE7F01 !important;
             border-color: transparent !important;
         }
 
         .sidebar .sidebar-item.active i {
-            color: #c4982a !important;
+            color: #EE7F01 !important;
         }
 
         /* Adjust footer/logout button in sidebar */
         .sidebar .border-t {
-            border-color: #7a6250 !important;
+            border-color: #4a6070 !important;
         }
 
         .sidebar .bg-surface {
@@ -231,7 +246,7 @@
         /* Active State */
         .sidebar-item.active {
             background-color: var(--color-surface-active);
-            color: #b8860b;
+            color: #c2410c;
             /* Dark Orange text */
             font-weight: 600;
             border-color: var(--color-border);
@@ -245,12 +260,12 @@
             transform: translateY(-50%);
             height: 16px;
             width: 3px;
-            background-color: #b8860b;
+            background-color: #EE7F01;
             border-radius: 0 4px 4px 0;
         }
 
         .sidebar-item.active i {
-            color: #b8860b;
+            color: #EE7F01;
         }
 
         .sidebar-expanded-text {
@@ -262,8 +277,8 @@
 
         /* Hover no menu NÃO fixado = Mostra e Aumenta */
         .sidebar:not(.sidebar-pinned):hover {
-            width: 13rem !important;
-            /* Mais estreito que o w-64 (16rem) */
+            width: 280px !important;
+            /* Largura aumentada para 280px (igual mobile) para evitar o último corte */
         }
 
         .sidebar:not(.sidebar-pinned):hover .sidebar-expanded-text {
@@ -275,8 +290,8 @@
         /* Sidebar Fixada = Sempre Visível e Larga (Desktop apenas) */
         @media (min-width: 768px) {
             .sidebar-pinned {
-                width: 13rem !important;
-                /* Mais estreito */
+                width: 280px !important;
+                /* Largura para evitar corte de letras */
             }
 
             .sidebar-pinned .sidebar-expanded-text {
@@ -286,7 +301,7 @@
             }
 
             body:has(.sidebar-pinned) .main-wrapper {
-                padding-left: 13rem !important;
+                padding-left: 280px !important;
             }
         }
 
@@ -305,7 +320,7 @@
 
         .pin-btn.is-pinned {
             transform: rotate(45deg);
-            color: #b8860b;
+            color: #EE7F01;
         }
 
         /* Bottom Nav (Mobile) */
@@ -315,7 +330,7 @@
         }
 
         .bottom-nav-item.active {
-            color: #b8860b;
+            color: #EE7F01;
             font-weight: 600;
         }
 
@@ -409,7 +424,7 @@
         }
 
         .logo-text-accent {
-            color: #b8860b;
+            color: #EE7F01;
         }
 
         /* Monitor de Conexão */
@@ -455,7 +470,7 @@
     </style>
 </head>
 
-<body class="flex flex-col md:flex-row overflow-hidden text-sm selection:bg-yellow-500/10 selection:text-yellow-700">
+<body class="flex flex-col md:flex-row overflow-hidden text-sm selection:bg-orange-500/10 selection:text-orange-600">
 
     <!-- Initial Loader -->
     <div id="initial-loader" class="loader-overlay">
@@ -473,7 +488,7 @@
 
         <!-- HEADER SIDEBAR -->
         <div
-            class="h-12 flex items-center justify-between px-4 border-b border-[#7a6250] flex-shrink-0 relative bg-transparent overflow-hidden">
+            class="h-12 flex items-center justify-between px-4 border-b border-[#4a6070] flex-shrink-0 relative bg-transparent overflow-hidden">
             <div class="flex items-center gap-3">
                 <i class="fa-solid fa-bars text-xl text-white/80 w-6 text-center"></i>
                 <span class="sidebar-expanded-text font-bold text-white uppercase text-sm tracking-wider">Menu</span>
@@ -486,7 +501,7 @@
         </div>
 
         <!-- Menu Items Desktop -->
-        <nav class="flex-1 overflow-y-auto py-5 flex flex-col gap-1 px-3 no-scrollbar" id="desktop-menu">
+        <nav class="flex-1 min-h-0 overflow-y-auto py-5 flex flex-col gap-1 px-3 custom-scrollbar pb-10" id="desktop-menu">
             <!-- Injetado via JS -->
         </nav>
 
@@ -504,10 +519,9 @@
     <div id="mobile-drawer"
         class="fixed inset-y-0 left-0 w-[280px] bg-surface shadow-2xl z-[60] mobile-drawer flex flex-col border-r border-border md:hidden overscroll-none">
         <div class="h-12 flex items-center justify-center border-b border-border bg-surface px-4 flex-shrink-0">
-            <img src="https://i.imgur.com/8vy4QAK.png" alt="NutriPort Comercial"
-                class="w-8 h-8 object-contain">
+            <img src="https://i.imgur.com/kJvm1nt.png" alt="Gestão VS Contábil Soollar" class="w-8 h-8 object-contain">
         </div>
-        <nav class="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-2 no-scrollbar overscroll-contain"
+        <nav class="flex-1 min-h-0 overflow-y-auto py-4 px-3 flex flex-col gap-2 custom-scrollbar overscroll-contain pb-24"
             id="mobile-drawer-menu">
             <!-- Injetado via JS -->
         </nav>
@@ -532,20 +546,21 @@
             <div class="flex items-center gap-4 relative z-10">
                 <!-- Mobile Logo & Name -->
                 <div class="md:hidden flex items-center gap-3">
-                    <img src="https://i.imgur.com/8vy4QAK.png" alt="NutriPort Comercial"
+                    <img src="https://i.imgur.com/kJvm1nt.png" alt="Gestão VS Contábil Soollar"
                         class="h-8 w-8 object-contain">
                     <div class="text-lg font-bold tracking-tight">
-                        <span class="logo-text-main">NutriPort</span>
+                        <span class="logo-text-main">Gestão VS</span>
                     </div>
                     <span id="status-indicator" class="status-dot"></span>
                 </div>
 
                 <!-- Desktop Logo & Name -->
                 <div class="hidden md:flex items-center gap-3 select-none">
-                    <img src="https://i.imgur.com/8vy4QAK.png" alt="NutriPort Comercial"
+                    <img src="https://i.imgur.com/kJvm1nt.png" alt="Gestão VS Contábil Soollar"
                         class="h-8 w-8 object-contain">
                     <div class="text-lg font-bold tracking-tight">
-                        <span class="logo-text-main">NutriPort</span> <span class="logo-text-accent">Comercial</span>
+                        <span class="logo-text-main">Gestão VS</span> <span class="logo-text-accent">Contábil
+                            Soollar</span>
                     </div>
                 </div>
             </div>
@@ -577,7 +592,7 @@
                 <div class="relative">
                     <button id="user-menu-btn"
                         class="flex items-center gap-2 hover:bg-surface-hover pl-1.5 pr-2 py-1.5 rounded-full transition-all border border-transparent hover:border-border group">
-                        <img id="user-avatar" src="https://i.imgur.com/bQKxZrI.png"
+                        <img id="user-avatar" src="https://i.imgur.com/WS6C2Gl.png"
                             class="w-8 h-8 rounded-full border border-border object-cover shadow-sm" alt="Avatar">
                         <span
                             class="hidden sm:block text-xs font-semibold text-sec group-hover:text-text-main transition-colors"
@@ -590,7 +605,7 @@
                         class="absolute right-0 top-full mt-2 w-64 bg-surface border border-border rounded-lg shadow-lg z-50 dropdown-enter transition-all duration-200 origin-top-right overflow-hidden">
                         <div class="p-5 text-center border-b border-border bg-surface-hover/50">
                             <div class="relative inline-block">
-                                <img id="dropdown-avatar" src="https://i.imgur.com/bQKxZrI.png"
+                                <img id="dropdown-avatar" src="https://i.imgur.com/WS6C2Gl.png"
                                     class="w-14 h-14 rounded-full mx-auto mb-3 border-2 border-surface shadow-sm object-cover">
                                 <div id="status-dot-dropdown"
                                     class="absolute bottom-0 right-0 w-3.5 h-3.5 bg-gray-400 border-2 border-surface rounded-full">
@@ -621,7 +636,7 @@
             <div id="weak-internet-indicator"
                 class="absolute top-4 left-1/2 transform -translate-x-1/2 pointer-events-none z-50 hidden transition-opacity duration-500">
                 <div
-                    class="bg-yellow-600/70 backdrop-blur-md text-white px-5 py-2 rounded-full font-semibold text-xs shadow-lg flex items-center gap-2 border border-yellow-500/50">
+                    class="bg-orange-500/60 backdrop-blur-md text-white px-5 py-2 rounded-full font-semibold text-xs shadow-lg flex items-center gap-2 border border-orange-400/50">
                     <i class="fa-solid fa-wifi fa-fade"></i>
                     <span>Conexão Fraca</span>
                 </div>
@@ -634,7 +649,7 @@
 
         <!-- BOTTOM NAV (Mobile Only) -->
         <nav
-            class="md:hidden w-full bg-[#5a4230] border-t border-[#7a6250] z-40 pb-[env(safe-area-inset-bottom)] flex-shrink-0 fixed bottom-0 left-0 right-0">
+            class="md:hidden w-full bg-[#3a4f63] border-t border-[#4a6070] z-40 pb-[env(safe-area-inset-bottom)] flex-shrink-0 fixed bottom-0 left-0 right-0">
             <div class="h-16 flex items-center justify-around px-2" id="mobile-nav">
                 <!-- Injetado via JS -->
             </div>
@@ -648,8 +663,8 @@
         // ========================================
         // CONFIGURAÇÃO SUPABASE (SOOLLAR)
         // ========================================
-        const SUPABASE_URL = 'https://jmcwiszplkjksdvqyhbw.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptY3dpc3pwbGtqa3NkdnF5aGJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODczODIsImV4cCI6MjA5MTE2MzM4Mn0.G85OrkSFtjTXmaHvEPBkWXZQQbDKsjMBD97_V3Z6yw0';
+        const SUPABASE_URL = 'https://hzljpmjhmrgwjjskubii.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh6bGpwbWpobXJnd2pqc2t1YmlpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMzUxMTAsImV4cCI6MjA4OTYxMTExMH0.8AVmg5kBhWI_KWjqqfDKzH9SSn0Vwfi1yAfywvdjt4Q';
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // ========================================
@@ -661,10 +676,26 @@
                 title: "Visão Geral",
                 items: [
                     { name: "Painel Principal", icon: "fa-solid fa-chart-pie", url: "inicio.html" },
-                    { name: "Confronto DACTe", icon: "fa-solid fa-truck-fast", url: "confronto-dacte.html" },
-                    { name: "Confronto NF Consumo", icon: "fa-solid fa-receipt", url: "confronto_nf_consumo.html" },
-                    { name: "Confronto NF Serviço", icon: "fa-solid fa-file-signature", url: "confronto_nf_servico.html" },
-                    { name: "Confronto DANFe", icon: "fa-solid fa-file-invoice-dollar", url: "confronto_danfe.html" },
+                    { name: "Confronto DACTe", icon: "fa-solid fa-file-invoice", url: "lancamentos.html" },
+                    { name: "Saldo IPI", icon: "fa-solid fa-file-invoice-dollar", url: "saldo_ipi.html" },
+                ],
+            },
+            {
+                title: "Gerenciamento",
+                items: [
+                    { name: "Pipeline Claudeyr", icon: "fa-solid fa-diagram-project", url: "ger_claudeyr.html" },
+                    { name: "Pipeline Overath", icon: "fa-solid fa-diagram-project", url: "ger_overath.html" },
+                    { name: "Pipeline Rodolfo", icon: "fa-solid fa-diagram-project", url: "ger_rodolfo.html" },
+                    { name: "Pipeline Financeiro", icon: "fa-solid fa-money-bill-trend-up", url: "ger_financeiro.html" },
+                ],
+            },
+            {
+                title: "Projetos",
+                items: [
+                    { name: "Projetos Claudeyr", icon: "fa-solid fa-clipboard-list", url: "proj_claudeyr.html" },
+                    { name: "Projetos Overath", icon: "fa-solid fa-clipboard-list", url: "proj_overath.html" },
+                    { name: "Projetos Rodolfo", icon: "fa-solid fa-clipboard-list", url: "proj_rodolfo.html" },
+                    { name: "Projetos Financeiro", icon: "fa-solid fa-coins", url: "proj_financeiro.html" },
                 ],
             },
             {
@@ -794,7 +825,7 @@
 
                     // Título da Seção (visível apenas expandido)
                     els.desktopMenu.insertAdjacentHTML('beforeend', `
-                        <div class="px-4 py-1 mt-1 text-[9px] font-extrabold text-white/80 uppercase tracking-widest sidebar-expanded-text truncate select-none whitespace-nowrap">
+                        <div class="px-4 py-1 mt-1 text-[9px] font-extrabold text-white/80 uppercase tracking-widest sidebar-expanded-text break-words">
                             ${section.title}
                         </div>
                     `);
@@ -806,10 +837,10 @@
 
                         els.desktopMenu.insertAdjacentHTML('beforeend', `
                             <button onclick="handleNavigation('${id}', '${item.url}', '${item.icon}', '${item.name}')"
-                                    class="sidebar-item w-full flex items-center p-2.5 rounded-lg gap-3 text-sec group/item relative overflow-hidden mb-0.5 ${isActive ? 'active' : ''}"
+                                    class="sidebar-item w-full flex items-center p-2.5 rounded-lg gap-3 text-sec group/item relative overflow-hidden mb-0.5 h-auto min-h-[44px] ${isActive ? 'active' : ''}"
                                     title="${item.name}">
-                                <i class="${item.icon} text-base w-6 text-center transition-colors ${isActive ? '' : 'group-hover/item:text-text-main'}"></i>
-                                <span class="sidebar-expanded-text font-medium text-xs transition-colors duration-200">${item.name}</span>
+                                <i class="${item.icon} shrink-0 text-base w-6 text-center transition-colors ${isActive ? '' : 'group-hover/item:text-text-main'}"></i>
+                                <span class="sidebar-expanded-text font-medium text-xs transition-colors duration-200 text-left" style="white-space: pre-wrap; word-break: break-word; line-height: 1.2;">${item.name}</span>
                             </button>
                         `);
                     });
@@ -1075,6 +1106,11 @@
         })();
 
     </script>
+    <script defer
+        src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015"
+        integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ=="
+        data-cf-beacon='{"version":"2024.11.0","token":"97ac66ee4a66456e998bdfa7fced6603","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}'
+        crossorigin="anonymous"></script>
 </body>
 
 </html>
