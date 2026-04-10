@@ -2085,7 +2085,7 @@
                             ? `<button class="btn-verificar-tomador verificar-tomador-btn" data-id="${item.id}" title="Verificar Tomador Dif Filial"><i class="fa-solid fa-magnifying-glass"></i></button>`
                             : '';
 
-                        const btnValidarHtml = isDivergente
+                        const btnValidarHtml = (isDivergente || item.status === 'Não Importada' || item.status === 'Erro Importação' || item.status === 'Aguardando Importação')
                             ? ''
                             : `<button class="btn-verificado verificado-btn" data-id="${item.id}" title="Validar no WinThor"><i class="fa-solid fa-check"></i></button>`;
 
