@@ -2472,8 +2472,11 @@
                     if (state.selectedFiliais.length) query = query.in('codfilial', state.selectedFiliais);
                     if (state.selectedStatus.length) query = query.in('status', state.selectedStatus);
                     if (state.selectedEspecies.length) query = query.in('especie', state.selectedEspecies);
-                    if (state.filterDtentInicio) query = query.gte('dtent', state.filterDtentInicio);
-                    if (state.filterDtentFim) query = query.lte('dtent', state.filterDtentFim);
+                    // Não aplica filtro de data para 'Não Importada' porque não possuem dtent do WinThor ainda
+                    if (state.viewMode !== 'nao_importada') {
+                        if (state.filterDtentInicio) query = query.gte('dtent', state.filterDtentInicio);
+                        if (state.filterDtentFim) query = query.lte('dtent', state.filterDtentFim);
+                    }
                 }
 
                 query = query.order('id', { ascending: false });
@@ -2927,8 +2930,10 @@
                 if (state.selectedFiliais.length) query = query.in('codfilial', state.selectedFiliais);
                 if (state.selectedStatus.length) query = query.in('status', state.selectedStatus);
                 if (state.selectedEspecies.length) query = query.in('especie', state.selectedEspecies);
-                if (state.filterDtentInicio) query = query.gte('dtent', state.filterDtentInicio);
-                if (state.filterDtentFim) query = query.lte('dtent', state.filterDtentFim);
+                if (state.viewMode !== 'nao_importada') {
+                    if (state.filterDtentInicio) query = query.gte('dtent', state.filterDtentInicio);
+                    if (state.filterDtentFim) query = query.lte('dtent', state.filterDtentFim);
+                }
                 query = query.order('id', { ascending: false });
 
                 const { data, error } = await query;
@@ -3490,8 +3495,10 @@
                     if (state.selectedFiliais.length) query = query.in('codfilial', state.selectedFiliais);
                     if (state.selectedStatus.length) query = query.in('status', state.selectedStatus);
                     if (state.selectedEspecies.length) query = query.in('especie', state.selectedEspecies);
-                    if (state.filterDtentInicio) query = query.gte('dtent', state.filterDtentInicio);
-                    if (state.filterDtentFim) query = query.lte('dtent', state.filterDtentFim);
+                    if (state.viewMode !== 'nao_importada') {
+                        if (state.filterDtentInicio) query = query.gte('dtent', state.filterDtentInicio);
+                        if (state.filterDtentFim) query = query.lte('dtent', state.filterDtentFim);
+                    }
                     query = query.order('id', { ascending: false });
 
                     const { data, error } = await query;
