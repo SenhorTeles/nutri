@@ -495,6 +495,197 @@ def run_toma_dif():
         time.sleep(5)
 
 # ==========================================================
+# THREAD 5: IMPORTAÇÃO NF CONSUMO
+# ==========================================================
+def run_import_consumo():
+    log("Iniciando rotina de importação NF Consumo.", "[IMPORT_CONSUMO]")
+    while True:
+        try:
+            for nome, cfg in MODOS_SQL.items():
+                if nome != 'CONSUMO': continue
+                resp = requests.get(f"{SUPABASE_URL}/rest/v1/{cfg['tbl_confronto']}?status=eq.Aguardando Importação", headers=HEADERS_GET)
+                if resp.status_code != 200: continue
+                filas = resp.json()
+                if not isinstance(filas, list) or not filas: continue
+                
+                log(f"({nome}) {len(filas)} registro(s) para importar.", "[IMPORT_CONSUMO]")
+                
+                conn = get_db_connection()
+                for reg in filas:
+                    id_req = reg['id']
+                    chave_xml = reg.get('chave_xml')
+                    xml_doc = reg.get("xml_doc", "")
+                    
+                    if not xml_doc or not chave_xml:
+                        requests.patch(f"{SUPABASE_URL}/rest/v1/{cfg['tbl_confronto']}?id=eq.{id_req}", headers=HEADERS, json={"status":"Não Importada", "obs": "Sem XML ou Chave"})
+                        continue
+                        
+                    try:
+                        clean_xml = re.sub(r'\sxmlns(:\w+)?="[^"]+"', '', xml_doc).replace('cte:', '').replace('nfe:', '')
+                        root = ET.fromstring(clean_xml)
+                        
+                        # Extrair dados do XML
+                        nNF_el = root.find('.//ide/nNF')
+                        nNF = nNF_el.text if nNF_el is not None else "0"
+                        serie_el = root.find('.//ide/serie')
+                        serie = serie_el.text if serie_el is not None else "53"
+                        dhEmi_el = root.find('.//ide/dhEmi')
+                        dhEmi = dhEmi_el.text if dhEmi_el is not None else ""
+                        dt_emissao = dhEmi[:10] if len(dhEmi) >= 10 else ""
+                        dt_emissao_formatada = datetime.strptime(dt_emissao, "%Y-%m-%d").strftime("%d/%m/%Y") if dt_emissao else ""
+                        
+                        cnpj_emissor_el = root.find('.//emit/CNPJ')
+                        cpf_emissor_el = root.find('.//emit/CPF')
+                        cnpj_emissor = cnpj_emissor_el.text if cnpj_emissor_el is not None else (cpf_emissor_el.text if cpf_emissor_el is not None else "00000000000000")
+                        tipo_fj = "J" if cnpj_emissor_el is not None else "F"
+                        
+                        xNome_emit_el = root.find('.//emit/xNome')
+                        xNome_emit = xNome_emit_el.text if xNome_emit_el is not None else "DESCONHECIDO"
+                        ie_emit_el = root.find('.//emit/IE')
+                        ie_emit = ie_emit_el.text if ie_emit_el is not None else ""
+                        
+                        # Emitente Ender
+                        xLgr_emit_el = root.find('.//emit/enderEmit/xLgr')
+                        xLgr_emit = xLgr_emit_el.text if xLgr_emit_el is not None else ""
+                        nro_emit_el = root.find('.//emit/enderEmit/nro')
+                        nro_emit = nro_emit_el.text if nro_emit_el is not None else ""
+                        xBairro_emit_el = root.find('.//emit/enderEmit/xBairro')
+                        xBairro_emit = xBairro_emit_el.text if xBairro_emit_el is not None else ""
+                        cMun_emit_el = root.find('.//emit/enderEmit/cMun')
+                        cMun_emit = cMun_emit_el.text if cMun_emit_el is not None else ""
+                        xMun_emit_el = root.find('.//emit/enderEmit/xMun')
+                        xMun_emit = xMun_emit_el.text if xMun_emit_el is not None else ""
+                        uf_emit_el = root.find('.//emit/enderEmit/UF')
+                        uf_emit = uf_emit_el.text if uf_emit_el is not None else ""
+                        cep_emit_el = root.find('.//emit/enderEmit/CEP')
+                        cep_emit = cep_emit_el.text if cep_emit_el is not None else ""
+                        
+                        # Destinatario
+                        cnpj_dest_el = root.find('.//dest/CNPJ')
+                        cnpj_dest = cnpj_dest_el.text if cnpj_dest_el is not None else ""
+                        uf_dest_el = root.find('.//dest/enderDest/UF')
+                        uf_dest = uf_dest_el.text if uf_dest_el is not None else ""
+                        cMun_dest_el = root.find('.//dest/enderDest/cMun')
+                        cMun_dest = cMun_dest_el.text if cMun_dest_el is not None else ""
+                        
+                        vNF = root.find('.//vNF')
+                        vltotal = float(vNF.text) if vNF is not None else 0.0
+                        
+                        cursor = conn.cursor()
+                        # 0. A chave já existe no pcnfent?
+                        cursor.execute("SELECT numtransent FROM pcnfent WHERE chavenfe = :chave", chave=chave_xml)
+                        if cursor.fetchone():
+                            requests.patch(f"{SUPABASE_URL}/rest/v1/{cfg['tbl_confronto']}?id=eq.{id_req}", headers=HEADERS, json={"status":"Não Importada", "obs": "A chave já foi encontrada no pcnfent!"})
+                            cursor.close()
+                            continue
+                            
+                        # 1. Obter info filial
+                        filial_map_key = cnpj_dest.lstrip('0')
+                        codfilial = FILIAIS_MAP.get(filial_map_key) or FILIAIS_MAP.get(cnpj_dest)
+                        
+                        cursor.execute("SELECT CODIGO, RAZAOSOCiAl, ENDERECO, CIDADE, UF, CEP, codfornec, CGC FROM PCFILIAL WHERE codigo = :cod OR cgc = :cgc", cod=codfilial, cgc=cnpj_dest)
+                        filial_db = cursor.fetchone()
+                        uf_filial = filial_db[4] if filial_db else uf_dest
+                        cgc_filial = filial_db[7] if filial_db else cnpj_dest
+                        codfor_filial = filial_db[6] if filial_db else None
+                        
+                        # IEFILIAL - precisa buscar a IE separada se nao estiver na query original ou do config
+                        # Assumindo que a rotina vai inserir vazio ou vai buscar do bd
+                        ie_filial = ""
+                        
+                        codfiscal = 199 if uf_emit == uf_filial else 299
+                        codfiscal_base = 1556 if uf_emit == uf_filial else 2556
+                        
+                        # 2. Obter/Criar fornecedor
+                        # Tomar cuidado com o '0' na frente do CNPJ
+                        cursor.execute("SELECT CODFORNEC FROM PCFORNEC WHERE CGC = :cgc OR CGC = :cgc2", cgc=cnpj_emissor, cgc2=cnpj_emissor.lstrip('0'))
+                        fornec_db = cursor.fetchone()
+                        if fornec_db:
+                            codfornec = fornec_db[0]
+                        else:
+                            cursor.execute("SELECT proxnumfornec FROM pcconsum FOR UPDATE")
+                            codfornec = cursor.fetchone()[0]
+                            novo_proxnumfornec = codfornec + 1
+                            cursor.execute("UPDATE pcconsum SET proxnumfornec = :val", val=novo_proxnumfornec)
+                            
+                            sql_ins_forn = cfg.get('sql_import_pcfornec')
+                            if sql_ins_forn:
+                                cursor.execute(sql_ins_forn, {
+                                    'CODFORNEC': codfornec,
+                                    'FORNECEDOR': xNome_emit[:60],
+                                    'TIPOPESSOA': tipo_fj,
+                                    'CGC': cnpj_emissor,
+                                    'IE': ie_emit[:20],
+                                    'ENDER': xLgr_emit[:80],
+                                    'BAIRRO': xBairro_emit[:40],
+                                    'CIDADE': xMun_emit[:40],
+                                    'ESTADO': uf_emit[:2],
+                                    'CEP': cep_emit[:8],
+                                    'CODMUNICIPIO': cMun_emit
+                                })
+                        
+                        # 3. Gerar numtransent
+                        cursor.execute("SELECT proxnumtransent FROM pcconsum FOR UPDATE")
+                        numtransent = cursor.fetchone()[0]
+                        novo_proxnumtransent = numtransent + 1
+                        cursor.execute("UPDATE pcconsum SET proxnumtransent = :val", val=novo_proxnumtransent)
+                        
+                        # 4. Insert pcnfent
+                        agora = datetime.now()
+                        hora_lanc = agora.strftime("%H")
+                        min_lanc = agora.strftime("%M")
+                        dt_ent = agora.strftime("%d/%m/%Y")
+                        
+                        sql_ins_pcnfent = cfg.get('sql_import_pcnfent')
+                        if sql_ins_pcnfent:
+                            cursor.execute(sql_ins_pcnfent, {
+                                'ESPECIE': 'NF', 'SERIE': serie, 'NUMNOTA': nNF, 'DTEMISSAO': dt_emissao_formatada,
+                                'DTENT': dt_ent, 'CODFORNEC': codfornec, 'VLTOTAL': vltotal, 'CODCONT': 401003,
+                                'CODFISCAL': codfiscal, 'CODFILIAL': codfilial, 'TIPODESCARGA': '0', 'NUMTRANSENT': numtransent,
+                                'VLIPI': 0, 'VLFRETE': 0, 'VLST': 0, 'VLDESCONTO': 0, 'VLBASEIPI': 0, 'UF': uf_emit,
+                                'VLOUTRAS': 0, 'CODFUNCLANC': 1, 'HORALANC': hora_lanc, 'MINUTOLANC': min_lanc,
+                                'ROTINALANC': 'ZyNapse', 'FUNCLANC': 'ZyNapse', 'CHAVENFE': chave_xml, 'SITUACAONFE': 0,
+                                'EMISSAOPROPRIA': 'N', 'TIPOEMISSAO': 1, 'FORNECEDOR': xNome_emit[:60], 'CGC': cnpj_emissor,
+                                'IE': ie_emit[:20], 'TIPOFJ': tipo_fj, 'TIPOFORNEC': 'I', 'CODPAIS': 1058, 'DESCPAIS': 'Brasil',
+                                'CGCFILIAL': cgc_filial, 'IEFILIAL': ie_filial, 'UFFILIAL': uf_filial, 'CODFORFILIAL': codfor_filial,
+                                'TIPOALIQOUTRASDESP': 'P', 'CODCONTFOR': 100001, 'CODCONTFRE': 100002, 'TIPOFRETECIFFOB': 'C',
+                                'REVENDA': 'S', 'UFCODIGO': uf_dest, 'HISTORICO': 'S', 'DTLANCTO': dt_ent, 'ENDERECO': xLgr_emit[:80],
+                                'BAIRRO': xBairro_emit[:40], 'MUNICIPIO': xMun_emit[:40], 'CEP': cep_emit[:8], 'CODMUNICIPIO': cMun_emit,
+                                'CONSUMIDORFINAL': 'S', 'CODIBGE': cMun_dest, 'SIMPLESNACIONAL': 'N'
+                            })
+                            
+                        # 5. Insert pcnfbase
+                        sql_ins_base = cfg.get('sql_import_pcnfbase')
+                        if sql_ins_base:
+                            cursor.execute(sql_ins_base, {
+                                'ALIQUOTA': 0, 'VLBASE': 0, 'VLICMS': 0, 'NUMTRANSENT': numtransent, 'CODCONT': 401003,
+                                'CODFISCAL': codfiscal_base, 'TIPO': 1, 'VLISENTAS': 0, 'VLCONTABIL': 0, 'SITTRIBUT': 90
+                            })
+                            
+                        # 6. Insert pcnfentpiscofins
+                        sql_ins_piscofins = cfg.get('sql_import_pcnfentpiscofins')
+                        if sql_ins_piscofins:
+                            cursor.execute(sql_ins_piscofins, {
+                                'CODTRIBPISCOFINS': 70, 'VLBASEPIS': 0, 'VLBASECOFINS': 0, 'PERPIS': 0, 'PERCOFINS': 0,
+                                'VLCOFINS': 0, 'VLPIS': 0, 'NUMTRANSENT': numtransent, 'CODCONT': 401003
+                            })
+                        
+                        conn.commit()
+                        cursor.close()
+                        
+                        # Atualizar status supabase para varredura
+                        requests.patch(f"{SUPABASE_URL}/rest/v1/{cfg['tbl_confronto']}?id=eq.{id_req}", headers=HEADERS, json={"status":"Sem XML", "obs": "Importada com Sucesso - Aguardando varredura"})
+                        
+                    except Exception as ex:
+                        conn.rollback()
+                        requests.patch(f"{SUPABASE_URL}/rest/v1/{cfg['tbl_confronto']}?id=eq.{id_req}", headers=HEADERS, json={"status":"Não Importada", "obs": f"Erro Importação: {str(ex)[:200]}"})
+                        
+                conn.close()
+        except Exception as e:
+            log(f"Erro: {e}", "[IMPORT_CONSUMO]")
+        time.sleep(5)
+
+# ==========================================================
 # INICIAR TUDO
 # ==========================================================
 def main():
@@ -503,11 +694,13 @@ def main():
     t2 = threading.Thread(target=run_busca_isolada, daemon=True)
     t3 = threading.Thread(target=run_ve_ri, daemon=True)
     t4 = threading.Thread(target=run_toma_dif, daemon=True)
+    t5 = threading.Thread(target=run_import_consumo, daemon=True)
 
     t1.start()
     t2.start()
     t3.start()
     t4.start()
+    t5.start()
 
     log("Todas as rotinas conectadas e rodando em plano de fundo!")
     while True:

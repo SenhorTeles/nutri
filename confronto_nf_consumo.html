@@ -1663,6 +1663,15 @@
                     </div>
                 </div>
 
+                <!-- BLOCO PRÉVIA DE IMPORTAÇÃO -->
+                <div id="import-preview-block" class="mt-4 rounded-lg overflow-hidden border border-blue-300 hidden" style="background-color: #eff6ff;">
+                    <div id="import-preview-block-title" class="px-4 py-2 text-blue-800 text-xs font-bold uppercase tracking-wider flex items-center gap-2 border-b border-blue-200">
+                        <i class="fa-solid fa-table-list"></i> Dados Gravados no WinThor
+                    </div>
+                    <div class="p-3 text-xs grid grid-cols-1 md:grid-cols-2 gap-3" id="import-preview-content">
+                    </div>
+                </div>
+
                 <!-- LINHA 2: Validação Tomador + Valores lado a lado -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
                     <div class="form-section">
@@ -2080,9 +2089,14 @@
                             ? ''
                             : `<button class="btn-verificado verificado-btn" data-id="${item.id}" title="Validar no WinThor"><i class="fa-solid fa-check"></i></button>`;
 
+                        const btnImportarHtml = (item.status === 'Não Importada' || item.status === 'Erro Importação')
+                            ? `<button class="action-icon-btn importar-btn" data-id="${item.id}" title="Importar NF Consumo para o WinThor" style="background:#dbeafe;color:#2563eb;border-color:#93c5fd;"><i class="fa-solid fa-cloud-arrow-down"></i></button>`
+                            : '';
+
                         acoesHtml = `<button class="action-icon-btn btn-xml view-btn" data-id="${item.id}" title="Ver NF Consumo XML"><i class="fa-solid fa-file-code"></i></button>
                                       ${btnVerificarTomadorHtml}
                                       ${btnValidarHtml}
+                                      ${btnImportarHtml}
                                       ${btnCopiarChave}
                                       <button class="action-icon-btn btn-download download-cml-btn" data-id="${item.id}" title="Baixar CML"><i class="fa-solid fa-download"></i></button>`;
                     }
@@ -2159,6 +2173,38 @@
                         navigator.clipboard.writeText(chave).then(() => {
                             showToast('Chave NF copiada!');
                         }).catch(() => showToast('Erro ao copiar', 'error'));
+                    }
+                };
+            });
+
+            document.querySelectorAll('.importar-btn').forEach(btn => {
+                btn.onclick = async (e) => {
+                    e.stopPropagation();
+                    const id = e.currentTarget.dataset.id;
+                    const confirm = await Swal.fire({
+                        title: 'Confirmar Importação',
+                        text: "Deseja enviar este XML para importação no WinThor?",
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'Sim, importar',
+                        cancelButtonText: 'Cancelar'
+                    });
+
+                    if (confirm.isConfirmed) {
+                        try {
+                            showToast('Enviando para fila de importação...', 'success');
+                            state.verificandoIds.add(parseInt(id));
+                            renderTable();
+                            
+                            const { error } = await supabase.from(TABLE_NAME).update({ status: 'Aguardando Importação', obs: 'Aguardando o robô processar a importação...' }).eq('id', id);
+                            
+                            if (error) throw error;
+                            showToast('NF enviada para a fila de importação com sucesso!', 'success');
+                        } catch (err) {
+                            showToast('Erro ao agendar importação', 'error');
+                            state.verificandoIds.delete(parseInt(id));
+                            renderTable();
+                        }
                     }
                 };
             });
@@ -2314,6 +2360,50 @@
                         document.getElementById('tax-vbc').textContent = vBC ? parseFloat(vBC).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '-';
                         document.getElementById('tax-picms').textContent = pICMS ? parseFloat(pICMS).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) + '%' : '-';
                         document.getElementById('tax-vicms').textContent = vICMS ? parseFloat(vICMS).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '-';
+                    }
+
+                    // Bloco Valores de Importação (Preenchido pelo Python)
+                    const importPreviewBlock = document.getElementById('import-preview-block');
+                    if (data.numtransent) {
+                        importPreviewBlock.classList.remove('hidden');
+                        document.getElementById('import-preview-block-title').innerHTML = '<i class="fa-solid fa-database"></i> Dados Gravados no WinThor';
+                        
+                        document.getElementById('import-preview-content').innerHTML = `
+                            <div class="md:col-span-2 text-[10px] uppercase font-bold text-blue-600 mt-2 mb-1 border-b border-blue-200 pb-1">Tabela PCNFENT</div>
+                            <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">ESPECIE</strong> <span class="text-gray-800 font-medium whitespace-nowrap">${data.especie || '-'}</span></div>
+                            <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">SERIE</strong> <span class="text-gray-800 font-medium whitespace-nowrap">${data.serie || '-'}</span></div>
+                            <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">NUMNOTA</strong> <span class="text-gray-800 font-medium whitespace-nowrap">${data.numnota || '-'}</span></div>
+                            <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">VLTOTAL</strong> <span class="text-gray-800 font-medium whitespace-nowrap">${data.vltotal ? formatBRL(data.vltotal) : '-'}</span></div>
+                            <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">CODFISCAL (CFOP)</strong> <span class="text-gray-800 font-medium whitespace-nowrap">${data.codfiscal || '-'}</span></div>
+                            <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">CODCONT</strong> <span class="text-gray-800 font-medium whitespace-nowrap">${data.codcont || '-'}</span></div>
+                            <div class="md:col-span-2 grid grid-cols-5 gap-2 mt-2 bg-blue-100 p-2 rounded">
+                                <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">VLIPI</strong> <span class="text-gray-800 font-medium whitespace-nowrap">${data.vlipi || '0'}</span></div>
+                                <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">VLFRETE</strong> <span class="text-gray-800 font-medium whitespace-nowrap">${data.vlfrete || '0'}</span></div>
+                                <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">VLST</strong> <span class="text-gray-800 font-medium whitespace-nowrap">${data.vlst || '0'}</span></div>
+                                <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">VLDESCONTO</strong> <span class="text-gray-800 font-medium whitespace-nowrap">${data.vldesconto || '0'}</span></div>
+                                <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">VLBASEIPI</strong> <span class="text-gray-800 font-medium whitespace-nowrap">${data.vlbaseipi || '0'}</span></div>
+                            </div>
+                            
+                            <div class="md:col-span-2 text-[10px] uppercase font-bold text-blue-600 mt-2 mb-1 border-b border-blue-200 pb-1">Tabela PCFORNEC</div>
+                            <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">CODFORNEC</strong> <span class="text-gray-800 font-medium whitespace-nowrap">${data.codfornec || '-'}</span></div>
+                            <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">FORNECEDOR</strong> <span class="text-gray-800 font-medium whitespace-nowrap truncate" title="${data.fornecedor || ''}">${data.fornecedor || '-'}</span></div>
+                            <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">CGC</strong> <span class="text-gray-800 font-medium whitespace-nowrap">${data.cgc || '-'}</span></div>
+                            <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">IE</strong> <span class="text-gray-800 font-medium whitespace-nowrap">${data.ie || '-'}</span></div>
+                            
+                            <div class="md:col-span-2 text-[10px] uppercase font-bold text-blue-600 mt-2 mb-1 border-b border-blue-200 pb-1">Campos de Integração e Log</div>
+                            <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">NUMTRANSENT</strong> <span class="text-gray-800 font-medium whitespace-nowrap">${data.numtransent || '-'}</span></div>
+                            <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">USUÁRIO LANÇAMENTO</strong> <span class="text-gray-800 font-medium whitespace-nowrap">${data.funclanc || '-'}</span></div>
+                        `;
+                    } else {
+                        importPreviewBlock.classList.remove('hidden');
+                        document.getElementById('import-preview-block-title').innerHTML = '<i class="fa-solid fa-hourglass-half"></i> Processamento no WinThor';
+                        document.getElementById('import-preview-content').innerHTML = `
+                            <div class="md:col-span-2 p-4 flex flex-col items-center text-center text-gray-500 italic">
+                                <i class="fa-solid fa-robot text-2xl text-blue-300 mb-2"></i>
+                                <span>Aguardando o robô efetuar a importação.</span>
+                                <span class="text-[10px] mt-1">Os campos reais do WinThor aparecerão aqui assim que o lançamento for concluído.</span>
+                            </div>
+                        `;
                     }
                 } catch (e) { /* silencioso */ }
             } else {
