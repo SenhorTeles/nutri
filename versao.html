@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NutriPort Comercial - Controle de Versões e Storage</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        /* === PALETA DE CORES PADRÃO === */
+        :root {
+            --color-bg: #f8fafc;
+            --color-surface: #ffffff;
+            --color-border: #e5e7eb;
+            --color-border-hover: #d1d5db;
+            --color-text-primary: #111827;
+            --color-text-secondary: #4b5563;
+            --color-text-tertiary: #9ca3af;
+            --color-surface-hover: #f3f4f6;
+
+            --color-primary: #b8860b;
+            --color-primary-hover: #9a7209;
+            --color-primary-text: #ffffff;
+            --color-primary-focus-ring: rgba(184, 134, 11, 0.4);
+            --color-primary-soft-bg: #fdf8f0;
+
+            --color-danger: #ef4444;
+            --color-danger-soft-bg: #fee2e2;
+            --color-success: #16a34a;
+            --color-success-soft-bg: #dcfce7;
+            --color-info: #3b82f6;
+            --color-info-soft-bg: #dbeafe;
+            --color-warning: #f59e0b;
+            --color-warning-soft-bg: #fef3c7;
+
+            --radius: 0.5rem;
+            --transition: 0.2s ease-in-out;
+        }
+
+        html[data-theme="dark"] {
+            --color-bg: #18181b;
+            --color-surface: #27272a;
+            --color-border: #3f3f46;
+            --color-border-hover: #52525b;
+            --color-text-primary: #f8fafc;
+            --color-text-secondary: #a1a1aa;
+            --color-text-tertiary: #71717a;
+            --color-surface-hover: #3a3a40;
+
+            --color-primary: #b8860b;
+            --color-primary-hover: #9a7209;
+            --color-primary-text: #111827;
+            --color-primary-focus-ring: rgba(184, 134, 11, 0.4);
+            --color-primary-soft-bg: #3d2e0a;
+
+            --color-danger: #f87171;
+            --color-danger-soft-bg: #452323;
+            --color-success: #4ade80;
+            --color-success-soft-bg: #1a3c2a;
+            --color-info: #60a5fa;
+            --color-info-soft-bg: #203555;
+            --color-warning: #facc15;
+            --color-warning-soft-bg: #4a3f1d;
+        }
+
+        html { font-size: 15px; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--color-bg);
+            color: var(--color-text-primary);
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body.loaded { opacity: 1; }
+
+        .loader-container {
+            position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+            background-color: var(--color-bg); z-index: 9999; transition: opacity 0.3s ease-out;
+        }
+        .loader {
+            width: 40px; height: 40px; border: 4px solid var(--color-border);
+            border-bottom-color: var(--color-primary); border-radius: 50%;
+            animation: rotation 1s linear infinite;
+        }
+        @keyframes rotation { to { transform: rotate(360deg); } }
+
+        .content-card {
+            background-color: var(--color-surface); border: 1px solid var(--color-border);
+            border-radius: var(--radius); box-shadow: 0 2px 4px -2px rgb(0 0 0 / 0.05);
+        }
+
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            padding: 0.625rem 1.25rem; font-weight: 500; border-radius: 0.375rem;
+            border: 1px solid transparent; transition: all var(--transition);
+            font-size: 0.875rem; cursor: pointer;
+        }
+        .btn-primary { background-color: var(--color-primary); color: var(--color-primary-text); }
+        .btn-primary:hover:not(:disabled) { background-color: var(--color-primary-hover); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .btn-secondary { background-color: var(--color-surface); color: var(--color-text-secondary); border-color: var(--color-border); }
+        .btn-secondary:hover:not(:disabled) { background-color: var(--color-surface-hover); color: var(--color-text-primary); }
+
+        .btn-danger { background-color: var(--color-danger); color: white; }
+        .btn-danger:hover:not(:disabled) { background-color: #dc2626; }
+        
+        .btn-sm { padding: 0.375rem 0.75rem; font-size: 0.75rem; }
+
+        .form-input {
+            width: 100%; background-color: var(--color-surface); border: 1px solid var(--color-border);
+            color: var(--color-text-primary); border-radius: 0.375rem; transition: all var(--transition);
+            padding: 0.625rem 0.875rem; font-size: 0.875rem;
+        }
+        .form-input:focus { border-color: var(--color-primary); outline: none; box-shadow: 0 0 0 2px var(--color-primary-focus-ring); }
+
+        .stats-card {
+            display: flex; flex-direction: column; padding: 1.5rem;
+            background-color: var(--color-surface); border: 1px solid var(--color-border);
+            border-radius: var(--radius); position: relative; overflow: hidden;
+        }
+        .stats-icon {
+            position: absolute; right: 1rem; top: 1.5rem; font-size: 2.5rem;
+            opacity: 0.1; color: var(--color-primary);
+        }
+
+        tbody tr { transition: background-color var(--transition); }
+        tbody tr:hover { background-color: var(--color-surface-hover); }
+        thead th { padding: 0.8rem 1rem; font-size: 0.75rem; color: var(--color-text-tertiary); background-color: var(--color-surface-hover); border-bottom: 1px solid var(--color-border); }
+        tbody td { padding: 0.75rem 1rem; font-size: 0.875rem; border-bottom: 1px solid var(--color-border); }
+
+        .thin-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
+        .thin-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .thin-scrollbar::-webkit-scrollbar-thumb { background-color: var(--color-border-hover); border-radius: 10px; }
+        
+        .upload-area {
+            border: 2px dashed var(--color-border); border-radius: var(--radius);
+            padding: 2rem; text-align: center; cursor: pointer; transition: all var(--transition);
+            background-color: var(--color-surface-hover);
+        }
+        .upload-area:hover, .upload-area.dragover { border-color: var(--color-primary); background-color: var(--color-primary-soft-bg); }
+    </style>
+    <script>
+        (function () {
+            try { if (JSON.parse(localStorage.getItem('gestaovscontabil_theme'))?.mode === 'escuro') { document.documentElement.setAttribute('data-theme', 'dark'); } } catch (e) { }
+        })();
+    </script>
+</head>
+
+<body class="p-4 sm:p-6 lg:p-8">
+    <div id="loader" class="loader-container">
+        <div class="loader"></div>
+    </div>
+
+    <!-- Overlay de Instalação (Tela Cheia) -->
+    <div id="install-overlay" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9999] flex flex-col items-center justify-center hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-[var(--color-surface)] p-8 rounded-2xl shadow-2xl flex flex-col items-center max-w-sm w-full mx-4 border border-[var(--color-border)]">
+            <div class="loader mb-6" style="border-bottom-color: var(--color-primary); width: 60px; height: 60px; border-width: 6px;"></div>
+            <h2 class="text-xl font-bold mb-2 text-center" id="install-title">Instalando Atualização...</h2>
+            <p class="text-[var(--color-text-secondary)] text-sm text-center mb-4">Aguarde enquanto o sistema finaliza<br>a instalação do arquivo no host.</p>
+            <div class="w-full bg-[var(--color-surface-hover)] rounded-full h-2 mb-2 overflow-hidden">
+                <div class="bg-[var(--color-primary)] h-2 rounded-full w-1/2 animate-pulse"></div>
+            </div>
+            <p class="text-xs font-medium text-[var(--color-primary)] uppercase tracking-wide" id="install-status-text">Status: Pendente</p>
+        </div>
+    </div>
+
+    <!-- Confirm Modal em HTML -->
+    <div id="confirm-modal" class="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-200">
+        <div class="bg-[var(--color-surface)] w-full max-w-sm rounded-xl p-6 shadow-2xl border border-[var(--color-border)] transform scale-95 transition-transform duration-200" id="confirm-modal-box">
+            <div class="flex items-center justify-center w-12 h-12 mx-auto mb-4 rounded-full" id="confirm-icon-container">
+                <i class="fa-solid" id="confirm-icon"></i>
+            </div>
+            <h3 class="text-lg font-bold text-center mb-2" id="confirm-title">Atenção</h3>
+            <p class="text-sm text-[var(--color-text-secondary)] text-center mb-6" id="confirm-message">Tem certeza que deseja fazer isso?</p>
+            <div class="flex items-center justify-center gap-3">
+                <button id="confirm-cancel-btn" class="btn btn-secondary w-full">Cancelar</button>
+                <button id="confirm-ok-btn" class="btn w-full">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-screen-xl mx-auto space-y-6">
+        <header>
+            <h1 class="text-3xl font-bold tracking-tight">Controle de Versões</h1>
+            <p class="mt-1 text-base text-[var(--color-text-secondary)]">Gerencie arquivos, executáveis e monitore o uso do Storage do Supabase.</p>
+        </header>
+
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="stats-card">
+                <h3 class="text-sm font-medium text-[var(--color-text-secondary)]">Total de Arquivos</h3>
+                <p id="stat-total-files" class="text-3xl font-bold mt-2">0</p>
+                <i class="fa-solid fa-file stats-icon"></i>
+            </div>
+            <div class="stats-card">
+                <h3 class="text-sm font-medium text-[var(--color-text-secondary)]">Uso de Storage</h3>
+                <p id="stat-storage-used" class="text-3xl font-bold mt-2">0 B</p>
+                <i class="fa-solid fa-hard-drive stats-icon"></i>
+            </div>
+            <div class="stats-card">
+                <h3 class="text-sm font-medium text-[var(--color-text-secondary)]">Buckets Ativos</h3>
+                <p id="stat-buckets" class="text-3xl font-bold mt-2">0</p>
+                <i class="fa-solid fa-box-archive stats-icon"></i>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Upload Area -->
+            <div class="lg:col-span-1 space-y-6">
+                <div class="content-card p-5">
+                    <h2 class="text-lg font-semibold mb-4 border-b pb-2" style="border-color: var(--color-border);">Upload de Nova Versão</h2>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-1 text-[var(--color-text-secondary)]">Selecione o Bucket</label>
+                        <select id="bucket-select" class="form-input"></select>
+                    </div>
+                    <form id="upload-form" class="space-y-4">
+                        <div id="drop-zone" class="upload-area">
+                            <i class="fa-solid fa-cloud-arrow-up text-4xl mb-2 text-[var(--color-primary)]"></i>
+                            <p class="font-medium">Clique ou arraste um arquivo aqui</p>
+                            <p class="text-xs mt-1 text-[var(--color-text-secondary)]">Tipos recomendados: .exe, .zip, .rar</p>
+                            <input type="file" id="file-input" class="hidden">
+                        </div>
+                        <div id="selected-file-info" class="hidden text-sm bg-[var(--color-info-soft-bg)] text-[var(--color-info)] p-2 rounded justify-between items-center">
+                            <span class="truncate pr-2 font-medium" id="file-name-display"></span>
+                            <span id="file-size-display" class="whitespace-nowrap text-xs opacity-80"></span>
+                        </div>
+                        
+                        <div class="relative w-full h-2 bg-gray-200 rounded-full overflow-hidden hidden" id="upload-progress-container" style="background-color: var(--color-surface-hover);">
+                            <div id="upload-progress-bar" class="absolute top-0 left-0 h-full bg-[var(--color-primary)] transition-all duration-300" style="width: 0%"></div>
+                        </div>
+
+                        <button type="submit" id="btn-upload" class="btn btn-primary w-full" disabled>
+                            <i class="fa-solid fa-upload mr-2"></i>Enviar Arquivo
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- List Area -->
+            <div class="lg:col-span-2">
+                <div class="content-card overflow-hidden flex flex-col h-full">
+                    <div class="p-4 border-b flex justify-between items-center" style="border-color: var(--color-border); background-color: var(--color-surface);">
+                        <h2 class="text-lg font-semibold">Arquivos no Bucket <span id="current-bucket-label" class="text-[var(--color-primary)]"></span></h2>
+                        <button id="btn-refresh" class="btn btn-secondary btn-sm" title="Atualizar">
+                            <i class="fa-solid fa-arrows-rotate"></i>
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto thin-scrollbar flex-1 min-h-[300px]">
+                        <table class="w-full text-left">
+                            <thead>
+                                <tr>
+                                    <th>Nome do Arquivo</th>
+                                    <th>Status Geral</th>
+                                    <th>Tamanho</th>
+                                    <th>Data de Criação</th>
+                                    <th class="text-right">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="files-table-body">
+                                <!-- Preenchido com JS -->
+                            </tbody>
+                        </table>
+                        <div id="empty-state" class="text-center p-12 hidden">
+                            <i class="fa-solid fa-folder-open text-4xl mb-3 text-[var(--color-text-tertiary)]"></i>
+                            <h3 class="text-base font-semibold">Nenhum arquivo encontrado</h3>
+                            <p class="text-sm mt-1 text-[var(--color-text-secondary)]">Este bucket está vazio no momento.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-4 right-4 z-50 transform translate-y-20 opacity-0 transition-all duration-300 ease-out flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg text-white font-medium">
+        <i id="toast-icon" class="fa-solid"></i>
+        <span id="toast-message"></span>
+    </div>
+
+    <script type="module">
+        // Configuração Supabase (Mesma chave do painel)
+        const SUPABASE_URL = 'https://jmcwiszplkjksdvqyhbw.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptY3dpc3pwbGtqa3NkdnF5aGJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODczODIsImV4cCI6MjA5MTE2MzM4Mn0.G85OrkSFtjTXmaHvEPBkWXZQQbDKsjMBD97_V3Z6yw0';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // UI DOM
+        const ui = {
+            loader: document.getElementById('loader'),
+            bucketSelect: document.getElementById('bucket-select'),
+            dropZone: document.getElementById('drop-zone'),
+            fileInput: document.getElementById('file-input'),
+            uploadForm: document.getElementById('upload-form'),
+            btnUpload: document.getElementById('btn-upload'),
+            selectedFileInfo: document.getElementById('selected-file-info'),
+            fileNameDisplay: document.getElementById('file-name-display'),
+            fileSizeDisplay: document.getElementById('file-size-display'),
+            filesTableBody: document.getElementById('files-table-body'),
+            emptyState: document.getElementById('empty-state'),
+            currentBucketLabel: document.getElementById('current-bucket-label'),
+            btnRefresh: document.getElementById('btn-refresh'),
+            uploadProgContainer: document.getElementById('upload-progress-container'),
+            uploadProgBar: document.getElementById('upload-progress-bar'),
+            toast: document.getElementById('toast'),
+            toastIcon: document.getElementById('toast-icon'),
+            toastMessage: document.getElementById('toast-message'),
+            stats: {
+                files: document.getElementById('stat-total-files'),
+                storage: document.getElementById('stat-storage-used'),
+                buckets: document.getElementById('stat-buckets')
+            }
+        };
+
+        let selectedFile = null;
+
+        // Utils
+        function formatBytes(bytes, decimals = 2) {
+            if (!+bytes) return '0 B';
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+        }
+
+        function showToast(message, type = 'success') {
+            ui.toastMessage.textContent = message;
+            ui.toast.className = `fixed bottom-4 right-4 z-50 transform transition-all duration-300 ease-out flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg text-white font-medium ${type === 'success' ? 'bg-green-600' : 'bg-red-600'}`;
+            ui.toastIcon.className = `fa-solid ${type === 'success' ? 'fa-check-circle' : 'fa-triangle-exclamation'}`;
+            
+            requestAnimationFrame(() => {
+                ui.toast.style.transform = 'translateY(0)';
+                ui.toast.style.opacity = '1';
+                setTimeout(() => {
+                    ui.toast.style.transform = 'translateY(20px)';
+                    ui.toast.style.opacity = '0';
+                }, 3000);
+            });
+        }
+
+        window.customConfirm = (title, message, isDanger = false) => {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('confirm-modal');
+                const box = document.getElementById('confirm-modal-box');
+                const titleEl = document.getElementById('confirm-title');
+                const messageEl = document.getElementById('confirm-message');
+                const okBtn = document.getElementById('confirm-ok-btn');
+                const cancelBtn = document.getElementById('confirm-cancel-btn');
+                const iconContainer = document.getElementById('confirm-icon-container');
+                const icon = document.getElementById('confirm-icon');
+
+                titleEl.textContent = title;
+                messageEl.textContent = message;
+
+                if(isDanger) {
+                    okBtn.className = 'btn btn-danger w-full';
+                    iconContainer.className = 'flex items-center justify-center w-12 h-12 mx-auto mb-4 rounded-full bg-[var(--color-danger-soft-bg)] text-[var(--color-danger)]';
+                    icon.className = 'fa-solid fa-trash-can text-xl';
+                } else {
+                    okBtn.className = 'btn btn-primary w-full';
+                    iconContainer.className = 'flex items-center justify-center w-12 h-12 mx-auto mb-4 rounded-full bg-[var(--color-info-soft-bg)] text-[var(--color-info)]';
+                    icon.className = 'fa-solid fa-circle-question text-xl';
+                }
+
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    modal.classList.remove('opacity-0');
+                    box.classList.remove('scale-95');
+                    box.classList.add('scale-100');
+                }, 10);
+
+                const close = (result) => {
+                    modal.classList.add('opacity-0');
+                    box.classList.remove('scale-100');
+                    box.classList.add('scale-95');
+                    setTimeout(() => {
+                        modal.classList.add('hidden');
+                    }, 200);
+                    
+                    okBtn.onclick = null;
+                    cancelBtn.onclick = null;
+                    resolve(result);
+                };
+
+                okBtn.onclick = () => close(true);
+                cancelBtn.onclick = () => close(false);
+            });
+        };
+
+        // App Logic
+        async function loadBuckets() {
+            try {
+                const { data: buckets, error } = await supabaseClient.storage.listBuckets();
+                if (error) throw error;
+                
+                ui.bucketSelect.innerHTML = '';
+                if(buckets.length === 0) {
+                    ui.bucketSelect.innerHTML = '<option value="">Nenhum bucket encontrado</option>';
+                    return;
+                }
+
+                buckets.forEach(b => {
+                    const option = document.createElement('option');
+                    option.value = b.name;
+                    option.textContent = b.name;
+                    ui.bucketSelect.appendChild(option);
+                });
+
+                ui.stats.buckets.textContent = buckets.length;
+                loadFiles();
+            } catch (error) {
+                console.error("Erro ao carregar buckets:", error);
+                showToast("Erro ao carregar buckets", "error");
+            }
+        }
+
+        async function loadFiles() {
+            const bucketName = ui.bucketSelect.value;
+            if (!bucketName) return;
+
+            ui.currentBucketLabel.textContent = bucketName;
+            ui.filesTableBody.innerHTML = '<tr><td colspan="4" class="text-center py-8"><i class="fa-solid fa-spinner fa-spin text-2xl text-[var(--color-primary)]"></i></td></tr>';
+            ui.emptyState.classList.add('hidden');
+
+            try {
+                const { data, error } = await supabaseClient.storage.from(bucketName).list('', {
+                    limit: 100, offset: 0, sortBy: { column: 'created_at', order: 'desc' }
+                });
+
+                if (error) throw error;
+
+                // Carrega o status de cada arquivo da nova tabela
+                const { data: statusData, error: statusError } = await supabaseClient.from('atualizacoes').select('*');
+                let mapStatus = {};
+                if(!statusError && statusData) {
+                    // Mapeia para ficar com o registro mais recente (maior ID de data)
+                    statusData.sort((a,b) => new Date(a.created_at) - new Date(b.created_at)).forEach(reg => {
+                        mapStatus[reg.arquivo] = reg;
+                    });
+                }
+
+                // Filtrar caso venha algum folder placeholder
+                const realFiles = data.filter(f => f.name !== '.emptyFolderPlaceholder' && f.id);
+                
+                let totalBytes = 0;
+                
+                if (realFiles.length === 0) {
+                    ui.filesTableBody.innerHTML = '';
+                    ui.emptyState.classList.remove('hidden');
+                } else {
+                    ui.filesTableBody.innerHTML = realFiles.map(file => {
+                        totalBytes += file.metadata.size;
+                        
+                        const at = mapStatus[file.name];
+                        let statusBadge = '<span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500">Sem Ação</span>';
+                        if(at) {
+                            if(at.status === 'Pendente') statusBadge = '<span class="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-600 border border-yellow-200"><i class="fa-solid fa-clock mr-1"></i>Pendente</span>';
+                            else if(at.status === 'OK' || at.status === 'ok') statusBadge = '<span class="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-600 border border-green-200"><i class="fa-solid fa-check mr-1"></i>OK</span>';
+                            else if(at.status === 'Erro') statusBadge = `<span class="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-600 border border-red-200" title="Log: ${at.log}"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Erro</span>`;
+                            else statusBadge = `<span class="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-600 border border-blue-200">${at.status}</span>`;
+                        }
+
+                        return `
+                        <tr>
+                            <td class="font-medium"><i class="fa-regular fa-file mr-2 text-[var(--color-text-tertiary)]"></i>${file.name}</td>
+                            <td>${statusBadge}</td>
+                            <td class="text-[var(--color-text-secondary)]">${formatBytes(file.metadata.size)}</td>
+                            <td class="text-[var(--color-text-secondary)]">${new Date(file.created_at).toLocaleString('pt-BR')}</td>
+                            <td class="text-right whitespace-nowrap">
+                                <button class="btn btn-primary btn-sm mr-2" onclick="startInstall('${file.name}')" title="Instalar Atualização">
+                                    <i class="fa-solid fa-rocket mr-1"></i>Instalar
+                                </button>
+                                <button class="btn btn-secondary btn-sm mr-2" onclick="downloadFile('${bucketName}', '${file.name}')" title="Baixar">
+                                    <i class="fa-solid fa-download"></i>
+                                </button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteFile('${bucketName}', '${file.name}')" title="Apagar">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>`;
+                    }).join('');
+                }
+
+                // Update Stats (Simplificado para o bucket atual, ou total se quiser loopar - vamos usar o sum do que foi carregado aqui)
+                ui.stats.files.textContent = realFiles.length;
+                ui.stats.storage.textContent = formatBytes(totalBytes);
+
+            } catch (error) {
+                console.error("Erro ao listar arquivos:", error);
+                ui.filesTableBody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-red-500">Erro ao carregar arquivos: ${error.message}</td></tr>`;
+            }
+        }
+
+        window.downloadFile = async (bucket, path) => {
+            try {
+                const { data, error } = await supabaseClient.storage.from(bucket).download(path);
+                if (error) throw error;
+                const url = URL.createObjectURL(data);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = path;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(url);
+            } catch (error) {
+                showToast("Erro ao baixar o arquivo.", "error");
+            }
+        };
+
+        window.deleteFile = async (bucket, path) => {
+            const confirmed = await customConfirm("Excluir Arquivo", `Tem certeza que deseja excluir permanentemente '${path}'?`, true);
+            if(!confirmed) return;
+            
+            try {
+                const { error } = await supabaseClient.storage.from(bucket).remove([path]);
+                if (error) throw error;
+                showToast("Arquivo apagado com sucesso!", "success");
+                loadFiles();
+            } catch (error) {
+                showToast("Erro ao apagar o arquivo.", "error");
+            }
+        };
+
+        // Lógica de INSTALAÇÃO das atualizações
+        let pollInterval = null;
+        window.startInstall = async (fileName) => {
+            const confirmed = await customConfirm(
+                "Iniciar Instalação", 
+                `Deseja iniciar a instalação (atualização) do arquivo '${fileName}' no seu Host?`
+            );
+            if(!confirmed) return;
+
+            // 1. Mostrar o Overlay
+            const overlay = document.getElementById('install-overlay');
+            const statusText = document.getElementById('install-status-text');
+            overlay.classList.remove('hidden');
+            setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+
+            // 2. Inserir registro na Tabela 'atualizacoes' com status = Pendente
+            try {
+                const { data, error } = await supabaseClient.from('atualizacoes').insert([
+                    { arquivo: fileName, status: 'Pendente', log: null }
+                ]).select().single();
+
+                if(error) throw error;
+                const recordId = data.id;
+
+                // 3. Ficar em Loading/Polling aguardando mudar para 'OK' ou 'Erro'
+                if(pollInterval) clearInterval(pollInterval);
+                
+                pollInterval = setInterval(async () => {
+                    const { data: pollData, error: pollError } = await supabaseClient
+                        .from('atualizacoes')
+                        .select('*')
+                        .eq('id', recordId)
+                        .single();
+
+                    if(pollData && (pollData.status.toLowerCase() === 'ok' || pollData.status === 'OK')) {
+                        clearInterval(pollInterval);
+                        statusText.textContent = "Status: Concluído!";
+                        statusText.className = "text-xs font-medium text-green-500 uppercase tracking-wide";
+                        setTimeout(() => {
+                            overlay.classList.add('opacity-0');
+                            setTimeout(() => overlay.classList.add('hidden'), 300);
+                            showToast("Instalação concluída com sucesso!", "success");
+                            loadFiles();
+                        }, 1000);
+                    } 
+                    else if (pollData && pollData.status === 'Erro') {
+                        clearInterval(pollInterval);
+                        statusText.textContent = "Status: Deu Erro!";
+                        statusText.className = "text-xs font-medium text-red-500 uppercase tracking-wide";
+                        setTimeout(() => {
+                            overlay.classList.add('opacity-0');
+                            setTimeout(() => overlay.classList.add('hidden'), 300);
+                            showToast("Erro na instalação: " + (pollData.log || "Desconhecido"), "error");
+                            loadFiles();
+                        }, 2500);
+                    }
+                }, 2000); // Polling a cada 2 segundos
+
+            } catch(e) {
+                console.error(e);
+                overlay.classList.add('opacity-0');
+                setTimeout(() => overlay.classList.add('hidden'), 300);
+                showToast("Erro de comunicação ao solicitar instalação.", "error");
+            }
+        };
+
+        // File Drag & Drop Handlers
+        ui.dropZone.addEventListener('click', () => ui.fileInput.click());
+        ui.dropZone.addEventListener('dragover', (e) => { e.preventDefault(); ui.dropZone.classList.add('dragover'); });
+        ui.dropZone.addEventListener('dragleave', () => ui.dropZone.classList.remove('dragover'));
+        ui.dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            ui.dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length) handleFileSelect(e.dataTransfer.files[0]);
+        });
+        ui.fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) handleFileSelect(e.target.files[0]);
+        });
+
+        function handleFileSelect(file) {
+            selectedFile = file;
+            ui.fileNameDisplay.textContent = file.name;
+            ui.fileSizeDisplay.textContent = formatBytes(file.size);
+            ui.selectedFileInfo.classList.remove('hidden');
+            ui.selectedFileInfo.classList.add('flex');
+            ui.btnUpload.disabled = false;
+        }
+
+        // Upload Form Submit
+        ui.uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!selectedFile) return;
+
+            const bucketName = ui.bucketSelect.value;
+            if(!bucketName) {
+                showToast("Selecione um bucket primeiro", "error");
+                return;
+            }
+
+            ui.btnUpload.disabled = true;
+            ui.btnUpload.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Enviando...';
+            ui.uploadProgContainer.classList.remove('hidden');
+            ui.uploadProgBar.style.width = '10%'; // Mock inicial
+
+            try {
+                // Remove espaços do nome do arquivo por segurança
+                const safeName = selectedFile.name.replace(/\s+/g, '_');
+                
+                // Em supabase js v2 upload:
+                const { data, error } = await supabaseClient.storage.from(bucketName).upload(safeName, selectedFile, {
+                    cacheControl: '3600',
+                    upsert: true
+                });
+
+                ui.uploadProgBar.style.width = '100%';
+
+                if (error) throw error;
+
+                setTimeout(() => {
+                    showToast("Upload concluído com sucesso!", "success");
+                    ui.uploadForm.reset();
+                    selectedFile = null;
+                    ui.selectedFileInfo.classList.add('hidden');
+                    ui.selectedFileInfo.classList.remove('flex');
+                    ui.uploadProgContainer.classList.add('hidden');
+                    ui.btnUpload.innerHTML = '<i class="fa-solid fa-upload mr-2"></i>Enviar Arquivo';
+                    loadFiles();
+                }, 500);
+
+            } catch (error) {
+                console.error("Erro upload:", error);
+                showToast(`Erro no upload: ${error.message}`, "error");
+                ui.uploadProgContainer.classList.add('hidden');
+                ui.btnUpload.innerHTML = '<i class="fa-solid fa-upload mr-2"></i>Enviar Arquivo';
+                ui.btnUpload.disabled = false;
+            }
+        });
+
+        ui.bucketSelect.addEventListener('change', loadFiles);
+        ui.btnRefresh.addEventListener('click', loadFiles);
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadBuckets();
+            ui.loader.style.opacity = '0';
+            setTimeout(() => { ui.loader.style.display = 'none'; document.body.classList.add('loaded'); }, 300);
+        });
+
+    </script>
+</body>
+</html>
