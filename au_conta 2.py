@@ -40,8 +40,14 @@ HEADERS_GET = {
 # Prefixo do CNPJ base da empresa de acordo com o json (36.123.120...)
 CNPJ_PREFIX = "36123"
 
+__logs_buffer = []
+
 def log(msg, prefix="[MAIN]"):
-    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {prefix} {msg}")
+    linha = f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {prefix} {msg}"
+    print(linha)
+    __logs_buffer.append(linha)
+    if len(__logs_buffer) > 200:
+        __logs_buffer.pop(0)
 
 # ==========================================================
 # CONFIGURAÇÕES REMOTAS (SUPABASE)
@@ -624,8 +630,18 @@ def run_import_consumo():
                         codfiscal_base = 1556 if uf_emit == uf_filial else 2556
                         log(f"ID {id_req}: UF_emit={uf_emit} UF_filial={uf_filial} codfiscal={codfiscal}", "[IMPORT_CONSUMO]")
                         
+                        # Helper functions for formatting
+                        def format_cnpj(cnpj):
+                            cnpj = str(cnpj).zfill(14)
+                            return f"{cnpj[:2]}.{cnpj[2:5]}.{cnpj[5:8]}/{cnpj[8:12]}-{cnpj[12:]}"
+                            
+                        def format_moeda(valor):
+                            return "{:.2f}".format(valor).replace('.', ',')
+
+                        cnpj_emissor_fmt = format_cnpj(cnpj_emissor) if len(str(cnpj_emissor)) >= 14 else cnpj_emissor
+                        
                         # 2. Obter/Criar fornecedor
-                        cursor.execute("SELECT CODFORNEC FROM PCFORNEC WHERE CGC = :cgc OR CGC = :cgc2", cgc=cnpj_emissor, cgc2=cnpj_emissor.lstrip('0'))
+                        cursor.execute("SELECT CODFORNEC FROM PCFORNEC WHERE CGC = :cgc OR CGC = :cgc2", cgc=cnpj_emissor_fmt, cgc2=cnpj_emissor.lstrip('0'))
                         fornec_db = cursor.fetchone()
                         if fornec_db:
                             codfornec = fornec_db[0]
@@ -637,21 +653,22 @@ def run_import_consumo():
                             cursor.execute("UPDATE pcconsum SET proxnumfornec = :val", val=novo_proxnumfornec)
                             log(f"ID {id_req}: Novo fornecedor codfornec={codfornec}", "[IMPORT_CONSUMO]")
                             
-                            sql_ins_forn = cfg.get('sql_import_pcfornec')
-                            if sql_ins_forn:
-                                cursor.execute(sql_ins_forn, {
-                                    'CODFORNEC': codfornec,
-                                    'FORNECEDOR': xNome_emit[:60],
-                                    'TIPOPESSOA': tipo_fj,
-                                    'CGC': cnpj_emissor,
-                                    'IE': ie_emit[:20],
-                                    'ENDER': xLgr_emit[:80],
-                                    'BAIRRO': xBairro_emit[:40],
-                                    'CIDADE': xMun_emit[:40],
-                                    'ESTADO': uf_emit[:2],
-                                    'CEP': cep_emit[:8],
-                                    'CODMUNICIPIO': cMun_emit
-                                })
+                            sql_ins_forn = """INSERT INTO PCFORNEC (CODFORNEC, FORNECEDOR, TIPOPESSOA, CGC, IE, ENDER, BAIRRO, CIDADE, ESTADO, CEP, CODMUNICIPIO, CODCONTAS) 
+                                              VALUES (:CODFORNEC, :FORNECEDOR, :TIPOPESSOA, :CGC, :IE, :ENDER, :BAIRRO, :CIDADE, :ESTADO, :CEP, :CODMUNICIPIO, :CODCONTAS)"""
+                            cursor.execute(sql_ins_forn, {
+                                'CODFORNEC': codfornec,
+                                'FORNECEDOR': xNome_emit[:60],
+                                'TIPOPESSOA': tipo_fj,
+                                'CGC': cnpj_emissor_fmt,
+                                'IE': ie_emit[:20],
+                                'ENDER': xLgr_emit[:80],
+                                'BAIRRO': xBairro_emit[:40],
+                                'CIDADE': xMun_emit[:40],
+                                'ESTADO': uf_emit[:2],
+                                'CEP': cep_emit[:8],
+                                'CODMUNICIPIO': cMun_emit,
+                                'CODCONTAS': 40183
+                            })
                         
                         # 3. Check existing and Gerar numtransent
                         agora = datetime.now()
@@ -673,49 +690,94 @@ def run_import_consumo():
                             hora_lanc = agora.strftime("%H")
                             min_lanc = agora.strftime("%M")
                             
-                            sql_ins_pcnfent = cfg.get('sql_import_pcnfent')
-                            if sql_ins_pcnfent:
-                                cursor.execute(sql_ins_pcnfent, {
-                                    'CODFILIALNF': codfilial, 'ESPECIE': 'NF', 'SERIE': serie, 'NUMNOTA': nNF, 'DTEMISSAO': dt_emissao_formatada,
-                                    'DTENT': dt_ent, 'CODFORNEC': codfornec, 'VLTOTAL': vltotal, 'CODCONT': 401003,
-                                    'CODFISCAL': codfiscal, 'CODFILIAL': codfilial, 'TIPODESCARGA': '0', 'NUMTRANSENT': numtransent,
-                                    'VLIPI': 0, 'VLFRETE': 0, 'VLST': 0, 'VLDESCONTO': 0, 'VLBASEIPI': 0, 'UF': uf_emit,
-                                    'VLOUTRAS': 0, 'CODFUNCLANC': 1, 'HORALANC': hora_lanc, 'MINUTOLANC': min_lanc,
-                                    'ROTINALANC': 'ZyNapse', 'FUNCLANC': 'ZyNapse', 'CHAVENFE': chave_xml, 'SITUACAONFE': 0,
-                                    'EMISSAOPROPRIA': 'N', 'TIPOEMISSAO': 1, 'FORNECEDOR': xNome_emit[:60], 'CGC': cnpj_emissor,
-                                    'IE': ie_emit[:20], 'TIPOFJ': tipo_fj, 'TIPOFORNEC': 'I', 'CODPAIS': 1058, 'DESCPAIS': 'Brasil',
-                                    'CGCFILIAL': cgc_filial, 'IEFILIAL': ie_filial, 'UFFILIAL': uf_filial, 'CODFORFILIAL': codfor_filial,
-                                    'TIPOALIQOUTRASDESP': 'P', 'CODCONTFOR': 100001, 'CODCONTFRE': 100002, 'TIPOFRETECIFFOB': 'C',
-                                    'REVENDA': 'S', 'UFCODIGO': uf_dest, 'HISTORICO': 'S', 'DTLANCTO': dt_ent, 'ENDERECO': xLgr_emit[:80],
-                                    'BAIRRO': xBairro_emit[:40], 'MUNICIPIO': xMun_emit[:40], 'CEP': cep_emit[:8], 'CODMUNICIPIO': cMun_emit,
-                                    'CONSUMIDORFINAL': 'S', 'CODIBGE': cMun_dest, 'SIMPLESNACIONAL': 'N'
-                                })
-                                log(f"ID {id_req}: PCNFENT inserido", "[IMPORT_CONSUMO]")
+                            sql_ins_pcnfent = """
+                            INSERT INTO PCNFENT (
+                                CODFILIALNF, ESPECIE, SERIE, NUMNOTA, DTEMISSAO, DTENT, CODFORNEC, VLTOTAL, CODCONT,
+                                CODFISCAL, CODFILIAL, TIPODESCARGA, NUMTRANSENT, VLIPI, VLFRETE, VLST, VLDESCONTO,
+                                VLBASEIPI, UF, VLOUTRAS, CODFUNCLANC, HORALANC, MINUTOLANC, ROTINALANC, FUNCLANC,
+                                CHAVENFE, SITUACAONFE, EMISSAOPROPRIA, TIPOEMISSAO, FORNECEDOR, CGC, IE, TIPOFJ,
+                                TIPOFORNEC, CODPAIS, DESCPAIS, CGCFILIAL, IEFILIAL, UFFILIAL, CODFORFILIAL,
+                                TIPOALIQOUTRASDESP, CODCONTFOR, CODCONTFRE, TIPOFRETECIFFOB, REVENDA, UFCODIGO,
+                                HISTORICO, DTLANCTO, ENDERECO, BAIRRO, MUNICIPIO, CEP, CODMUNICIPIO, CONSUMIDORFINAL,
+                                CODIBGE, SIMPLESNACIONAL, MODELO, GERANFVENDA, INDUSTRIALOCAL
+                            ) VALUES (
+                                :CODFILIALNF, :ESPECIE, :SERIE, :NUMNOTA, TO_DATE(:DTEMISSAO, 'DD/MM/YYYY'), TO_DATE(:DTENT, 'DD/MM/YYYY'), :CODFORNEC, :VLTOTAL, :CODCONT,
+                                :CODFISCAL, :CODFILIAL, :TIPODESCARGA, :NUMTRANSENT, :VLIPI, :VLFRETE, :VLST, :VLDESCONTO,
+                                :VLBASEIPI, :UF, :VLOUTRAS, :CODFUNCLANC, :HORALANC, :MINUTOLANC, :ROTINALANC, :FUNCLANC,
+                                :CHAVENFE, :SITUACAONFE, :EMISSAOPROPRIA, :TIPOEMISSAO, :FORNECEDOR, :CGC, :IE, :TIPOFJ,
+                                :TIPOFORNEC, :CODPAIS, :DESCPAIS, :CGCFILIAL, :IEFILIAL, :UFFILIAL, :CODFORFILIAL,
+                                :TIPOALIQOUTRASDESP, :CODCONTFOR, :CODCONTFRE, :TIPOFRETECIFFOB, :REVENDA, :UFCODIGO,
+                                :HISTORICO, TO_DATE(:DTLANCTO, 'DD/MM/YYYY'), :ENDERECO, :BAIRRO, :MUNICIPIO, :CEP, :CODMUNICIPIO, :CONSUMIDORFINAL,
+                                :CODIBGE, :SIMPLESNACIONAL, :MODELO, :GERANFVENDA, :INDUSTRIALOCAL
+                            )"""
+
+                            cursor.execute(sql_ins_pcnfent, {
+                                'CODFILIALNF': codfilial, 'ESPECIE': 'NF', 'SERIE': '001', 'NUMNOTA': nNF, 'DTEMISSAO': dt_emissao_formatada,
+                                'DTENT': dt_ent, 'CODFORNEC': codfornec, 'VLTOTAL': round(float(vltotal), 2), 'CODCONT': 401003,
+                                'CODFISCAL': codfiscal, 'CODFILIAL': codfilial, 'TIPODESCARGA': '2', 'NUMTRANSENT': numtransent,
+                                'VLIPI': 0, 'VLFRETE': 0, 'VLST': 0, 'VLDESCONTO': 0, 'VLBASEIPI': 0, 'UF': uf_emit,
+                                'VLOUTRAS': 0, 'CODFUNCLANC': 1, 'HORALANC': hora_lanc, 'MINUTOLANC': min_lanc,
+                                'ROTINALANC': 'ZyNapse', 'FUNCLANC': 'ZyNapse', 'CHAVENFE': chave_xml, 'SITUACAONFE': 0,
+                                'EMISSAOPROPRIA': 'N', 'TIPOEMISSAO': 1, 'FORNECEDOR': xNome_emit[:60], 'CGC': cnpj_emissor_fmt,
+                                'IE': ie_emit[:20], 'TIPOFJ': tipo_fj, 'TIPOFORNEC': 'O', 'CODPAIS': 1058, 'DESCPAIS': 'Brasil',
+                                'CGCFILIAL': cgc_filial, 'IEFILIAL': ie_filial, 'UFFILIAL': uf_filial, 'CODFORFILIAL': codfor_filial,
+                                'TIPOALIQOUTRASDESP': 'P', 'CODCONTFOR': 100001, 'CODCONTFRE': 100002, 'TIPOFRETECIFFOB': 'C',
+                                'REVENDA': 'O', 'UFCODIGO': uf_dest, 'HISTORICO': 'S', 'DTLANCTO': dt_ent, 'ENDERECO': xLgr_emit[:80],
+                                'BAIRRO': xBairro_emit[:40], 'MUNICIPIO': xMun_emit[:40], 'CEP': cep_emit[:8], 'CODMUNICIPIO': cMun_emit,
+                                'CONSUMIDORFINAL': 'S', 'CODIBGE': cMun_dest, 'SIMPLESNACIONAL': 'N', 'MODELO': 55, 'GERANFVENDA': 'N',
+                                'INDUSTRIALOCAL': 'N'
+                            })
+                            log(f"ID {id_req}: PCNFENT inserido", "[IMPORT_CONSUMO]")
                             
-                        # 5. Check e Insert pcnfbase
+                        # 5. Gerar NUMTRANSPISCOFINS (usado em PCNFBASE e PCNFENTPISCOFINS)
+                        cursor.execute("SELECT DFSEQ_PCNFENTPISCOFINS.NEXTVAL PROX FROM DUAL")
+                        numtranspiscofins = cursor.fetchone()[0]
+                        log(f"ID {id_req}: numtranspiscofins={numtranspiscofins}", "[IMPORT_CONSUMO]")
+
+                        # 6. Check e Insert pcnfbase
                         cursor.execute("SELECT 1 FROM PCNFBASE WHERE NUMTRANSENT = :num", num=numtransent)
                         if not cursor.fetchone():
-                            sql_ins_base = cfg.get('sql_import_pcnfbase')
-                            if sql_ins_base:
-                                cursor.execute(sql_ins_base, {
-                                    'ALIQUOTA': 0, 'VLBASE': 0, 'VLICMS': 0, 'NUMTRANSENT': numtransent, 'CODCONT': 401003,
-                                    'CODFISCAL': codfiscal_base, 'TIPO': 1, 'VLISENTAS': 0, 'VLCONTABIL': 0, 'SITTRIBUT': 90
-                                })
-                                log(f"ID {id_req}: PCNFBASE inserido", "[IMPORT_CONSUMO]")
+                            sql_ins_base = """
+                            INSERT INTO PCNFBASE (ALIQUOTA, VLBASE, VLICMS, NUMTRANSENT, CODCONT, CODFISCAL, TIPO, VLISENTAS, VLCONTABIL, SITTRIBUT, NUMTRANSPISCOFINS)
+                            VALUES (:ALIQUOTA, :VLBASE, :VLICMS, :NUMTRANSENT, :CODCONT, :CODFISCAL, :TIPO, :VLISENTAS, :VLCONTABIL, :SITTRIBUT, :NUMTRANSPISCOFINS)
+                            """
+                            cursor.execute(sql_ins_base, {
+                                'ALIQUOTA': 0, 'VLBASE': 0, 'VLICMS': 0, 'NUMTRANSENT': numtransent, 'CODCONT': 401003,
+                                'CODFISCAL': codfiscal_base, 'TIPO': 1, 'VLISENTAS': 0, 'VLCONTABIL': round(float(vltotal), 2), 'SITTRIBUT': 90,
+                                'NUMTRANSPISCOFINS': numtranspiscofins
+                            })
+                            log(f"ID {id_req}: PCNFBASE inserido", "[IMPORT_CONSUMO]")
                         else:
                             log(f"ID {id_req}: PCNFBASE ja preenchido. Pulando.", "[IMPORT_CONSUMO]")
                             
-                        # 6. Check e Insert pcnfentpiscofins
+                        # 7. Check e Insert pcnfentpiscofins
                         cursor.execute("SELECT 1 FROM PCNFENTPISCOFINS WHERE NUMTRANSENT = :num", num=numtransent)
                         if not cursor.fetchone():
-                            sql_ins_piscofins = cfg.get('sql_import_pcnfentpiscofins')
-                            if sql_ins_piscofins:
-                                cursor.execute(sql_ins_piscofins, {
-                                    'NUMTRANSPISCOFINS': numtransent,
-                                    'CODTRIBPISCOFINS': 70, 'VLBASEPIS': 0, 'VLBASECOFINS': 0, 'PERPIS': 0, 'PERCOFINS': 0,
-                                    'VLCOFINS': 0, 'VLPIS': 0, 'NUMTRANSENT': numtransent, 'CODCONT': 401003
-                                })
-                                log(f"ID {id_req}: PCNFENTPISCOFINS inserido", "[IMPORT_CONSUMO]")
+                            cursor.execute("SELECT COD_CTA FROM PCCONTASCONTABEISSPED WHERE CODFISCAL = :cod", cod=codfiscal)
+                            row_cta = cursor.fetchone()
+                            obs_pis = ""
+                            cod_cta = ""
+                            if row_cta:
+                                cod_cta = row_cta[0]
+                            else:
+                                obs_pis = f"N: NENHUM REGISTRO FOI LOCALIZADO PARA O P_CST: 70 CFOP {codfiscal} P_COD_FILIAL: {codfilial}."
+
+                            sql_ins_piscofins = """
+                            INSERT INTO PCNFENTPISCOFINS (
+                                NUMTRANSPISCOFINS, CODTRIBPISCOFINS, VLBASEPIS, VLBASECOFINS, PERPIS, PERCOFINS,
+                                VLCOFINS, VLPIS, NUMTRANSENT, CODCONT, NATCREDITO, PERCREDBASEPISCOFINSFRETE
+                            ) VALUES (
+                                :NUMTRANSPISCOFINS, :CODTRIBPISCOFINS, :VLBASEPIS, :VLBASECOFINS, :PERPIS, :PERCOFINS,
+                                :VLCOFINS, :VLPIS, :NUMTRANSENT, :CODCONT, :NATCREDITO, :PERCREDBASEPISCOFINSFRETE
+                            )
+                            """
+                            cursor.execute(sql_ins_piscofins, {
+                                'NUMTRANSPISCOFINS': numtranspiscofins,
+                                'CODTRIBPISCOFINS': 70, 'VLBASEPIS': 0, 'VLBASECOFINS': 0, 'PERPIS': 0, 'PERCOFINS': 0,
+                                'VLCOFINS': 0, 'VLPIS': 0, 'NUMTRANSENT': numtransent, 'CODCONT': 401003,
+                                'NATCREDITO': 0, 'PERCREDBASEPISCOFINSFRETE': 0
+                            })
+                            log(f"ID {id_req}: PCNFENTPISCOFINS inserido", "[IMPORT_CONSUMO]")
                         else:
                             log(f"ID {id_req}: PCNFENTPISCOFINS ja preenchido. Pulando.", "[IMPORT_CONSUMO]")
                         
@@ -737,17 +799,67 @@ def run_import_consumo():
                         cnpj_tomador = cnpj_dest
                         cnpj_remetente = cnpj_emissor
                         
-                        # Atualizar status supabase para varredura
-                        log(f"ID {id_req}: COMMIT OK! Atualizando supabase...", "[IMPORT_CONSUMO]")
+                        # Atualizar status supabase com TODOS os campos do WinThor
+                        log(f"ID {id_req}: COMMIT OK! Atualizando supabase com dados completos...", "[IMPORT_CONSUMO]")
                         payload_ok = {
-                            "status":"Sem XML",
+                            "status": "Sem XML",
                             "numtransent": numtransent,
-                            "obs": f"Importada com Sucesso (trans={numtransent}) - Aguardando varredura",
-                            "vltotal_xml": vltotal, "vlicms_xml": vlicms_xml,
-                            "vlpis_xml": vlpis_xml, "vlcofins_xml": vlcofins_xml,
-                            "cnpj_tomador": cnpj_tomador, "cnpj_remetente": cnpj_remetente
+                            "obs": f"Importada com Sucesso (trans={numtransent})",
+                            # Campos de identificação WinThor
+                            "codfilial": codfilial,
+                            "codfilialnf": codfilial,
+                            "numnota": int(nNF) if nNF.isdigit() else nNF,
+                            "serie": '001',
+                            "especie": 'NF',
+                            "dtent": datetime.now().strftime('%Y-%m-%d'),
+                            "dtemissao": dt_emissao if dt_emissao else None,
+                            "codfiscal": codfiscal,
+                            "codcont": 401003,
+                            # Campos do fornecedor
+                            "codfornec": codfornec,
+                            "fornecedor": xNome_emit[:60],
+                            "cgc": cnpj_emissor_fmt,
+                            "ie": ie_emit[:20],
+                            # Campos de valor (do WinThor)
+                            "vltotal": round(float(vltotal), 2),
+                            "vlicms": 0,
+                            "vlpis": 0,
+                            "vlcofins": 0,
+                            "vlipi": 0,
+                            "vlfrete": 0,
+                            "vlst": 0,
+                            "vldesconto": 0,
+                            "vlbaseipi": 0,
+                            # Campos de valor do XML
+                            "vltotal_xml": vltotal,
+                            "vlicms_xml": vlicms_xml,
+                            "vlpis_xml": vlpis_xml,
+                            "vlcofins_xml": vlcofins_xml,
+                            # Chaves e CNPJs
+                            "chave_winthor": chave_xml,
+                            "cnpj_filial": cgc_filial,
+                            "cnpj_tomador": cnpj_tomador,
+                            "cnpj_remetente": cnpj_remetente,
+                            # Campos de log
+                            "funclanc": "ZyNapse",
+                            "conferido": 'N',
+                            "modelo": 55
                         }
                         requests.patch(f"{SUPABASE_URL}/rest/v1/{cfg['tbl_confronto']}?id=eq.{id_req}", headers=HEADERS, json=payload_ok)
+                        log(f"ID {id_req}: Supabase atualizado com dados completos. Rodando avaliacao XML...", "[IMPORT_CONSUMO]")
+                        
+                        # Rodar avaliação XML imediata para comparar e definir status final
+                        time.sleep(0.3)
+                        resp_final = requests.get(
+                            f"{SUPABASE_URL}/rest/v1/{cfg['tbl_confronto']}?id=eq.{id_req}&select=*",
+                            headers=HEADERS_GET
+                        )
+                        if resp_final.status_code == 200:
+                            regs_final = resp_final.json()
+                            if isinstance(regs_final, list) and regs_final:
+                                avaliar_xml(cfg['tbl_confronto'], regs_final[0])
+                                log(f"ID {id_req}: Avaliacao XML concluida.", "[IMPORT_CONSUMO]")
+                        
                         log(f"ID {id_req}: IMPORTACAO CONCLUIDA COM SUCESSO!", "[IMPORT_CONSUMO]")
                         
                     except Exception as ex:
@@ -772,125 +884,30 @@ import base64
 import subprocess
 from io import BytesIO
 
-def auto_install_host_deps():
-    import importlib
-    packages = [('supabase', 'supabase'), ('pyautogui', 'pyautogui'), ('mss', 'mss'), ('Pillow', 'PIL')]
-    for pkg, import_name in packages:
-        try:
-            importlib.import_module(import_name)
-        except ImportError:
-            log(f"Instalando {pkg}...", "[HOST]")
-            try:
-                subprocess.check_call([sys.executable, '-m', 'pip', 'install', pkg])
-            except:
-                subprocess.check_call([sys.executable, '-m', 'pip', 'install', pkg, '--break-system-packages'])
 
-def is_screen_black(img):
-    w, h = img.size
-    sample = img.crop((w//4, h//4, 3*w//4, 3*h//4)).resize((64, 36))
-    pixels = list(sample.getdata())
-    if not pixels: return True
-    total = sum(r + g + b for r, g, b in pixels)
-    return (total / (len(pixels) * 3)) < 5
 
-def capture_screen():
-    import mss
-    from PIL import Image, ImageGrab
-    try:
-        with mss.mss() as sct:
-            monitor = sct.monitors[1] if len(sct.monitors) > 1 else sct.monitors[0]
-            sct_img = sct.grab(monitor)
-            return Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
-    except:
-        try:
-            return ImageGrab.grab()
-        except:
-            return None
-
-def run_remote_host():
-    log("Iniciando rotina.", "[HOST]")
-    try:
-        auto_install_host_deps()
-    except Exception as e:
-        log(f"Erro ao instalar dependências do host: {e}", "[HOST]")
-        return
-        
-    import pyautogui
-    from supabase import create_client
-    
-    HOST_SUPABASE_URL = "https://wdwiwfepukjoihxpqkvz.supabase.co"
-    HOST_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indkd2l3ZmVwdWtqb2loeHBxa3Z6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTc2NzkxOCwiZXhwIjoyMDkxMzQzOTE4fQ.v8B6q0Ji03hmIt_Zun3I7tT3iZYLCyGBLC8naq5QyYw"
-    supabase_host = create_client(HOST_SUPABASE_URL, HOST_SUPABASE_KEY)
-    
-    HOST_NAME_LOCAL = "NutriPort"
-    
-    pyautogui.FAILSAFE = False
-    pyautogui.PAUSE = 0.0
-    
-    last_status_check = 0
-    is_connected = False
-    last_b64_sent = ""
-    black_screen_count = 0
-    
+# ==========================================================
+# THREAD 7: LOG MONITOR 
+# ==========================================================
+def run_logs_monitor():
+    log("Iniciando rotina.", "[LOGS]")
     while True:
         try:
-            now = time.time()
-            if not is_connected and (now - last_status_check > 1.5):
-                res = supabase_host.table('screen_stream_v2').select('is_connected').eq('host_name', HOST_NAME_LOCAL).execute()
-                if res.data:
-                    is_connected = res.data[0].get('is_connected', False)
-                last_status_check = now
-            if not is_connected:
-                time.sleep(0.5)
-                continue
-            if now - last_status_check > 2.0:
-                res = supabase_host.table('screen_stream_v2').select('is_connected').eq('host_name', HOST_NAME_LOCAL).execute()
-                if res.data:
-                    is_connected = res.data[0].get('is_connected', False)
-                last_status_check = now
-                if not is_connected:
-                    log("Coleta pausada. Aguardando próximo ciclo...", "[HOST]")
-                    last_b64_sent = ""
-                    continue
-            img = capture_screen()
-            if img is not None:
-                if is_screen_black(img):
-                    black_screen_count += 1
-                else:
-                    black_screen_count = 0
-                img.thumbnail((1280, 720))
-                buffer = BytesIO()
-                img.save(buffer, format="JPEG", quality=60)
-                img_b64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
-                if img_b64 != last_b64_sent:
-                    supabase_host.table('screen_stream_v2').update({'image_b64': img_b64}).eq('host_name', HOST_NAME_LOCAL).execute()
-                    last_b64_sent = img_b64
-            res_cmd = supabase_host.table('remote_commands_v2').select('*').eq('host_name', HOST_NAME_LOCAL).order('id').execute()
-            cmds = res_cmd.data
-            if cmds:
-                screen_width, screen_height = pyautogui.size()
-                ids_del = []
-                for cmd in cmds:
-                    ids_del.append(cmd['id'])
-                    action = cmd['action']
-                    try:
-                        if action == 'move':
-                            pyautogui.moveTo(int(cmd.get('x',0)*screen_width), int(cmd.get('y',0)*screen_height), _pause=False)
-                        elif action == 'click':
-                            pyautogui.click(x=int(cmd.get('x',0)*screen_width), y=int(cmd.get('y',0)*screen_height), button=cmd.get('button','left'))
-                        elif action == 'scroll':
-                            pyautogui.scroll(int(cmd.get('y', 0)))
-                        elif action == 'type':
-                            key = cmd.get('key_name')
-                            if key:
-                                if key in pyautogui.KEYBOARD_KEYS: pyautogui.press(key)
-                                else: pyautogui.write(key)
-                    except: pass
-                if ids_del:
-                    supabase_host.table('remote_commands_v2').delete().in_('id', ids_del).execute()
-            time.sleep(0.04)
+            resp = requests.get(f"{SUPABASE_URL}/rest/v1/app_logs?status=eq.solicitado&select=id", headers=HEADERS_GET)
+            if resp.status_code == 200:
+                sols = resp.json()
+                if isinstance(sols, list) and sols:
+                    for s in sols:
+                        payload = {
+                            "status": "respondido",
+                            "log_content": "\n".join(__logs_buffer),
+                            "versao": "3.11.1",
+                            "data_hora": datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+                        }
+                        requests.patch(f"{SUPABASE_URL}/rest/v1/app_logs?id=eq.{s['id']}", headers=HEADERS, json=payload)
         except Exception as e:
-            time.sleep(0.5)
+            pass
+        time.sleep(10)
 
 # ==========================================================
 # INICIAR TUDO
@@ -902,14 +919,14 @@ def main():
     t3 = threading.Thread(target=run_ve_ri, daemon=True)
     t4 = threading.Thread(target=run_toma_dif, daemon=True)
     t5 = threading.Thread(target=run_import_consumo, daemon=True)
-    t6 = threading.Thread(target=run_remote_host, daemon=True)
+    t7 = threading.Thread(target=run_logs_monitor, daemon=True)
 
     t1.start()
     t2.start()
     t3.start()
     t4.start()
     t5.start()
-    t6.start()
+    t7.start()
 
     log("Todas as rotinas conectadas e rodando em plano de fundo!")
     while True:

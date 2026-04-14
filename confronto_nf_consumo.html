@@ -2188,25 +2188,49 @@
                 btn.onclick = async (e) => {
                     e.stopPropagation();
                     const id = e.currentTarget.dataset.id;
+                    const itemData = state.lastFetchedData.find(d => d.id == id);
+                    const notaLabel = itemData ? `NF ${itemData.numnota || ''} (Filial ${itemData.codfilial || ''})` : `#${id}`;
+
                     const confirm = await Swal.fire({
                         title: 'Confirmar Importação',
-                        text: "Deseja enviar este XML para importação no WinThor?",
+                        html: `<p>Deseja enviar <strong>${notaLabel}</strong> para importação no WinThor?</p>
+                               <p class="text-xs text-gray-500 mt-2">A nota ficará em processamento até o robô concluir.</p>`,
                         icon: 'question',
                         showCancelButton: true,
-                        confirmButtonText: 'Sim, importar',
+                        confirmButtonColor: '#2563eb',
+                        confirmButtonText: '<i class="fa-solid fa-cloud-arrow-down mr-1"></i> Sim, importar',
                         cancelButtonText: 'Cancelar'
                     });
 
                     if (confirm.isConfirmed) {
                         try {
-                            showToast('Enviando para fila de importação...', 'success');
                             state.verificandoIds.add(parseInt(id));
                             renderTable();
                             
                             const { error } = await supabase.from(TABLE_NAME).update({ status: 'Aguardando Robo', obs: 'Aguardando o robo processar a importacao...' }).eq('id', id);
                             
                             if (error) throw error;
-                            showToast('NF enviada para a fila de importação com sucesso!', 'success');
+                            showToast(`${notaLabel} enviada para importação...`, 'success');
+
+                            // Auto-polling: verificar quando o robô terminar (a cada 2s)
+                            const pollImport = setInterval(async () => {
+                                try {
+                                    const { data: pollData } = await supabase.from(TABLE_NAME).select('status, obs, numtransent, codfornec, fornecedor, vltotal, codfilial').eq('id', id).single();
+                                    if (pollData && pollData.status !== 'Aguardando Robo') {
+                                        clearInterval(pollImport);
+                                        state.verificandoIds.delete(parseInt(id));
+                                        if (pollData.status === 'OK' || pollData.status === 'Sem XML') {
+                                            showToast(`✅ ${notaLabel} importada! Trans=${pollData.numtransent || '?'} | ${pollData.fornecedor || ''}`, 'success');
+                                        } else if (pollData.status === 'Erro Import' || pollData.status === 'Erro Importação') {
+                                            showToast(`❌ Erro: ${pollData.obs || 'Desconhecido'}`, 'error');
+                                        } else {
+                                            showToast(`${notaLabel}: ${pollData.status}`, 'success');
+                                        }
+                                        await fetchData(false);
+                                    }
+                                } catch(e) {}
+                            }, 2000);
+
                         } catch (err) {
                             showToast('Erro ao agendar importação', 'error');
                             state.verificandoIds.delete(parseInt(id));
@@ -2551,6 +2575,8 @@
                         query = query.eq('status', 'Sem XML');
                     } else if (state.viewMode === 'nao_importada') {
                         query = query.eq('status', 'Não Importada');
+                    } else if (state.viewMode === 'aguardando_robo') {
+                        query = query.eq('status', 'Aguardando Robo');
                     }
                 }
 
@@ -3546,6 +3572,7 @@
                 document.getElementById('view-tomador-dif-btn')?.classList.remove('active', 'text-orange-600');
                 document.getElementById('view-sem-xml-btn')?.classList.remove('active', 'text-yellow-600');
                 document.getElementById('view-nao-importada-btn')?.classList.remove('active', 'text-purple-600');
+                document.getElementById('view-aguardando-btn')?.classList.remove('active', 'text-cyan-600');
                 document.getElementById('view-validados-btn')?.classList.remove('active', 'text-blue-600');
             };
 
@@ -3576,6 +3603,10 @@
             document.getElementById('view-nao-importada-btn')?.addEventListener('click', e => {
                 state.viewMode = 'nao_importada'; state.currentPage = 1;
                 unselectViewPills(); e.target.classList.add('active', 'text-purple-600'); fetchData();
+            });
+            document.getElementById('view-aguardando-btn')?.addEventListener('click', e => {
+                state.viewMode = 'aguardando_robo'; state.currentPage = 1;
+                unselectViewPills(); e.target.classList.add('active', 'text-cyan-600'); fetchData();
             });
 
             // Sidebar and Modals

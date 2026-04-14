@@ -280,6 +280,30 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Seção de Logs Mestre Bot -->
+        <div class="content-card overflow-hidden flex flex-col mt-6">
+            <div class="p-4 border-b flex justify-between items-center" style="border-color: var(--color-border); background-color: var(--color-surface);">
+                <h2 class="text-lg font-semibold"><i class="fa-solid fa-robot mr-2 text-[var(--color-primary)]"></i>Status do Bot (Mestre)</h2>
+                <button id="btn-request-logs" class="btn btn-primary btn-sm" title="Solicitar Log Atual">
+                    <i class="fa-solid fa-terminal mr-2"></i>Solicitar Status
+                </button>
+            </div>
+            <div class="p-4 bg-[var(--color-bg)]">
+                <div id="bot-status-container" class="hidden flex-col gap-3">
+                    <div class="flex items-center gap-4 text-sm font-medium">
+                        <span class="bg-[var(--color-info-soft-bg)] text-[var(--color-info)] px-3 py-1 rounded border border-[var(--color-info)] opacity-80">Versão instalada: <span id="log-version">--</span></span>
+                        <span class="bg-[var(--color-surface)] border border-[var(--color-border)] px-3 py-1 rounded shadow-sm"><i class="fa-regular fa-clock mr-2"></i>Data e Hora: <span id="log-datetime" class="font-bold text-[var(--color-text-primary)]">--</span></span>
+                    </div>
+                    <pre id="log-content-display" class="bg-[#1e1e1e] text-[#d4d4d4] p-4 rounded-lg overflow-auto h-[300px] text-xs font-mono border border-[#333] custom-scrollbar shadow-inner mt-2"></pre>
+                </div>
+                <div id="bot-status-empty" class="text-center p-8 text-[var(--color-text-secondary)] text-sm flex flex-col items-center">
+                    <i class="fa-solid fa-satellite-dish text-4xl mb-3 opacity-50"></i>
+                    <p>Clique em "Solicitar Status" para pingar o servidor local e obter os logs mais recentes.</p>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <!-- Toast Notification -->
@@ -314,6 +338,12 @@
             toast: document.getElementById('toast'),
             toastIcon: document.getElementById('toast-icon'),
             toastMessage: document.getElementById('toast-message'),
+            btnRequestLogs: document.getElementById('btn-request-logs'),
+            botStatusContainer: document.getElementById('bot-status-container'),
+            botStatusEmpty: document.getElementById('bot-status-empty'),
+            logVersion: document.getElementById('log-version'),
+            logDatetime: document.getElementById('log-datetime'),
+            logContentDisplay: document.getElementById('log-content-display'),
             stats: {
                 files: document.getElementById('stat-total-files'),
                 storage: document.getElementById('stat-storage-used'),
@@ -672,6 +702,66 @@
 
         ui.bucketSelect.addEventListener('change', loadFiles);
         ui.btnRefresh.addEventListener('click', loadFiles);
+        
+        // Logs Request Logic
+        let logPollInterval = null;
+        ui.btnRequestLogs.addEventListener('click', async () => {
+            ui.btnRequestLogs.disabled = true;
+            ui.btnRequestLogs.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Aguardando Bot...';
+            
+            try {
+                // Insere pedido
+                const { data, error } = await supabaseClient.from('app_logs').insert([
+                    { status: 'solicitado' }
+                ]).select().single();
+                
+                if(error) { throw error; }
+                const reqId = data.id;
+                
+                // Overlay/Aviso UI
+                ui.botStatusEmpty.classList.remove('hidden');
+                ui.botStatusEmpty.classList.add('flex');
+                ui.botStatusEmpty.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-4xl mb-3 opacity-80 text-[var(--color-primary)]"></i><p>Aguardando resposta do Mestre Bot (au_conta 2.py)...</p>';
+                ui.botStatusContainer.style.display = 'none';
+
+                if(logPollInterval) clearInterval(logPollInterval);
+                let attempts = 0;
+                
+                logPollInterval = setInterval(async () => {
+                    attempts++;
+                    const { data: pollData } = await supabaseClient.from('app_logs').select('*').eq('id', reqId).single();
+                    if(pollData && pollData.status === 'respondido') {
+                        clearInterval(logPollInterval);
+                        ui.botStatusEmpty.classList.add('hidden');
+                        ui.botStatusEmpty.classList.remove('flex');
+                        ui.botStatusContainer.classList.remove('hidden');
+                        ui.botStatusContainer.style.display = 'flex';
+                        
+                        ui.logVersion.textContent = pollData.versao || 'Desconhecido';
+                        ui.logDatetime.textContent = pollData.data_hora || new Date(pollData.created_at).toLocaleString('pt-BR');
+                        ui.logContentDisplay.textContent = pollData.log_content || 'Nenhum log retornado.';
+                        
+                        // Scroll to bottom
+                        setTimeout(() => { ui.logContentDisplay.scrollTop = ui.logContentDisplay.scrollHeight; }, 100);
+                        
+                        ui.btnRequestLogs.disabled = false;
+                        ui.btnRequestLogs.innerHTML = '<i class="fa-solid fa-terminal mr-2"></i>Solicitar Status';
+                        showToast("Logs carregados com sucesso!", "success");
+                    } else if (attempts > 30) { // ~60 sec limit
+                        clearInterval(logPollInterval);
+                        ui.btnRequestLogs.disabled = false;
+                        ui.btnRequestLogs.innerHTML = '<i class="fa-solid fa-terminal mr-2"></i>Solicitar Status';
+                        ui.botStatusEmpty.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-4xl mb-3 text-[var(--color-danger)] opacity-80"></i><p>Tempo esgotado. O Bot pode estar offline ou indisponível.</p>';
+                        showToast("Falha ao comunicar com o Bot.", "error");
+                    }
+                }, 2000);
+            } catch(e) {
+                console.error(e);
+                showToast("Erro ao solicitar logs.", "error");
+                ui.btnRequestLogs.disabled = false;
+                ui.btnRequestLogs.innerHTML = '<i class="fa-solid fa-terminal mr-2"></i>Solicitar Status';
+            }
+        });
 
         // Inicialização
         document.addEventListener('DOMContentLoaded', async () => {
