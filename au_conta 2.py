@@ -889,6 +889,45 @@ from io import BytesIO
 # ==========================================================
 # THREAD 7: LOG MONITOR 
 # ==========================================================
+def run_delete_nf():
+    log("Iniciando rotina de exclusao NF.", "[DELETE_NF]")
+    while True:
+        try:
+            resp = requests.get(f"{SUPABASE_URL}/rest/v1/delete_nf_queue?status=eq.Pendente", headers=HEADERS_GET)
+            if resp.status_code == 200:
+                pendentes = resp.json()
+                if isinstance(pendentes, list) and pendentes:
+                    for p in pendentes:
+                        id_ = p.get('id')
+                        numtransent = p.get('numtransent')
+                        
+                        requests.patch(f"{SUPABASE_URL}/rest/v1/delete_nf_queue?id=eq.{id_}", headers=HEADERS, json={"status": "Processando"})
+                        
+                        try:
+                            conn = get_db_connection()
+                            cursor = conn.cursor()
+                            cursor.execute("DELETE FROM pcnfent WHERE numtransent = :1", [numtransent])
+                            cursor.execute("DELETE FROM pcnfbase WHERE numtransent = :1", [numtransent])
+                            cursor.execute("DELETE FROM pcnfentpiscofins WHERE numtransent = :1", [numtransent])
+                            conn.commit()
+                            conn.close()
+                            
+                            log(f"NF {numtransent} (ID: {id_}) deletada do WinThor.", "[DELETE_NF]")
+                            requests.patch(f"{SUPABASE_URL}/rest/v1/delete_nf_queue?id=eq.{id_}", headers=HEADERS, json={"status": "Excluída", "obs": "Removido com sucesso"})
+                        except Exception as e_db:
+                            log(f"Erro BD ao deletar NF {numtransent}: {e_db}", "[DELETE_NF]")
+                            try:
+                                conn.rollback()
+                                conn.close()
+                            except: pass
+                            requests.patch(f"{SUPABASE_URL}/rest/v1/delete_nf_queue?id=eq.{id_}", headers=HEADERS, json={"status": "Erro", "obs": f"Erro BD: {str(e_db)[:200]}"})
+        except Exception as e:
+            log(f"Erro na thread de delecao: {e}", "[DELETE_NF]")
+        time.sleep(5)
+
+# ==========================================================
+# THREAD 8: LOG MONITOR 
+# ==========================================================
 def run_logs_monitor():
     log("Iniciando rotina.", "[LOGS]")
     while True:
@@ -920,6 +959,7 @@ def main():
     t4 = threading.Thread(target=run_toma_dif, daemon=True)
     t5 = threading.Thread(target=run_import_consumo, daemon=True)
     t7 = threading.Thread(target=run_logs_monitor, daemon=True)
+    t8 = threading.Thread(target=run_delete_nf, daemon=True)
 
     t1.start()
     t2.start()
@@ -927,6 +967,7 @@ def main():
     t4.start()
     t5.start()
     t7.start()
+    t8.start()
 
     log("Todas as rotinas conectadas e rodando em plano de fundo!")
     while True:
