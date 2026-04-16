@@ -4,6 +4,7 @@ import csv
 import json
 import threading
 import tkinter as tk
+import subprocess
 from tkinter import ttk, messagebox, filedialog, font as tkfont
 from datetime import datetime
 import time
@@ -17,44 +18,113 @@ ORACLE_SERVICE = "CS8NZK_190797_W_high.paas.oracle.com"
 CLIENT_LIB_DIR = r"C:\Users\informatica.ti\Documents\appdiscooveryzynapse\cmdintanci\instantclient_21_19"
 
 COLORS = {
-    "bg_dark":       "#f5f6fa",
-    "bg_medium":     "#ffffff",
-    "bg_light":      "#ebedf2",
-    "bg_input":      "#ffffff",
-    "accent":        "#e67e22",
-    "accent_hover":  "#d35400",
-    "accent_green":  "#27ae60",
-    "accent_red":    "#e74c3c",
+    "bg_dark": "#f5f6fa",
+    "bg_medium": "#ffffff",
+    "bg_light": "#ebedf2",
+    "bg_input": "#ffffff",
+    "accent": "#e67e22",
+    "accent_hover": "#d35400",
+    "accent_green": "#27ae60",
+    "accent_red": "#e74c3c",
     "accent_orange": "#f39c12",
-    "text_primary":  "#2c3e50",
-    "text_secondary":"#636e72",
-    "text_muted":    "#b2bec3",
-    "border":        "#dcdde1",
-    "row_even":      "#ffffff",
-    "row_odd":       "#fafafa",
-    "row_hover":     "#fef3e2",
-    "selection":     "#fdebd0",
-    "scrollbar_bg":  "#ebedf2",
-    "scrollbar_fg":  "#c8c8d0",
-    "success_bg":    "#eafaf1",
-    "error_bg":      "#fdedec",
+    "text_primary": "#2c3e50",
+    "text_secondary": "#636e72",
+    "text_muted": "#b2bec3",
+    "border": "#dcdde1",
+    "row_even": "#ffffff",
+    "row_odd": "#fafafa",
+    "row_hover": "#fef3e2",
+    "selection": "#fdebd0",
+    "scrollbar_bg": "#ebedf2",
+    "scrollbar_fg": "#c8c8d0",
+    "success_bg": "#eafaf1",
+    "error_bg": "#fdedec",
 }
 
 SQL_KEYWORDS = [
-    "SELECT", "FROM", "WHERE", "AND", "OR", "NOT", "IN", "BETWEEN",
-    "LIKE", "IS", "NULL", "ORDER", "BY", "GROUP", "HAVING", "JOIN",
-    "LEFT", "RIGHT", "INNER", "OUTER", "FULL", "CROSS", "ON", "AS",
-    "INSERT", "INTO", "VALUES", "UPDATE", "SET", "DELETE", "CREATE",
-    "TABLE", "ALTER", "DROP", "INDEX", "VIEW", "DISTINCT", "TOP",
-    "LIMIT", "OFFSET", "UNION", "ALL", "EXISTS", "CASE", "WHEN",
-    "THEN", "ELSE", "END", "COUNT", "SUM", "AVG", "MIN", "MAX",
-    "FETCH", "FIRST", "ROWS", "ONLY", "WITH", "ROWNUM", "SYSDATE",
-    "NVL", "NVL2", "DECODE", "TO_DATE", "TO_CHAR", "TO_NUMBER",
-    "SUBSTR", "TRIM", "UPPER", "LOWER", "REPLACE", "INSTR",
-    "ROUND", "TRUNC", "COALESCE", "DUAL", "ASC", "DESC",
+    "SELECT",
+    "FROM",
+    "WHERE",
+    "AND",
+    "OR",
+    "NOT",
+    "IN",
+    "BETWEEN",
+    "LIKE",
+    "IS",
+    "NULL",
+    "ORDER",
+    "BY",
+    "GROUP",
+    "HAVING",
+    "JOIN",
+    "LEFT",
+    "RIGHT",
+    "INNER",
+    "OUTER",
+    "FULL",
+    "CROSS",
+    "ON",
+    "AS",
+    "INSERT",
+    "INTO",
+    "VALUES",
+    "UPDATE",
+    "SET",
+    "DELETE",
+    "CREATE",
+    "TABLE",
+    "ALTER",
+    "DROP",
+    "INDEX",
+    "VIEW",
+    "DISTINCT",
+    "TOP",
+    "LIMIT",
+    "OFFSET",
+    "UNION",
+    "ALL",
+    "EXISTS",
+    "CASE",
+    "WHEN",
+    "THEN",
+    "ELSE",
+    "END",
+    "COUNT",
+    "SUM",
+    "AVG",
+    "MIN",
+    "MAX",
+    "FETCH",
+    "FIRST",
+    "ROWS",
+    "ONLY",
+    "WITH",
+    "ROWNUM",
+    "SYSDATE",
+    "NVL",
+    "NVL2",
+    "DECODE",
+    "TO_DATE",
+    "TO_CHAR",
+    "TO_NUMBER",
+    "SUBSTR",
+    "TRIM",
+    "UPPER",
+    "LOWER",
+    "REPLACE",
+    "INSTR",
+    "ROUND",
+    "TRUNC",
+    "COALESCE",
+    "DUAL",
+    "ASC",
+    "DESC",
 ]
 
-HISTORY_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".vieworacle_history.json")
+HISTORY_FILE = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), ".vieworacle_history.json"
+)
 
 
 def log(msg):
@@ -64,15 +134,23 @@ def log(msg):
 oracle_available = False
 try:
     import oracledb
-    try:
+except ImportError:
+    log("[ERRO] oracledb nao encontrado. O executavel nao foi compilado corretamente.")
+
+try:
+    import openpyxl
+except ImportError:
+    log("[ERRO] openpyxl nao encontrado. O executavel nao foi compilado corretamente.")
+
+try:
+    if "oracledb" in sys.modules:
         oracledb.init_oracle_client(lib_dir=CLIENT_LIB_DIR)
         log("[OK] Oracle Client inicializado!")
         oracle_available = True
-    except Exception as e:
-        log(f"[AVISO] Oracle Client init: {e}")
-        oracle_available = True
-except ImportError:
-    log("[ERRO] oracledb nao instalado. pip install oracledb")
+except Exception as e:
+    log(f"[AVISO] Oracle Client init: {e}")
+    # Fallback para o Thin mode, que não precisa de instalação de cliente Oracle!
+    oracle_available = True
 
 
 def conectar():
@@ -122,7 +200,8 @@ class ViewOracleApp:
         self.style = ttk.Style()
         self.style.theme_use("clam")
 
-        self.style.configure("Custom.Treeview",
+        self.style.configure(
+            "Custom.Treeview",
             background=COLORS["bg_medium"],
             foreground=COLORS["text_primary"],
             fieldbackground=COLORS["bg_medium"],
@@ -130,7 +209,8 @@ class ViewOracleApp:
             rowheight=38,
             font=("Segoe UI", 10),
         )
-        self.style.configure("Custom.Treeview.Heading",
+        self.style.configure(
+            "Custom.Treeview.Heading",
             background=COLORS["bg_light"],
             foreground=COLORS["text_primary"],
             borderwidth=1,
@@ -138,23 +218,27 @@ class ViewOracleApp:
             font=("Segoe UI", 10, "bold"),
             padding=(14, 10),
         )
-        self.style.map("Custom.Treeview.Heading",
+        self.style.map(
+            "Custom.Treeview.Heading",
             background=[("active", COLORS["accent"])],
             foreground=[("active", "#ffffff")],
         )
-        self.style.map("Custom.Treeview",
+        self.style.map(
+            "Custom.Treeview",
             background=[("selected", COLORS["selection"])],
             foreground=[("selected", COLORS["text_primary"])],
         )
 
-        self.style.configure("Custom.Vertical.TScrollbar",
+        self.style.configure(
+            "Custom.Vertical.TScrollbar",
             background=COLORS["scrollbar_fg"],
             troughcolor=COLORS["scrollbar_bg"],
             borderwidth=0,
             arrowsize=0,
             width=10,
         )
-        self.style.configure("Custom.Horizontal.TScrollbar",
+        self.style.configure(
+            "Custom.Horizontal.TScrollbar",
             background=COLORS["scrollbar_fg"],
             troughcolor=COLORS["scrollbar_bg"],
             borderwidth=0,
@@ -162,68 +246,83 @@ class ViewOracleApp:
             width=10,
         )
 
-        self.style.configure("Accent.TButton",
+        self.style.configure(
+            "Accent.TButton",
             background=COLORS["accent"],
             foreground="#ffffff",
             borderwidth=0,
             padding=(16, 8),
             font=("Segoe UI", 10, "bold"),
         )
-        self.style.map("Accent.TButton",
-            background=[("active", COLORS["accent_hover"]), ("disabled", COLORS["bg_light"])],
+        self.style.map(
+            "Accent.TButton",
+            background=[
+                ("active", COLORS["accent_hover"]),
+                ("disabled", COLORS["bg_light"]),
+            ],
         )
 
-        self.style.configure("Green.TButton",
+        self.style.configure(
+            "Green.TButton",
             background=COLORS["accent_green"],
             foreground="#ffffff",
             borderwidth=0,
             padding=(16, 8),
             font=("Segoe UI", 10, "bold"),
         )
-        self.style.map("Green.TButton",
+        self.style.map(
+            "Green.TButton",
             background=[("active", "#00d1a0"), ("disabled", COLORS["bg_light"])],
         )
 
-        self.style.configure("Red.TButton",
+        self.style.configure(
+            "Red.TButton",
             background=COLORS["accent_red"],
             foreground="#ffffff",
             borderwidth=0,
             padding=(16, 8),
             font=("Segoe UI", 10, "bold"),
         )
-        self.style.map("Red.TButton",
+        self.style.map(
+            "Red.TButton",
             background=[("active", "#ff5252"), ("disabled", COLORS["bg_light"])],
         )
 
-        self.style.configure("Flat.TButton",
+        self.style.configure(
+            "Flat.TButton",
             background=COLORS["bg_light"],
             foreground=COLORS["text_primary"],
             borderwidth=0,
             padding=(12, 8),
             font=("Segoe UI", 9),
         )
-        self.style.map("Flat.TButton",
+        self.style.map(
+            "Flat.TButton",
             background=[("active", COLORS["border"])],
         )
 
-        self.style.configure("Custom.TEntry",
+        self.style.configure(
+            "Custom.TEntry",
             fieldbackground=COLORS["bg_input"],
             foreground=COLORS["text_primary"],
             borderwidth=1,
             padding=(8, 6),
         )
 
-        self.style.configure("Custom.TNotebook",
+        self.style.configure(
+            "Custom.TNotebook",
             background=COLORS["bg_dark"],
             borderwidth=0,
         )
-        self.style.configure("Custom.TNotebook.Tab",
+        self.style.configure(
+            "Custom.TNotebook.Tab",
             background=COLORS["bg_light"],
             foreground=COLORS["text_secondary"],
             padding=(14, 6),
             font=("Segoe UI", 9),
         )
-        self.style.map("Custom.TNotebook.Tab",
+        self.style.map(
+            "Custom.TNotebook.Tab",
             background=[("selected", COLORS["accent"])],
             foreground=[("selected", "#ffffff")],
         )
@@ -235,31 +334,70 @@ class ViewOracleApp:
 
         logo_frame = tk.Frame(topbar, bg=COLORS["bg_dark"])
         logo_frame.pack(side="left", padx=16)
-        tk.Label(logo_frame, text="⬡", font=("Segoe UI", 22), fg=COLORS["accent"],
-                 bg=COLORS["bg_dark"]).pack(side="left")
-        tk.Label(logo_frame, text=" View", font=("Segoe UI", 16, "bold"),
-                 fg=COLORS["text_primary"], bg=COLORS["bg_dark"]).pack(side="left")
-        tk.Label(logo_frame, text="Wintx", font=("Segoe UI", 16, "bold"),
-                 fg=COLORS["accent"], bg=COLORS["bg_dark"]).pack(side="left")
-        tk.Label(logo_frame, text="ZyNapse", font=("Segoe UI", 16, "bold"),
-                 fg=COLORS["text_primary"], bg=COLORS["bg_dark"]).pack(side="left")
-        tk.Label(logo_frame, text="  SQL Client", font=("Segoe UI", 10),
-                 fg=COLORS["text_muted"], bg=COLORS["bg_dark"]).pack(side="left", padx=(4, 0))
+        tk.Label(
+            logo_frame,
+            text="⬡",
+            font=("Segoe UI", 22),
+            fg=COLORS["accent"],
+            bg=COLORS["bg_dark"],
+        ).pack(side="left")
+        tk.Label(
+            logo_frame,
+            text=" View",
+            font=("Segoe UI", 16, "bold"),
+            fg=COLORS["text_primary"],
+            bg=COLORS["bg_dark"],
+        ).pack(side="left")
+        tk.Label(
+            logo_frame,
+            text="Wintx",
+            font=("Segoe UI", 16, "bold"),
+            fg=COLORS["accent"],
+            bg=COLORS["bg_dark"],
+        ).pack(side="left")
+        tk.Label(
+            logo_frame,
+            text="ZyNapse",
+            font=("Segoe UI", 16, "bold"),
+            fg=COLORS["text_primary"],
+            bg=COLORS["bg_dark"],
+        ).pack(side="left")
+        tk.Label(
+            logo_frame,
+            text="  SQL Client",
+            font=("Segoe UI", 10),
+            fg=COLORS["text_muted"],
+            bg=COLORS["bg_dark"],
+        ).pack(side="left", padx=(4, 0))
 
         conn_frame = tk.Frame(topbar, bg=COLORS["bg_dark"])
         conn_frame.pack(side="right", padx=16)
-        self.conn_indicator = tk.Label(conn_frame, text="●", font=("Segoe UI", 12),
-                                        fg=COLORS["text_muted"], bg=COLORS["bg_dark"])
+        self.conn_indicator = tk.Label(
+            conn_frame,
+            text="●",
+            font=("Segoe UI", 12),
+            fg=COLORS["text_muted"],
+            bg=COLORS["bg_dark"],
+        )
         self.conn_indicator.pack(side="left", padx=(0, 6))
-        tk.Label(conn_frame, text=f"{ORACLE_USUARIO}@{ORACLE_HOST}",
-                 font=("Segoe UI", 9), fg=COLORS["text_secondary"],
-                 bg=COLORS["bg_dark"]).pack(side="left")
+        tk.Label(
+            conn_frame,
+            text=f"{ORACLE_USUARIO}@{ORACLE_HOST}",
+            font=("Segoe UI", 9),
+            fg=COLORS["text_secondary"],
+            bg=COLORS["bg_dark"],
+        ).pack(side="left")
 
         tk.Frame(self.root, bg=COLORS["border"], height=1).pack(fill="x")
 
-        self.paned = tk.PanedWindow(self.root, orient="vertical",
-                                     bg=COLORS["bg_dark"], sashwidth=6,
-                                     sashrelief="flat", borderwidth=0)
+        self.paned = tk.PanedWindow(
+            self.root,
+            orient="vertical",
+            bg=COLORS["bg_dark"],
+            sashwidth=6,
+            sashrelief="flat",
+            borderwidth=0,
+        )
         self.paned.pack(fill="both", expand=True)
 
         editor_panel = tk.Frame(self.paned, bg=COLORS["bg_dark"])
@@ -272,56 +410,104 @@ class ViewOracleApp:
         toolbar_inner = tk.Frame(toolbar, bg=COLORS["bg_medium"])
         toolbar_inner.pack(fill="x", padx=10, pady=6)
 
-        self.btn_execute = ttk.Button(toolbar_inner, text="▶  Executar  (F5)",
-                                       style="Green.TButton", command=self._execute_query)
+        self.btn_execute = ttk.Button(
+            toolbar_inner,
+            text="▶  Executar  (F5)",
+            style="Green.TButton",
+            command=self._execute_query,
+        )
         self.btn_execute.pack(side="left", padx=(0, 6))
 
-        self.btn_stop = ttk.Button(toolbar_inner, text="■  Parar",
-                                    style="Red.TButton", command=self._stop_query, state="disabled")
+        self.btn_stop = ttk.Button(
+            toolbar_inner,
+            text="■  Parar",
+            style="Red.TButton",
+            command=self._stop_query,
+            state="disabled",
+        )
         self.btn_stop.pack(side="left", padx=(0, 16))
 
-        tk.Frame(toolbar_inner, bg=COLORS["border"], width=1, height=28).pack(side="left", padx=8, fill="y")
+        tk.Frame(toolbar_inner, bg=COLORS["border"], width=1, height=28).pack(
+            side="left", padx=8, fill="y"
+        )
 
-        ttk.Button(toolbar_inner, text="🗑  Limpar", style="Flat.TButton",
-                   command=self._clear_editor).pack(side="left", padx=(0, 4))
+        ttk.Button(
+            toolbar_inner,
+            text="🗑  Limpar",
+            style="Flat.TButton",
+            command=self._clear_editor,
+        ).pack(side="left", padx=(0, 4))
 
-        ttk.Button(toolbar_inner, text="📋  Histórico", style="Flat.TButton",
-                   command=self._show_history).pack(side="left", padx=(0, 4))
+        ttk.Button(
+            toolbar_inner,
+            text="📋  Histórico",
+            style="Flat.TButton",
+            command=self._show_history,
+        ).pack(side="left", padx=(0, 4))
 
-        ttk.Button(toolbar_inner, text="📝  Templates", style="Flat.TButton",
-                   command=self._show_templates).pack(side="left", padx=(0, 4))
+        ttk.Button(
+            toolbar_inner,
+            text="📝  Templates",
+            style="Flat.TButton",
+            command=self._show_templates,
+        ).pack(side="left", padx=(0, 4))
 
-        tk.Label(toolbar_inner, text="Ctrl+Enter: Executar  |  Ctrl+E: Exportar Excel  |  Ctrl+L: Limpar",
-                 font=("Segoe UI", 8), fg=COLORS["text_muted"],
-                 bg=COLORS["bg_medium"]).pack(side="right")
+        tk.Label(
+            toolbar_inner,
+            text="Ctrl+Enter: Executar  |  Ctrl+E: Exportar Excel  |  Ctrl+L: Limpar",
+            font=("Segoe UI", 8),
+            fg=COLORS["text_muted"],
+            bg=COLORS["bg_medium"],
+        ).pack(side="right")
 
         editor_container = tk.Frame(editor_panel, bg=COLORS["bg_dark"])
         editor_container.pack(fill="both", expand=True, padx=8, pady=(4, 4))
 
-        self.line_numbers = tk.Text(editor_container, width=4, padx=8, pady=8,
-                                     bg=COLORS["bg_light"], fg=COLORS["text_muted"],
-                                     font=("Consolas", 11), relief="flat",
-                                     state="disabled", cursor="arrow",
-                                     selectbackground=COLORS["bg_light"],
-                                     selectforeground=COLORS["text_muted"],
-                                     borderwidth=0, highlightthickness=0)
+        self.line_numbers = tk.Text(
+            editor_container,
+            width=4,
+            padx=8,
+            pady=8,
+            bg=COLORS["bg_light"],
+            fg=COLORS["text_muted"],
+            font=("Consolas", 11),
+            relief="flat",
+            state="disabled",
+            cursor="arrow",
+            selectbackground=COLORS["bg_light"],
+            selectforeground=COLORS["text_muted"],
+            borderwidth=0,
+            highlightthickness=0,
+        )
         self.line_numbers.pack(side="left", fill="y")
 
-        self.sql_editor = tk.Text(editor_container, wrap="none", padx=10, pady=8,
-                                   bg=COLORS["bg_input"], fg=COLORS["text_primary"],
-                                   insertbackground=COLORS["accent"],
-                                   selectbackground=COLORS["selection"],
-                                   selectforeground="#ffffff",
-                                   font=("Consolas", 11), relief="flat",
-                                   undo=True, autoseparators=True,
-                                   borderwidth=0, highlightthickness=1,
-                                   highlightcolor=COLORS["accent"],
-                                   highlightbackground=COLORS["border"])
+        self.sql_editor = tk.Text(
+            editor_container,
+            wrap="none",
+            padx=10,
+            pady=8,
+            bg=COLORS["bg_input"],
+            fg=COLORS["text_primary"],
+            insertbackground=COLORS["accent"],
+            selectbackground=COLORS["selection"],
+            selectforeground="#ffffff",
+            font=("Consolas", 11),
+            relief="flat",
+            undo=True,
+            autoseparators=True,
+            borderwidth=0,
+            highlightthickness=1,
+            highlightcolor=COLORS["accent"],
+            highlightbackground=COLORS["border"],
+        )
         self.sql_editor.pack(side="left", fill="both", expand=True)
 
-        editor_scroll = ttk.Scrollbar(editor_container, orient="vertical",
-                                       command=self.sql_editor.yview,
-                                       style="Custom.Vertical.TScrollbar")
+        editor_scroll = ttk.Scrollbar(
+            editor_container,
+            orient="vertical",
+            command=self.sql_editor.yview,
+            style="Custom.Vertical.TScrollbar",
+        )
         editor_scroll.pack(side="right", fill="y")
         self.sql_editor.configure(yscrollcommand=editor_scroll.set)
 
@@ -329,7 +515,9 @@ class ViewOracleApp:
         self.sql_editor.bind("<MouseWheel>", self._on_editor_change)
         self.sql_editor.bind("<Tab>", self._on_tab)
 
-        self.sql_editor.insert("1.0", "SELECT * FROM PCFILIAL ORDER BY CODIGO FETCH FIRST 50 ROWS ONLY")
+        self.sql_editor.insert(
+            "1.0", "SELECT * FROM PCFILIAL ORDER BY CODIGO FETCH FIRST 50 ROWS ONLY"
+        )
         self._on_editor_change()
 
         results_panel = tk.Frame(self.paned, bg=COLORS["bg_dark"])
@@ -342,69 +530,119 @@ class ViewOracleApp:
         results_toolbar_inner = tk.Frame(results_toolbar, bg=COLORS["bg_medium"])
         results_toolbar_inner.pack(fill="x", padx=10, pady=6)
 
-        tk.Label(results_toolbar_inner, text="📊 Resultados",
-                 font=("Segoe UI", 11, "bold"), fg=COLORS["text_primary"],
-                 bg=COLORS["bg_medium"]).pack(side="left")
+        tk.Label(
+            results_toolbar_inner,
+            text="📊 Resultados",
+            font=("Segoe UI", 11, "bold"),
+            fg=COLORS["text_primary"],
+            bg=COLORS["bg_medium"],
+        ).pack(side="left")
 
-        self.results_info = tk.Label(results_toolbar_inner, text="",
-                                      font=("Segoe UI", 9), fg=COLORS["text_secondary"],
-                                      bg=COLORS["bg_medium"])
+        self.results_info = tk.Label(
+            results_toolbar_inner,
+            text="",
+            font=("Segoe UI", 9),
+            fg=COLORS["text_secondary"],
+            bg=COLORS["bg_medium"],
+        )
         self.results_info.pack(side="left", padx=(16, 0))
 
         actions_frame = tk.Frame(results_toolbar_inner, bg=COLORS["bg_medium"])
         actions_frame.pack(side="right")
 
-        tk.Label(actions_frame, text="🔍", font=("Segoe UI", 10),
-                 bg=COLORS["bg_medium"], fg=COLORS["text_secondary"]).pack(side="left")
-        self.filter_entry = tk.Entry(actions_frame, textvariable=self.filter_text,
-                                      width=25, font=("Segoe UI", 9),
-                                      bg=COLORS["bg_input"], fg=COLORS["text_primary"],
-                                      insertbackground=COLORS["accent"],
-                                      relief="flat", borderwidth=0,
-                                      highlightthickness=1,
-                                      highlightcolor=COLORS["accent"],
-                                      highlightbackground=COLORS["border"])
+        tk.Label(
+            actions_frame,
+            text="🔍",
+            font=("Segoe UI", 10),
+            bg=COLORS["bg_medium"],
+            fg=COLORS["text_secondary"],
+        ).pack(side="left")
+        self.filter_entry = tk.Entry(
+            actions_frame,
+            textvariable=self.filter_text,
+            width=25,
+            font=("Segoe UI", 9),
+            bg=COLORS["bg_input"],
+            fg=COLORS["text_primary"],
+            insertbackground=COLORS["accent"],
+            relief="flat",
+            borderwidth=0,
+            highlightthickness=1,
+            highlightcolor=COLORS["accent"],
+            highlightbackground=COLORS["border"],
+        )
         self.filter_entry.pack(side="left", padx=(4, 12))
 
-        tk.Frame(actions_frame, bg=COLORS["border"], width=1, height=24).pack(side="left", padx=6, fill="y")
+        tk.Frame(actions_frame, bg=COLORS["border"], width=1, height=24).pack(
+            side="left", padx=6, fill="y"
+        )
 
-        ttk.Button(actions_frame, text="📥 Excel", style="Accent.TButton",
-                   command=self._export_excel).pack(side="left", padx=(6, 4))
-        ttk.Button(actions_frame, text="📄 CSV", style="Flat.TButton",
-                   command=self._export_csv).pack(side="left", padx=(0, 4))
-        ttk.Button(actions_frame, text="📋 Copiar", style="Flat.TButton",
-                   command=self._copy_all).pack(side="left")
+        ttk.Button(
+            actions_frame,
+            text="📥 Excel",
+            style="Accent.TButton",
+            command=self._export_excel,
+        ).pack(side="left", padx=(6, 4))
+        ttk.Button(
+            actions_frame, text="📄 CSV", style="Flat.TButton", command=self._export_csv
+        ).pack(side="left", padx=(0, 4))
+        ttk.Button(
+            actions_frame,
+            text="📋 Copiar",
+            style="Flat.TButton",
+            command=self._copy_all,
+        ).pack(side="left")
 
         results_container = tk.Frame(results_panel, bg=COLORS["bg_dark"])
         results_container.pack(fill="both", expand=True, padx=8, pady=(4, 4))
 
-        self.tree = ttk.Treeview(results_container, style="Custom.Treeview",
-                                  show="headings", selectmode="extended")
+        self.tree = ttk.Treeview(
+            results_container,
+            style="Custom.Treeview",
+            show="headings",
+            selectmode="extended",
+        )
         self.tree.pack(side="left", fill="both", expand=True)
 
-        tree_vscroll = ttk.Scrollbar(results_container, orient="vertical",
-                                      command=self.tree.yview,
-                                      style="Custom.Vertical.TScrollbar")
+        tree_vscroll = ttk.Scrollbar(
+            results_container,
+            orient="vertical",
+            command=self.tree.yview,
+            style="Custom.Vertical.TScrollbar",
+        )
         tree_vscroll.pack(side="right", fill="y")
         self.tree.configure(yscrollcommand=tree_vscroll.set)
 
-        tree_hscroll = ttk.Scrollbar(results_panel, orient="horizontal",
-                                      command=self.tree.xview,
-                                      style="Custom.Horizontal.TScrollbar")
+        tree_hscroll = ttk.Scrollbar(
+            results_panel,
+            orient="horizontal",
+            command=self.tree.xview,
+            style="Custom.Horizontal.TScrollbar",
+        )
         tree_hscroll.pack(fill="x", padx=8, pady=(0, 2))
         self.tree.configure(xscrollcommand=tree_hscroll.set)
 
         self.tree.tag_configure("odd", background=COLORS["row_odd"])
         self.tree.tag_configure("even", background=COLORS["row_even"])
 
-        self.tree_menu = tk.Menu(self.root, tearoff=0, bg=COLORS["bg_light"],
-                                  fg=COLORS["text_primary"], font=("Segoe UI", 10),
-                                  activebackground=COLORS["accent"],
-                                  activeforeground="#ffffff", borderwidth=0)
-        self.tree_menu.add_command(label="📋  Copiar Seleção", command=self._copy_selection)
+        self.tree_menu = tk.Menu(
+            self.root,
+            tearoff=0,
+            bg=COLORS["bg_light"],
+            fg=COLORS["text_primary"],
+            font=("Segoe UI", 10),
+            activebackground=COLORS["accent"],
+            activeforeground="#ffffff",
+            borderwidth=0,
+        )
+        self.tree_menu.add_command(
+            label="📋  Copiar Seleção", command=self._copy_selection
+        )
         self.tree_menu.add_command(label="📋  Copiar Tudo", command=self._copy_all)
         self.tree_menu.add_separator()
-        self.tree_menu.add_command(label="📥  Exportar Excel", command=self._export_excel)
+        self.tree_menu.add_command(
+            label="📥  Exportar Excel", command=self._export_excel
+        )
         self.tree_menu.add_command(label="📄  Exportar CSV", command=self._export_csv)
         self.tree.bind("<Button-3>", self._show_tree_menu)
 
@@ -412,18 +650,32 @@ class ViewOracleApp:
         status_bar.pack(fill="x", side="bottom")
         status_bar.pack_propagate(False)
 
-        self.status_icon = tk.Label(status_bar, text="●", font=("Segoe UI", 10),
-                                     fg=COLORS["accent_green"], bg=COLORS["bg_medium"])
+        self.status_icon = tk.Label(
+            status_bar,
+            text="●",
+            font=("Segoe UI", 10),
+            fg=COLORS["accent_green"],
+            bg=COLORS["bg_medium"],
+        )
         self.status_icon.pack(side="left", padx=(12, 4))
 
-        self.status_label = tk.Label(status_bar, text="Pronto",
-                                      font=("Segoe UI", 9), fg=COLORS["text_secondary"],
-                                      bg=COLORS["bg_medium"], anchor="w")
+        self.status_label = tk.Label(
+            status_bar,
+            text="Pronto",
+            font=("Segoe UI", 9),
+            fg=COLORS["text_secondary"],
+            bg=COLORS["bg_medium"],
+            anchor="w",
+        )
         self.status_label.pack(side="left", fill="x", expand=True)
 
-        self.row_count_label = tk.Label(status_bar, text="",
-                                         font=("Segoe UI", 9), fg=COLORS["text_muted"],
-                                         bg=COLORS["bg_medium"])
+        self.row_count_label = tk.Label(
+            status_bar,
+            text="",
+            font=("Segoe UI", 9),
+            fg=COLORS["text_muted"],
+            bg=COLORS["bg_medium"],
+        )
         self.row_count_label.pack(side="right", padx=12)
 
     def _on_editor_change(self, event=None):
@@ -445,18 +697,23 @@ class ViewOracleApp:
         self.sql_editor.tag_remove("number", "1.0", "end")
         self.sql_editor.tag_remove("comment", "1.0", "end")
 
-        self.sql_editor.tag_configure("keyword", foreground="#d35400", font=("Consolas", 11, "bold"))
+        self.sql_editor.tag_configure(
+            "keyword", foreground="#d35400", font=("Consolas", 11, "bold")
+        )
         self.sql_editor.tag_configure("string", foreground="#27ae60")
         self.sql_editor.tag_configure("number", foreground="#e67e22")
-        self.sql_editor.tag_configure("comment", foreground="#95a5a6", font=("Consolas", 11, "italic"))
+        self.sql_editor.tag_configure(
+            "comment", foreground="#95a5a6", font=("Consolas", 11, "italic")
+        )
 
         content = self.sql_editor.get("1.0", "end")
 
         for kw in SQL_KEYWORDS:
             start = "1.0"
             while True:
-                pos = self.sql_editor.search(r'\m' + kw + r'\M', start, "end",
-                                              nocase=True, regexp=True)
+                pos = self.sql_editor.search(
+                    r"\m" + kw + r"\M", start, "end", nocase=True, regexp=True
+                )
                 if not pos:
                     break
                 end_pos = f"{pos}+{len(kw)}c"
@@ -503,7 +760,10 @@ class ViewOracleApp:
             return
 
         if not oracle_available:
-            messagebox.showerror("Erro", "Módulo oracledb não está disponível.\nInstale com: pip install oracledb")
+            messagebox.showerror(
+                "Erro",
+                "Módulo oracledb não está disponível.\nInstale com: pip install oracledb",
+            )
             return
 
         self.is_running = True
@@ -512,7 +772,9 @@ class ViewOracleApp:
         self._set_status("Executando query...", "running")
         self._clear_results()
 
-        self._query_thread = threading.Thread(target=self._run_query, args=(sql,), daemon=True)
+        self._query_thread = threading.Thread(
+            target=self._run_query, args=(sql,), daemon=True
+        )
         self._query_thread.start()
 
     def _run_query(self, sql):
@@ -547,21 +809,29 @@ class ViewOracleApp:
                                 try:
                                     raw = val.__str__()
                                     if isinstance(raw, bytes):
-                                        display_row.append(raw.decode("utf-8", errors="replace"))
+                                        display_row.append(
+                                            raw.decode("utf-8", errors="replace")
+                                        )
                                     else:
                                         display_row.append(repr(val))
                                 except Exception:
                                     display_row.append(repr(val))
                     display_rows.append(display_row)
 
-                self.root.after(0, self._display_results, columns, display_rows, elapsed, len(rows))
+                self.root.after(
+                    0, self._display_results, columns, display_rows, elapsed, len(rows)
+                )
                 self._add_to_history(sql, len(rows), elapsed)
             else:
                 affected = cursor.rowcount
                 conn.commit()
                 elapsed = time.time() - start_time
-                self.root.after(0, self._set_status,
-                    f"Comando executado com sucesso. {affected} linha(s) afetada(s). ({elapsed:.2f}s)", "success")
+                self.root.after(
+                    0,
+                    self._set_status,
+                    f"Comando executado com sucesso. {affected} linha(s) afetada(s). ({elapsed:.2f}s)",
+                    "success",
+                )
 
             cursor.close()
 
@@ -579,7 +849,9 @@ class ViewOracleApp:
                 except Exception:
                     error_msg = repr(e)
             self.root.after(0, self._set_status, f"ERRO: {error_msg}", "error")
-            self.root.after(0, lambda m=error_msg: messagebox.showerror("Erro na Query", m))
+            self.root.after(
+                0, lambda m=error_msg: messagebox.showerror("Erro na Query", m)
+            )
 
         finally:
             if self.connection:
@@ -617,7 +889,9 @@ class ViewOracleApp:
 
         self.tree["columns"] = columns
         for i, col in enumerate(columns):
-            self.tree.heading(col, text=f"  {col}  ", command=lambda c=col: self._sort_by_column(c))
+            self.tree.heading(
+                col, text=f"  {col}  ", command=lambda c=col: self._sort_by_column(c)
+            )
 
             max_width = max(len(col) * 12 + 30, 120)
             sample = rows[:100] if len(rows) > 100 else rows
@@ -630,10 +904,13 @@ class ViewOracleApp:
         self._populate_tree(rows)
 
         self.results_info.configure(
-            text=f"   {total_rows} registro(s)  ·  {elapsed:.3f}s  ·  {len(columns)} coluna(s)")
+            text=f"   {total_rows} registro(s)  ·  {elapsed:.3f}s  ·  {len(columns)} coluna(s)"
+        )
         self.row_count_label.configure(text=f"{total_rows} linhas")
         self._set_status(
-            f"Query executada com sucesso! {total_rows} registro(s) em {elapsed:.3f}s", "success")
+            f"Query executada com sucesso! {total_rows} registro(s) em {elapsed:.3f}s",
+            "success",
+        )
 
     def _populate_tree(self, rows):
         self.tree.delete(*self.tree.get_children())
@@ -685,7 +962,8 @@ class ViewOracleApp:
 
         self._populate_tree(filtered)
         self.row_count_label.configure(
-            text=f"{len(filtered)} de {len(self.current_data)} linhas")
+            text=f"{len(filtered)} de {len(self.current_data)} linhas"
+        )
 
     def _export_excel(self):
         if not self.current_data:
@@ -696,15 +974,18 @@ class ViewOracleApp:
             import openpyxl
             from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
         except ImportError:
-            messagebox.showerror("Erro",
-                "Módulo openpyxl não instalado.\nInstale com: pip install openpyxl")
+            messagebox.showerror(
+                "Erro",
+                "Módulo openpyxl não instalado.\nInstale com: pip install openpyxl",
+            )
             return
 
         filepath = filedialog.asksaveasfilename(
             defaultextension=".xlsx",
             filetypes=[("Excel", "*.xlsx")],
             initialfile=f"query_resultado_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
-            title="Exportar para Excel")
+            title="Exportar para Excel",
+        )
 
         if not filepath:
             return
@@ -715,8 +996,12 @@ class ViewOracleApp:
             ws.title = "Resultado SQL"
 
             header_font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
-            header_fill = PatternFill(start_color="E67E22", end_color="E67E22", fill_type="solid")
-            header_alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+            header_fill = PatternFill(
+                start_color="E67E22", end_color="E67E22", fill_type="solid"
+            )
+            header_alignment = Alignment(
+                horizontal="center", vertical="center", wrap_text=True
+            )
             thin_border = Border(
                 left=Side(style="thin", color="CCCCCC"),
                 right=Side(style="thin", color="CCCCCC"),
@@ -732,8 +1017,12 @@ class ViewOracleApp:
                 cell.border = thin_border
 
             data_font = Font(name="Calibri", size=10)
-            even_fill = PatternFill(start_color="FEF3E2", end_color="FEF3E2", fill_type="solid")
-            odd_fill = PatternFill(start_color="FFFFFF", end_color="FFFFFF", fill_type="solid")
+            even_fill = PatternFill(
+                start_color="FEF3E2", end_color="FEF3E2", fill_type="solid"
+            )
+            odd_fill = PatternFill(
+                start_color="FFFFFF", end_color="FFFFFF", fill_type="solid"
+            )
 
             for row_idx, row_data in enumerate(self.current_data, 2):
                 fill = even_fill if row_idx % 2 == 0 else odd_fill
@@ -744,7 +1033,7 @@ class ViewOracleApp:
                     cell.border = thin_border
                     try:
                         cell.value = float(value.replace(",", "."))
-                        cell.number_format = '#,##0.00'
+                        cell.number_format = "#,##0.00"
                     except (ValueError, AttributeError):
                         pass
 
@@ -753,15 +1042,19 @@ class ViewOracleApp:
                 for row_data in self.current_data[:200]:
                     if col_idx - 1 < len(row_data):
                         max_len = max(max_len, len(str(row_data[col_idx - 1])))
-                ws.column_dimensions[openpyxl.utils.get_column_letter(col_idx)].width = min(max_len + 4, 50)
+                ws.column_dimensions[
+                    openpyxl.utils.get_column_letter(col_idx)
+                ].width = min(max_len + 4, 50)
 
             ws.freeze_panes = "A2"
             ws.auto_filter.ref = ws.dimensions
 
             wb.save(filepath)
             self._set_status(f"Exportado para Excel: {filepath}", "success")
-            messagebox.showinfo("Sucesso",
-                f"Arquivo exportado com sucesso!\n\n{filepath}\n\n{len(self.current_data)} registro(s)")
+            messagebox.showinfo(
+                "Sucesso",
+                f"Arquivo exportado com sucesso!\n\n{filepath}\n\n{len(self.current_data)} registro(s)",
+            )
 
         except Exception as e:
             messagebox.showerror("Erro ao Exportar", str(e))
@@ -775,7 +1068,8 @@ class ViewOracleApp:
             defaultextension=".csv",
             filetypes=[("CSV", "*.csv")],
             initialfile=f"query_resultado_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-            title="Exportar para CSV")
+            title="Exportar para CSV",
+        )
 
         if not filepath:
             return
@@ -787,8 +1081,10 @@ class ViewOracleApp:
                 writer.writerows(self.current_data)
 
             self._set_status(f"Exportado para CSV: {filepath}", "success")
-            messagebox.showinfo("Sucesso",
-                f"CSV exportado!\n\n{filepath}\n\n{len(self.current_data)} registro(s)")
+            messagebox.showinfo(
+                "Sucesso",
+                f"CSV exportado!\n\n{filepath}\n\n{len(self.current_data)} registro(s)",
+            )
 
         except Exception as e:
             messagebox.showerror("Erro ao Exportar", str(e))
@@ -806,7 +1102,10 @@ class ViewOracleApp:
 
         self.root.clipboard_clear()
         self.root.clipboard_append("\n".join(lines))
-        self._set_status(f"{len(selected)} linha(s) copiada(s) para a área de transferência.", "success")
+        self._set_status(
+            f"{len(selected)} linha(s) copiada(s) para a área de transferência.",
+            "success",
+        )
 
     def _copy_all(self):
         if not self.current_data:
@@ -819,7 +1118,10 @@ class ViewOracleApp:
 
         self.root.clipboard_clear()
         self.root.clipboard_append("\n".join(lines))
-        self._set_status(f"{len(self.current_data)} linha(s) copiada(s) para a área de transferência.", "success")
+        self._set_status(
+            f"{len(self.current_data)} linha(s) copiada(s) para a área de transferência.",
+            "success",
+        )
 
     def _show_tree_menu(self, event):
         try:
@@ -864,20 +1166,36 @@ class ViewOracleApp:
         hist_win.transient(self.root)
         hist_win.grab_set()
 
-        tk.Label(hist_win, text="📋  Histórico de Queries", font=("Segoe UI", 14, "bold"),
-                 fg=COLORS["text_primary"], bg=COLORS["bg_dark"]).pack(pady=(16, 8))
-        tk.Label(hist_win, text="Clique duas vezes para carregar a query no editor",
-                 font=("Segoe UI", 9), fg=COLORS["text_muted"],
-                 bg=COLORS["bg_dark"]).pack(pady=(0, 8))
+        tk.Label(
+            hist_win,
+            text="📋  Histórico de Queries",
+            font=("Segoe UI", 14, "bold"),
+            fg=COLORS["text_primary"],
+            bg=COLORS["bg_dark"],
+        ).pack(pady=(16, 8))
+        tk.Label(
+            hist_win,
+            text="Clique duas vezes para carregar a query no editor",
+            font=("Segoe UI", 9),
+            fg=COLORS["text_muted"],
+            bg=COLORS["bg_dark"],
+        ).pack(pady=(0, 8))
 
         container = tk.Frame(hist_win, bg=COLORS["bg_dark"])
         container.pack(fill="both", expand=True, padx=16, pady=(0, 16))
 
-        listbox = tk.Listbox(container, bg=COLORS["bg_input"], fg=COLORS["text_primary"],
-                              font=("Consolas", 10), selectbackground=COLORS["accent"],
-                              selectforeground="#ffffff", borderwidth=0,
-                              highlightthickness=1, highlightcolor=COLORS["accent"],
-                              highlightbackground=COLORS["border"])
+        listbox = tk.Listbox(
+            container,
+            bg=COLORS["bg_input"],
+            fg=COLORS["text_primary"],
+            font=("Consolas", 10),
+            selectbackground=COLORS["accent"],
+            selectforeground="#ffffff",
+            borderwidth=0,
+            highlightthickness=1,
+            highlightcolor=COLORS["accent"],
+            highlightbackground=COLORS["border"],
+        )
         listbox.pack(side="left", fill="both", expand=True)
 
         sb = ttk.Scrollbar(container, orient="vertical", command=listbox.yview)
@@ -886,8 +1204,10 @@ class ViewOracleApp:
 
         for entry in reversed(self.query_history):
             sql_preview = entry["sql"][:100].replace("\n", " ")
-            listbox.insert("end",
-                f"[{entry['timestamp']}]  {entry['rows']} rows  ({entry['elapsed']}s)  │  {sql_preview}")
+            listbox.insert(
+                "end",
+                f"[{entry['timestamp']}]  {entry['rows']} rows  ({entry['elapsed']}s)  │  {sql_preview}",
+            )
 
         def on_select(event):
             idx = listbox.curselection()
@@ -901,27 +1221,44 @@ class ViewOracleApp:
 
         listbox.bind("<Double-Button-1>", on_select)
 
-        ttk.Button(hist_win, text="Fechar", style="Flat.TButton",
-                   command=hist_win.destroy).pack(pady=(0, 16))
+        ttk.Button(
+            hist_win, text="Fechar", style="Flat.TButton", command=hist_win.destroy
+        ).pack(pady=(0, 16))
 
     def _show_templates(self):
         templates = [
-            ("Todas as Filiais",
-             "SELECT CODIGO, RAZAOSOCIAL, CGCFILIAL AS CNPJ, CIDADE, UF\nFROM PCFILIAL\nORDER BY CODIGO"),
-            ("Produtos (Top 100)",
-             "SELECT CODPROD, DESCRICAO, EMBALAGEM, UNIDADE, CODAUXILIAR\nFROM PCPRODUT\nORDER BY CODPROD\nFETCH FIRST 100 ROWS ONLY"),
-            ("Fornecedores (Top 100)",
-             "SELECT CODFORNEC, FORNECEDOR, CGC, CIDADE, UF\nFROM PCFORNEC\nORDER BY CODFORNEC\nFETCH FIRST 100 ROWS ONLY"),
-            ("Clientes (Top 100)",
-             "SELECT CODCLI, CLIENTE, CGCENT, CIDADE, ESTENT\nFROM PCCLIENT\nORDER BY CODCLI\nFETCH FIRST 100 ROWS ONLY"),
-            ("Tabelas do Schema",
-             "SELECT TABLE_NAME, NUM_ROWS, LAST_ANALYZED\nFROM USER_TABLES\nORDER BY TABLE_NAME"),
-            ("Colunas de uma Tabela",
-             "SELECT COLUMN_NAME, DATA_TYPE, DATA_LENGTH, NULLABLE\nFROM USER_TAB_COLUMNS\nWHERE TABLE_NAME = 'PCPRODUT'\nORDER BY COLUMN_ID"),
-            ("Estoque por Filial",
-             "SELECT E.CODPROD, P.DESCRICAO, E.CODFILIAL, E.QTESTGER, E.QTRESERV\nFROM PCEST E\nJOIN PCPRODUT P ON P.CODPROD = E.CODPROD\nWHERE E.CODFILIAL = 1\nORDER BY P.DESCRICAO\nFETCH FIRST 100 ROWS ONLY"),
-            ("Vendas do Dia",
-             "SELECT NUMPED, CODCLI, VLTOTAL, DATA, CODFILIAL\nFROM PCPEDC\nWHERE TRUNC(DATA) = TRUNC(SYSDATE)\nORDER BY NUMPED DESC\nFETCH FIRST 100 ROWS ONLY"),
+            (
+                "Todas as Filiais",
+                "SELECT CODIGO, RAZAOSOCIAL, CGCFILIAL AS CNPJ, CIDADE, UF\nFROM PCFILIAL\nORDER BY CODIGO",
+            ),
+            (
+                "Produtos (Top 100)",
+                "SELECT CODPROD, DESCRICAO, EMBALAGEM, UNIDADE, CODAUXILIAR\nFROM PCPRODUT\nORDER BY CODPROD\nFETCH FIRST 100 ROWS ONLY",
+            ),
+            (
+                "Fornecedores (Top 100)",
+                "SELECT CODFORNEC, FORNECEDOR, CGC, CIDADE, UF\nFROM PCFORNEC\nORDER BY CODFORNEC\nFETCH FIRST 100 ROWS ONLY",
+            ),
+            (
+                "Clientes (Top 100)",
+                "SELECT CODCLI, CLIENTE, CGCENT, CIDADE, ESTENT\nFROM PCCLIENT\nORDER BY CODCLI\nFETCH FIRST 100 ROWS ONLY",
+            ),
+            (
+                "Tabelas do Schema",
+                "SELECT TABLE_NAME, NUM_ROWS, LAST_ANALYZED\nFROM USER_TABLES\nORDER BY TABLE_NAME",
+            ),
+            (
+                "Colunas de uma Tabela",
+                "SELECT COLUMN_NAME, DATA_TYPE, DATA_LENGTH, NULLABLE\nFROM USER_TAB_COLUMNS\nWHERE TABLE_NAME = 'PCPRODUT'\nORDER BY COLUMN_ID",
+            ),
+            (
+                "Estoque por Filial",
+                "SELECT E.CODPROD, P.DESCRICAO, E.CODFILIAL, E.QTESTGER, E.QTRESERV\nFROM PCEST E\nJOIN PCPRODUT P ON P.CODPROD = E.CODPROD\nWHERE E.CODFILIAL = 1\nORDER BY P.DESCRICAO\nFETCH FIRST 100 ROWS ONLY",
+            ),
+            (
+                "Vendas do Dia",
+                "SELECT NUMPED, CODCLI, VLTOTAL, DATA, CODFILIAL\nFROM PCPEDC\nWHERE TRUNC(DATA) = TRUNC(SYSDATE)\nORDER BY NUMPED DESC\nFETCH FIRST 100 ROWS ONLY",
+            ),
         ]
 
         tmpl_win = tk.Toplevel(self.root)
@@ -931,18 +1268,28 @@ class ViewOracleApp:
         tmpl_win.transient(self.root)
         tmpl_win.grab_set()
 
-        tk.Label(tmpl_win, text="📝  Templates SQL — Winthor",
-                 font=("Segoe UI", 14, "bold"), fg=COLORS["text_primary"],
-                 bg=COLORS["bg_dark"]).pack(pady=(16, 4))
-        tk.Label(tmpl_win, text="Clique em um template para carregar no editor",
-                 font=("Segoe UI", 9), fg=COLORS["text_muted"],
-                 bg=COLORS["bg_dark"]).pack(pady=(0, 12))
+        tk.Label(
+            tmpl_win,
+            text="📝  Templates SQL — Winthor",
+            font=("Segoe UI", 14, "bold"),
+            fg=COLORS["text_primary"],
+            bg=COLORS["bg_dark"],
+        ).pack(pady=(16, 4))
+        tk.Label(
+            tmpl_win,
+            text="Clique em um template para carregar no editor",
+            font=("Segoe UI", 9),
+            fg=COLORS["text_muted"],
+            bg=COLORS["bg_dark"],
+        ).pack(pady=(0, 12))
 
         canvas = tk.Canvas(tmpl_win, bg=COLORS["bg_dark"], highlightthickness=0)
         scrollbar = ttk.Scrollbar(tmpl_win, orient="vertical", command=canvas.yview)
         scroll_frame = tk.Frame(canvas, bg=COLORS["bg_dark"])
 
-        scroll_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        scroll_frame.bind(
+            "<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
         canvas.create_window((0, 0), window=scroll_frame, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
 
@@ -950,18 +1297,32 @@ class ViewOracleApp:
         scrollbar.pack(side="right", fill="y")
 
         for name, sql in templates:
-            frame = tk.Frame(scroll_frame, bg=COLORS["bg_light"], cursor="hand2",
-                             padx=14, pady=10)
+            frame = tk.Frame(
+                scroll_frame, bg=COLORS["bg_light"], cursor="hand2", padx=14, pady=10
+            )
             frame.pack(fill="x", pady=4, padx=4)
 
-            lbl_name = tk.Label(frame, text=name, font=("Segoe UI", 11, "bold"),
-                                 fg=COLORS["text_primary"], bg=COLORS["bg_light"],
-                                 anchor="w", cursor="hand2")
+            lbl_name = tk.Label(
+                frame,
+                text=name,
+                font=("Segoe UI", 11, "bold"),
+                fg=COLORS["text_primary"],
+                bg=COLORS["bg_light"],
+                anchor="w",
+                cursor="hand2",
+            )
             lbl_name.pack(fill="x")
 
-            lbl_sql = tk.Label(frame, text=sql, font=("Consolas", 9),
-                                fg=COLORS["text_secondary"], bg=COLORS["bg_light"],
-                                anchor="w", justify="left", cursor="hand2")
+            lbl_sql = tk.Label(
+                frame,
+                text=sql,
+                font=("Consolas", 9),
+                fg=COLORS["text_secondary"],
+                bg=COLORS["bg_light"],
+                anchor="w",
+                justify="left",
+                cursor="hand2",
+            )
             lbl_sql.pack(fill="x", pady=(4, 0))
 
             def load_template(s=sql, w=tmpl_win):
@@ -972,34 +1333,44 @@ class ViewOracleApp:
 
             for widget in (frame, lbl_name, lbl_sql):
                 widget.bind("<Button-1>", lambda e, s=sql: load_template(s))
-                widget.bind("<Enter>", lambda e, f=frame, ln=lbl_name, ls=lbl_sql: (
-                    f.configure(bg=COLORS["accent"]),
-                    ln.configure(bg=COLORS["accent"]),
-                    ls.configure(bg=COLORS["accent"]),
-                ))
-                widget.bind("<Leave>", lambda e, f=frame, ln=lbl_name, ls=lbl_sql: (
-                    f.configure(bg=COLORS["bg_light"]),
-                    ln.configure(bg=COLORS["bg_light"]),
-                    ls.configure(bg=COLORS["bg_light"]),
-                ))
+                widget.bind(
+                    "<Enter>",
+                    lambda e, f=frame, ln=lbl_name, ls=lbl_sql: (
+                        f.configure(bg=COLORS["accent"]),
+                        ln.configure(bg=COLORS["accent"]),
+                        ls.configure(bg=COLORS["accent"]),
+                    ),
+                )
+                widget.bind(
+                    "<Leave>",
+                    lambda e, f=frame, ln=lbl_name, ls=lbl_sql: (
+                        f.configure(bg=COLORS["bg_light"]),
+                        ln.configure(bg=COLORS["bg_light"]),
+                        ls.configure(bg=COLORS["bg_light"]),
+                    ),
+                )
 
     def _set_status(self, msg, level="info"):
         colors = {
-            "info":    COLORS["text_secondary"],
+            "info": COLORS["text_secondary"],
             "success": COLORS["accent_green"],
             "warning": COLORS["accent_orange"],
-            "error":   COLORS["accent_red"],
+            "error": COLORS["accent_red"],
             "running": COLORS["accent"],
         }
         icons = {
-            "info":    "●",
+            "info": "●",
             "success": "✓",
             "warning": "⚠",
-            "error":   "✕",
+            "error": "✕",
             "running": "◌",
         }
-        self.status_label.configure(text=msg, fg=colors.get(level, COLORS["text_secondary"]))
-        self.status_icon.configure(text=icons.get(level, "●"), fg=colors.get(level, COLORS["text_secondary"]))
+        self.status_label.configure(
+            text=msg, fg=colors.get(level, COLORS["text_secondary"])
+        )
+        self.status_icon.configure(
+            text=icons.get(level, "●"), fg=colors.get(level, COLORS["text_secondary"])
+        )
 
         if level == "success":
             self.conn_indicator.configure(fg=COLORS["accent_green"])
@@ -1012,6 +1383,7 @@ if __name__ == "__main__":
 
     try:
         from ctypes import windll
+
         windll.shcore.SetProcessDpiAwareness(1)
     except:
         pass

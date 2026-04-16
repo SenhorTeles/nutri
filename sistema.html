@@ -171,6 +171,7 @@
             background-color: #5a4230 !important;
             border-right: 1px solid #7a6250;
             color: #e2e8f0;
+            transition: width 0.3s cubic-bezier(0.2, 0, 0, 1), transform 0.3s cubic-bezier(0.2, 0, 0, 1);
         }
 
         /* Custom overrides for dark sidebar irrespective of theme */
@@ -218,9 +219,12 @@
         }
 
         .sidebar-item {
-            transition: all 0.15s ease-in-out;
+            transition: all 0.2s ease-in-out;
             position: relative;
             border: 1px solid transparent;
+            /* Layout flex para manter ícone fixo e texto rolando com width */
+            display: flex;
+            align-items: center;
         }
 
         .sidebar-item:hover {
@@ -256,37 +260,40 @@
         .sidebar-expanded-text {
             opacity: 0;
             visibility: hidden;
-            transition: opacity 0.1s ease;
+            transition: opacity 0.2s ease, transform 0.2s ease;
             white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transform: translateX(-5px); /* Efeito suave de slide do texto */
         }
 
         /* Hover no menu NÃO fixado = Mostra e Aumenta */
         .sidebar:not(.sidebar-pinned):hover {
-            width: 13rem !important;
-            /* Mais estreito que o w-64 (16rem) */
+            width: 15rem !important; /* Aumentei um pouco pra evitar corte de nomes grandes (240px) */
         }
 
         .sidebar:not(.sidebar-pinned):hover .sidebar-expanded-text {
             opacity: 1;
             visibility: visible;
-            transition-delay: 0.15s;
+            transform: translateX(0);
+            transition-delay: 0.1s; /* Delay pra a sidebar abrir primeiro */
         }
 
         /* Sidebar Fixada = Sempre Visível e Larga (Desktop apenas) */
         @media (min-width: 768px) {
             .sidebar-pinned {
-                width: 13rem !important;
-                /* Mais estreito */
+                width: 15rem !important;
             }
 
             .sidebar-pinned .sidebar-expanded-text {
                 opacity: 1;
                 visibility: visible;
+                transform: translateX(0);
                 transition-delay: 0s;
             }
 
             body:has(.sidebar-pinned) .main-wrapper {
-                padding-left: 13rem !important;
+                padding-left: 15rem !important;
             }
         }
 
@@ -493,9 +500,11 @@
         <!-- Footer Sidebar -->
         <div class="p-3 border-t border-border mt-auto flex flex-col gap-2 bg-surface">
             <button id="logout-btn-desktop"
-                class="sidebar-item w-full flex items-center p-2.5 rounded-lg gap-3 text-sec hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 transition-colors group/logout overflow-hidden">
-                <i class="fa-solid fa-arrow-right-from-bracket text-base w-6 text-center shrink-0"></i>
-                <span class="sidebar-expanded-text font-medium text-xs">Sair</span>
+                class="sidebar-item w-full p-2.5 rounded-lg gap-3 text-sec hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 transition-colors group/logout">
+                <div class="w-6 shrink-0 flex items-center justify-center">
+                    <i class="fa-solid fa-arrow-right-from-bracket text-base"></i>
+                </div>
+                <span class="sidebar-expanded-text font-medium text-xs text-left flex-1">Sair</span>
             </button>
         </div>
     </aside>
@@ -671,6 +680,7 @@
                 title: "Administração",
                 items: [
                     { name: "Gestão de Usuários", icon: "fa-solid fa-users-cog", url: "user.html" },
+                    { name: "Deletar NFs", icon: "fa-solid fa-trash-can", url: "deletar_nfe.html" },
                     { name: "Configurações", icon: "fa-solid fa-gear", url: "config.html" },
                     { name: "Controle de Versões", icon: "fa-solid fa-code-branch", url: "versao.html" },
                 ],
@@ -795,7 +805,7 @@
 
                     // Título da Seção (visível apenas expandido)
                     els.desktopMenu.insertAdjacentHTML('beforeend', `
-                        <div class="px-4 py-1 mt-1 text-[9px] font-extrabold text-white/80 uppercase tracking-widest sidebar-expanded-text truncate select-none whitespace-nowrap">
+                        <div class="px-4 py-1.5 mt-2 mb-0.5 text-[9px] font-extrabold text-white/70 uppercase tracking-widest sidebar-expanded-text select-none">
                             ${section.title}
                         </div>
                     `);
@@ -807,10 +817,12 @@
 
                         els.desktopMenu.insertAdjacentHTML('beforeend', `
                             <button onclick="handleNavigation('${id}', '${item.url}', '${item.icon}', '${item.name}')"
-                                    class="sidebar-item w-full flex items-center p-2.5 rounded-lg gap-3 text-sec group/item relative overflow-hidden mb-0.5 ${isActive ? 'active' : ''}"
+                                    class="sidebar-item w-full p-2.5 rounded-lg gap-3 text-sec group/item mb-0.5 ${isActive ? 'active' : ''}"
                                     title="${item.name}">
-                                <i class="${item.icon} text-base w-6 text-center transition-colors ${isActive ? '' : 'group-hover/item:text-text-main'}"></i>
-                                <span class="sidebar-expanded-text font-medium text-xs transition-colors duration-200">${item.name}</span>
+                                <div class="w-6 shrink-0 flex items-center justify-center">
+                                    <i class="${item.icon} text-base transition-colors ${isActive ? '' : 'group-hover/item:text-text-main'}"></i>
+                                </div>
+                                <span class="sidebar-expanded-text font-medium text-xs transition-colors duration-200 text-left flex-1">${item.name}</span>
                             </button>
                         `);
                     });

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excluir NF - WinThor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        :root {
+            --color-bg: #f8fafc;
+            --color-surface: #ffffff;
+            --color-border: #e5e7eb;
+            --color-border-hover: #d1d5db;
+            --color-text-primary: #111827;
+            --color-text-secondary: #4b5563;
+            --color-surface-hover: #f3f4f6;
+            --color-primary: #b8860b;
+            --color-primary-hover: #9a7209;
+            --color-primary-text: #ffffff;
+            --color-primary-focus-ring: rgba(184, 134, 11, 0.4);
+            --color-danger: #ef4444;
+            --color-danger-hover: #dc2626;
+            --radius: 0.5rem;
+            --transition: 0.2s ease-in-out;
+        }
+
+        html[data-theme="dark"] {
+            --color-bg: #18181b;
+            --color-surface: #27272a;
+            --color-border: #3f3f46;
+            --color-border-hover: #52525b;
+            --color-text-primary: #f8fafc;
+            --color-text-secondary: #a1a1aa;
+            --color-surface-hover: #3a3a40;
+            --color-primary: #b8860b;
+            --color-primary-hover: #9a7209;
+            --color-primary-text: #111827;
+        }
+
+        html { font-size: 15px; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--color-bg);
+            color: var(--color-text-primary);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .content-card {
+            background-color: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius);
+            box-shadow: 0 2px 4px -2px rgb(0 0 0 / 0.05);
+        }
+
+        .form-input {
+            width: 100%;
+            background-color: var(--color-surface);
+            border: 1px solid var(--color-border);
+            color: var(--color-text-primary);
+            border-radius: 0.375rem;
+            transition: border-color var(--transition), box-shadow var(--transition);
+            padding: 0.625rem 0.875rem;
+            font-size: 0.875rem;
+        }
+
+        .form-input:focus {
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px var(--color-primary-focus-ring);
+            outline: none;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.625rem 1.25rem;
+            font-weight: 500;
+            border-radius: 0.375rem;
+            border: 1px solid transparent;
+            transition: all var(--transition);
+            font-size: 0.875rem;
+            cursor: pointer;
+        }
+
+        .btn-danger {
+            background-color: var(--color-danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: var(--color-danger-hover);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .thin-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .thin-scrollbar::-webkit-scrollbar-thumb {
+            background-color: var(--color-border-hover);
+            border-radius: 10px;
+        }
+    </style>
+    <script>
+        (function () {
+            try { if (JSON.parse(localStorage.getItem('gestaovscontabil_theme'))?.mode === 'escuro') { document.documentElement.setAttribute('data-theme', 'dark'); } } catch (e) { }
+        })();
+    </script>
+</head>
+
+<body class="p-4 sm:p-6 lg:p-8">
+    <div class="max-w-2xl mx-auto space-y-6">
+        <header>
+            <h1 class="text-3xl font-bold tracking-tight">Excluir NF Replicada</h1>
+            <p class="mt-1 text-base" style="color: var(--color-text-secondary);">Informe o "Nº Trans Ent" para apagar uma NF do WinThor.</p>
+        </header>
+
+        <main class="space-y-4">
+            <div class="content-card p-6">
+                <form id="delete-form" class="space-y-4">
+                    <div>
+                        <label for="numtransent" class="block text-sm font-medium mb-1" style="color: var(--color-text-secondary);">Nº Trans Ent *</label>
+                        <input type="number" id="numtransent" required
+                               class="form-input text-lg font-bold" 
+                               placeholder="Ex: 123456" />
+                        <p class="text-xs mt-2" style="color: var(--color-text-secondary);">
+                            <i class="fa-solid fa-circle-info mr-1 text-blue-500"></i>O processo removerá os registros das tabelas <b>pcnfent, pcnfbase, pcnfentpiscofins</b>.
+                        </p>
+                    </div>
+
+                    <button type="submit" id="btn-delete" class="btn btn-danger w-full mt-4">
+                        <i class="fa-solid fa-trash-can mr-2"></i> Excluir Registro
+                    </button>
+                </form>
+            </div>
+
+            <!-- Fila de Exclusões Recentes -->
+            <div class="content-card p-6">
+                <h3 class="font-semibold text-base border-b border-[var(--color-border)] pb-2 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-clock-rotate-left text-[var(--color-primary)]"></i> Histórico de Exclusões
+                </h3>
+                
+                <div class="overflow-x-auto thin-scrollbar">
+                    <table class="w-full text-sm text-left">
+                        <thead class="text-xs uppercase" style="background-color: var(--color-surface-hover); color: var(--color-text-secondary);">
+                            <tr>
+                                <th class="py-2 px-3">TRANS ENT</th>
+                                <th class="py-2 px-3">Status</th>
+                                <th class="py-2 px-3" style="min-width: 200px;">Obs</th>
+                                <th class="py-2 px-3 text-right">Data</th>
+                            </tr>
+                        </thead>
+                        <tbody id="queue-body" class="divide-y" style="border-color: var(--color-border);">
+                            <tr>
+                                <td colspan="4" class="text-center py-4 italic text-gray-500">Carregando...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        const SUPABASE_URL = 'https://jmcwiszplkjksdvqyhbw.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptY3dpc3pwbGtqa3NkdnF5aGJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODczODIsImV4cCI6MjA5MTE2MzM4Mn0.G85OrkSFtjTXmaHvEPBkWXZQQbDKsjMBD97_V3Z6yw0';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const form = document.getElementById('delete-form');
+        const numInput = document.getElementById('numtransent');
+        const btnDelete = document.getElementById('btn-delete');
+        const queueBody = document.getElementById('queue-body');
+        
+        let currentUser = null;
+
+        // Tentar recuperar nome do usuário
+        try {
+            const raw = localStorage.getItem('gestaovscontabil_auth');
+            if (raw) {
+                const session = JSON.parse(raw);
+                if (session && session.user && session.user.nome) {
+                    currentUser = session.user.nome;
+                }
+            }
+        } catch(e) {}
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const val = numInput.value.trim();
+            if(!val) return;
+
+            const res = await Swal.fire({
+                title: 'Tem certeza?',
+                text: "A exclusão das tabelas do WinThor não poderá ser desfeita e exige processamento extra.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#4b5563',
+                confirmButtonText: 'Sim, desejo excluir!'
+            });
+
+            if(res.isConfirmed) {
+                btnDelete.disabled = true;
+                btnDelete.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Aguarde...';
+
+                const { data, error } = await supabase
+                    .from('delete_nf_queue')
+                    .insert([
+                        { 
+                            numtransent: parseInt(val),
+                            user_nome: currentUser || 'Desconhecido',
+                            status: 'Pendente',
+                            obs: 'Aguardando o robô processar...'
+                        }
+                    ]);
+
+                btnDelete.disabled = false;
+                btnDelete.innerHTML = '<i class="fa-solid fa-trash-can mr-2"></i> Excluir Registro';
+
+                if(error) {
+                    Swal.fire('Erro!', 'Não foi possível solicitar a exclusão: ' + error.message, 'error');
+                } else {
+                    Swal.fire({
+                        title: 'Solicitado!',
+                        text: 'A requisição foi enviada para o serviço de automação.',
+                        icon: 'success',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                    numInput.value = '';
+                    loadQueue();
+                }
+            }
+        });
+
+        async function loadQueue() {
+            const { data, error } = await supabase
+                .from('delete_nf_queue')
+                .select('*')
+                .order('id', { ascending: false })
+                .limit(20);
+
+            if (error) {
+                queueBody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-red-500">Erro ao carregar histórico</td></tr>`;
+                return;
+            }
+
+            if (!data || data.length === 0) {
+                queueBody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-gray-500">Nenhum registro encontrado.</td></tr>`;
+                return;
+            }
+
+            queueBody.innerHTML = data.map(item => {
+                let badgeClass = 'bg-gray-200 text-gray-800';
+                if(item.status === 'Processando') badgeClass = 'bg-blue-100 text-blue-800';
+                if(item.status === 'Excluída') badgeClass = 'bg-green-100 text-green-800';
+                if(item.status === 'Erro') badgeClass = 'bg-red-100 text-red-800';
+
+                const dataFormatada = new Date(item.criado_em).toLocaleString('pt-BR');
+
+                return `
+                    <tr class="hover:bg-[length:var(--color-surface-hover)]">
+                        <td class="py-2 px-3 font-semibold">${item.numtransent}</td>
+                        <td class="py-2 px-3">
+                            <span class="px-2 py-0.5 rounded text-xs font-semibold ${badgeClass}">
+                                ${item.status}
+                            </span>
+                        </td>
+                        <td class="py-2 px-3 text-xs" style="color: var(--color-text-secondary); max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${item.obs || ''}">
+                            ${item.obs || '-'}
+                        </td>
+                        <td class="py-2 px-3 text-right text-xs" style="color: var(--color-text-secondary);">
+                            <div class="font-medium">${dataFormatada}</div>
+                            <div class="text-[10px] mt-0.5 opacity-70">${item.user_nome || 'N/A'}</div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Subscribing to realtime updates
+        const channel = supabase.channel('table-db-changes')
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'delete_nf_queue',
+            },
+            (payload) => {
+                loadQueue();
+            }
+          )
+          .subscribe();
+
+        // Initial load
+        loadQueue();
+    </script>
+</body>
+</html>

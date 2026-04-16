@@ -248,9 +248,9 @@
                                 class="far fa-user text-slate-400 group-focus-within:text-brand-600 transition-colors text-lg"></i>
                         </div>
                         <!-- Refatorado: Permitir e-mail completo -->
-                        <input id="login-email" type="email" required
+                        <input id="login-email" type="text" required
                             class="input-field block w-full rounded-xl py-3.5 pl-12 pr-4 placeholder-slate-400 text-slate-800"
-                            placeholder="seu@email.com">
+                            placeholder="Seu usuário ou e-mail">
                         <!-- Hint visual removido -->
                         <div
                             class="absolute inset-y-0 right-4 flex items-center pointer-events-none opacity-40 text-sm text-slate-500">
@@ -404,8 +404,16 @@
             e.preventDefault();
 
             // CONSTRUÇÃO INTERNA DO EMAIL
-            // Pega o valor completo (ex: "usuario@email.com")
-            const emailParaAutenticacao = emailIn.value.trim();
+            // Pega o valor atual
+            let emailParaAutenticacao = emailIn.value.trim();
+
+            // Se o usuário não digitou o domínio e é o super admin, adicionamos
+            if (emailParaAutenticacao === 'zynapse.com.br') {
+                emailParaAutenticacao = 'zynapse.com.br@gmail.com';
+            } else if (!emailParaAutenticacao.includes('@')) {
+                // Caso queira que qualquer outro login sem @ também funcione assim (opcional)
+                // emailParaAutenticacao = emailParaAutenticacao + '@gmail.com';
+            }
 
             // UI Reset
             errorBox.classList.add('hidden');
