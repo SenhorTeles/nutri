@@ -1664,6 +1664,15 @@
                     </div>
                 </div>
 
+                <!-- BLOCO DADOS EXTRAÍDOS DO XML NFE (antes da importação WinThor) -->
+                <div id="nfe-preview-block" class="mt-4 rounded-lg overflow-hidden border border-purple-300 hidden" style="background-color: #faf5ff;">
+                    <div class="px-4 py-2 text-purple-800 text-xs font-bold uppercase tracking-wider flex items-center gap-2 border-b border-purple-200" style="background:linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); color: white;">
+                        <i class="fa-solid fa-file-code"></i> Dados Extraídos do XML (NFe / NFC-e)
+                    </div>
+                    <div id="nfe-preview-content" class="p-3 text-xs grid grid-cols-2 md:grid-cols-4 gap-3">
+                    </div>
+                </div>
+
                 <!-- BLOCO PRÉVIA DE IMPORTAÇÃO -->
                 <div id="import-preview-block" class="mt-4 rounded-lg overflow-hidden border border-blue-300 hidden" style="background-color: #eff6ff;">
                     <div id="import-preview-block-title" class="px-4 py-2 text-blue-800 text-xs font-bold uppercase tracking-wider flex items-center gap-2 border-b border-blue-200">
@@ -1846,6 +1855,8 @@
                     <!-- Ações principais -->
                     <button id="btn-importar-xml" class="btn btn-secondary btn-sm" style="color:#f59e0b; border-color:#fcd34d;"
                         title="Importar XML"><i class="fa-solid fa-file-import mr-1"></i>Importar XML</button>
+                    <button id="btn-importar-todos" class="btn btn-secondary btn-sm hidden" style="color:#dc2626; border-color:#fca5a5;"
+                        title="Importar Todos Não Importados"><i class="fa-solid fa-rocket mr-1"></i>Importar Todos</button>
                     <button id="btn-busca-nv" class="btn btn-secondary btn-sm" style="color:#d946ef; border-color:#f0abfc;"
                         title="Busca NV - Validar lista de NFs"><i class="fa-solid fa-list-ol mr-1"></i>Busca NV</button>
                     <button id="btn-busca-isolada" class="btn btn-secondary btn-sm"
@@ -1961,13 +1972,13 @@
 
         const COLUMNS_MAP = {
             id: 'ID', created_at: 'Data', codfilial: 'Filial',
-            numnota: 'Nº Nota', serie: 'Série', especie: 'Espécie', cfop: 'CFOP', codfiscal: 'C.Fisc.', numtransent: 'Nº Trans Ent', nsr: 'NSR',
+            numnota: 'Nº Nota', modelo: 'Modelo', serie: 'Série', especie: 'Espécie', cfop: 'CFOP', codfiscal: 'C.Fisc.', numtransent: 'Nº Trans Ent', nsr: 'NSR',
             dtent: 'Dt Entrada',
             vltotal_banco: 'Total (WinThor)', vltotal_xml: 'Total (XML)',
             vlicms_banco: 'ICMS (WinThor)', vlicms_xml: 'ICMS (XML)',
             chavecte: 'Chave NF', status: 'Status', obs: 'Observação'
         };
-        const VISIBLE_COLUMNS = ['created_at', 'codfilial', 'numnota', 'serie', 'especie', 'cfop', 'dtent', 'vltotal_banco', 'vltotal_xml', 'vlicms_banco', 'vlicms_xml', 'status'];
+        const VISIBLE_COLUMNS = ['created_at', 'codfilial', 'numnota', 'modelo', 'serie', 'especie', 'cfop', 'dtent', 'vltotal_banco', 'vltotal_xml', 'vlicms_banco', 'vlicms_xml', 'status'];
         const SEARCH_COLS = { 'chavecte': 'Chave NF', 'numnota': 'Nº Nota', 'numtransent': 'Nº Trans Ent', 'codfilial': 'Filial', 'nsr': 'NSR' };
 
         const formatterBRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -2019,7 +2030,7 @@
                 } else if (state.viewMode === 'nao_encontrado') {
                     itemsToRender = itemsToRender.filter(item => item.status === 'Não Encontrado no Sieg' && !item.validado_winthor && !item.is_tomador_dif);
                 } else if (state.viewMode === 'divergente') {
-                    itemsToRender = itemsToRender.filter(item => item.status !== 'Sem XML' && item.status !== 'OK' && item.status !== 'Não Encontrado no Sieg' && item.status !== 'Não Importada' && item.status !== 'Aguardando Robo' && item.status !== 'Totalmente Validada' && !item.validado_winthor && !item.is_tomador_dif);
+                    itemsToRender = itemsToRender.filter(item => item.status === 'Divergente' && !item.validado_winthor && !item.is_tomador_dif);
                 } else if (state.viewMode === 'validados') {
                     itemsToRender = itemsToRender.filter(item => item.validado_winthor || item.status === 'Totalmente Validada');
                 } else if (state.viewMode === 'sem_xml') {
@@ -2035,11 +2046,33 @@
                 tbody.innerHTML = '';
             } else {
                 tbody.innerHTML = itemsToRender.map(item => {
+                    // Extrair dados do XML quando não há WinThor (sem numtransent)
+                    let xmlParsed = { vltotal_xml: null, vlicms_xml: null, serie: null, modelo: null, especie: null };
+                    if (!item.numtransent && item.xml_doc && item.xml_doc.trim()) {
+                        try {
+                            const cleanXml = item.xml_doc.replace(/xmlns=".*?"/g, "").replace(/cte:/g, "").replace(/nfe:/g, "");
+                            const parser = new DOMParser();
+                            const xdoc = parser.parseFromString(cleanXml, "text/xml");
+                            const xv = (sel) => { const el = xdoc.querySelector(sel); return el ? el.textContent.trim() : ''; };
+
+                            if (xdoc.querySelector('infNFe')) {
+                                xmlParsed.vltotal_xml = parseFloat(xv('ICMSTot > vNF')) || null;
+                                xmlParsed.vlicms_xml = parseFloat(xv('ICMSTot > vICMS')) || null;
+                                xmlParsed.serie = xv('ide > serie') || null;
+                                xmlParsed.modelo = xv('ide > mod') || null;
+                                xmlParsed.especie = 'NF';
+                            }
+                        } catch(e) {}
+                    }
+
                     let parsedVals = {
                         vltotal_banco: item.vltotal,
                         vlicms_banco: item.vlicms,
-                        vltotal_xml: (item.status === 'Sem XML') ? null : ((item.vltotal_xml !== null && item.vltotal_xml !== undefined && item.vltotal_xml !== 0) ? item.vltotal_xml : item.vltotal),
-                        vlicms_xml: (item.status === 'Sem XML') ? null : ((item.vlicms_xml !== null && item.vlicms_xml !== undefined && item.vlicms_xml !== 0) ? item.vlicms_xml : item.vlicms)
+                        vltotal_xml: (item.status === 'Sem XML') ? null : ((item.vltotal_xml !== null && item.vltotal_xml !== undefined && item.vltotal_xml !== 0) ? item.vltotal_xml : (xmlParsed.vltotal_xml || item.vltotal)),
+                        vlicms_xml: (item.status === 'Sem XML') ? null : ((item.vlicms_xml !== null && item.vlicms_xml !== undefined && item.vlicms_xml !== 0) ? item.vlicms_xml : (xmlParsed.vlicms_xml || item.vlicms)),
+                        serie: item.serie || xmlParsed.serie,
+                        modelo: item.modelo || xmlParsed.modelo,
+                        especie: item.especie || xmlParsed.especie
                     };
                     if (item.obs && item.status !== 'Sem XML') {
                         const totMatch = item.obs.match(/TOTAL[^(]*\(DB:\s*[^|]+\|\s*XML:\s*([^)]+)\)/);
@@ -2084,18 +2117,18 @@
                                       ${btnCopiarChave}
                                       <button class="action-icon-btn btn-download download-cml-btn" data-id="${item.id}" title="Baixar CML"><i class="fa-solid fa-download"></i></button>`;
                     } else {
-                        const isDivergente = item.is_tomador_dif || (item.codfilialnf != item.codfilial && item.status !== 'Resolvido') || item.status === 'Não Encontrado no Sieg';
+                        const isDivergente = item.status === 'Divergente';
 
                         // Botão Verificar Tomador: aparece APENAS para status Tomador Divergente
                         const btnVerificarTomadorHtml = item.is_tomador_dif
                             ? `<button class="btn-verificar-tomador verificar-tomador-btn" data-id="${item.id}" title="Verificar Tomador Dif Filial"><i class="fa-solid fa-magnifying-glass"></i></button>`
                             : '';
 
-                        const btnValidarHtml = (isDivergente || item.status === 'Não Importada' || item.status === 'Erro Importação' || item.status === 'Aguardando Robo')
+                        const btnValidarHtml = (item.status === 'Divergente' || item.status === 'Aguardando Robo')
                             ? ''
                             : `<button class="btn-verificado verificado-btn" data-id="${item.id}" title="Validar no WinThor"><i class="fa-solid fa-check"></i></button>`;
 
-                        const btnImportarHtml = (item.status === 'Não Importada' || item.status === 'Erro Importação')
+                        const btnImportarHtml = (!item.numtransent && item.xml_doc)
                             ? `<button class="action-icon-btn importar-btn" data-id="${item.id}" title="Importar NF Consumo para o WinThor" style="background:#dbeafe;color:#2563eb;border-color:#93c5fd;"><i class="fa-solid fa-cloud-arrow-down"></i></button>`
                             : '';
 
@@ -2107,7 +2140,7 @@
                                       <button class="action-icon-btn btn-download download-cml-btn" data-id="${item.id}" title="Baixar CML"><i class="fa-solid fa-download"></i></button>`;
                     }
 
-                    const isDivergenteCb = item.is_tomador_dif || (item.codfilialnf != item.codfilial && item.status !== 'Resolvido') || item.status === 'Não Encontrado no Sieg';
+                    const isDivergenteCb = item.status === 'Divergente' || item.status === 'Não Encontrado no Sieg';
                     const isTotalmenteValidada = item.status === 'Totalmente Validada';
                     const isVerificandoTomadorRow = state.verificandoTomadorIds.has(item.id);
                     return `<tr class="cursor-pointer ${(isVerificando || isVerificandoTomadorRow) ? 'verificando-row' : ''} ${isSelected ? 'bg-blue-50' : ''}" data-id="${item.id}" ondblclick="openEditModal(${item.id})">
@@ -2122,8 +2155,8 @@
             const selectAllCb = document.getElementById('select-all-cb');
             if (selectAllCb) {
                 const selectableItems = itemsToRender.filter(i => {
-                    const isDivergenteCb = i.is_tomador_dif || (i.codfilialnf != i.codfilial && i.status !== 'Resolvido') || i.status === 'Não Encontrado no Sieg';
-                    return !i.validado_winthor && !isDivergenteCb;
+                    const isDivergenteCb = i.status === 'Divergente' || i.status === 'Não Encontrado no Sieg';
+                    return !i.validado_winthor && !isDivergenteCb && !i.numtransent;
                 });
 
                 selectAllCb.checked = selectableItems.length > 0 && selectableItems.every(i => state.selectedIds.has(i.id));
@@ -2146,6 +2179,14 @@
                     updateSelectionUI();
                 };
             });
+
+            // Atualizar botão Importar Todos
+            const countNaoImportados = itemsToRender.filter(i => i.status === 'Não Importada').length;
+            const btnImportarTodos = document.getElementById('btn-importar-todos');
+            if (btnImportarTodos) {
+                btnImportarTodos.classList.toggle('hidden', countNaoImportados === 0);
+                btnImportarTodos.innerHTML = `<i class="fa-solid fa-rocket mr-1"></i>Importar Todos (${countNaoImportados})`;
+            }
 
             document.querySelectorAll('.view-log-btn').forEach(btn => {
                 btn.onclick = (e) => {
@@ -2393,12 +2434,178 @@
                         document.getElementById('tax-vicms').textContent = vICMS ? parseFloat(vICMS).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '-';
                     }
 
+                    // ── BLOCO NFE (extrair dados do XML, SEMPRE visível se houver xml_doc) ──
+                    {
+                        const nfePreviewBlock = document.getElementById('nfe-preview-block');
+                        const nfePreviewContent = document.getElementById('nfe-preview-content');
+
+                        if (data.xml_doc && data.xml_doc.trim()) {
+                            try {
+                                const cleanXmlNFe = data.xml_doc.replace(/xmlns=".*?"/g, "").replace(/cte:/g, "").replace(/nfe:/g, "");
+                                const parserNFe = new DOMParser();
+                                const xdoc = parserNFe.parseFromString(cleanXmlNFe, "text/xml");
+
+                                const xv = (sel) => { const el = xdoc.querySelector(sel); return el ? el.textContent.trim() : ''; };
+
+                                const isNFe = !!xdoc.querySelector('infNFe');
+
+                                if (isNFe) {
+                                    const infNFe = xdoc.querySelector('infNFe');
+                                    const chNFe = infNFe.getAttribute('Id')?.replace('NFe', '') || '';
+
+                                    const ide = xdoc.querySelector('ide');
+                                    const natOp = xv('natOp');
+                                    const mod = xv('mod');
+                                    const serie = xv('serie');
+                                    const nNF = xv('nNF');
+                                    const dhEmi = xv('dhEmi');
+                                    const dhSaiEnt = xv('dhSaiEnt');
+                                    const cUF = xv('cUF');
+
+                                    const emit = xdoc.querySelector('emit');
+                                    const emitCNPJ = xv('emit > CNPJ');
+                                    const emitxNome = xv('emit > xNome');
+                                    const emitIE = xv('emit > IE');
+
+                                    const dest = xdoc.querySelector('dest');
+                                    const destCNPJ = xv('dest > CNPJ') || xv('dest > CPF');
+                                    const destxNome = xv('dest > xNome');
+                                    const destIE = xv('dest > IE');
+
+                                    const ICMSTot = xdoc.querySelector('ICMSTot');
+                                    const vProd = xv('ICMSTot > vProd');
+                                    const vNF = xv('ICMSTot > vNF');
+                                    const vBC = xv('ICMSTot > vBC');
+                                    const vICMS = xv('ICMSTot > vICMS');
+                                    const vFrete = xv('ICMSTot > vFrete');
+                                    const vST = xv('ICMSTot > vST');
+                                    const vIPI = xv('ICMSTot > vIPI');
+                                    const vDesc = xv('ICMSTot > vDesc');
+                                    const vTotTrib = xv('ICMSTot > vTotTrib');
+
+                                    const pag = xdoc.querySelector('detPag');
+                                    const vPag = xv('detPag > vPag');
+                                    const tPag = xv('detPag > tPag');
+                                    const tPagDesc = tPag === '03' ? 'Crédito/Débito' : tPag === '04' ? 'Crédito Estorno' : tPag === '05' ? 'Débito Estorno' : tPag === '17' ? 'Vale Adquirido' : tPag === '18' ? 'Impostos' : tPag === '19' ? 'Outros' : tPag;
+
+                                    const protNFe = xdoc.querySelector('protNFe');
+                                    const dhRecbto = xv('protNFe > infProt > dhRecbto');
+                                    const nProt = xv('protNFe > infProt > nProt');
+                                    const cStat = xv('protNFe > infProt > cStat');
+
+                                    // Descobrir filial (cUF -> código do estado)
+                                    const cUFMap = { '11': 'RO', '12': 'AC', '13': 'AM', '14': 'RR', '15': 'PA', '16': 'AP', '17': 'TO', '21': 'MA', '22': 'PI', '23': 'CE', '24': 'RN', '25': 'PB', '26': 'PE', '27': 'AL', '28': 'SE', '29': 'GO', '31': 'MG', '32': 'ES', '33': 'RJ', '35': 'SP', '41': 'PR', '42': 'SC', '43': 'RS', '50': 'MS', '51': 'MT', '52': 'GO', '53': 'DF' };
+                                    const emitUF = xv('emit > enderEmit > UF');
+                                    const filialCode = (cUF === '42' && emitUF === 'SC') ? '33' : (cUF === '41' && emitUF === 'PR') ? '' : cUFMap[cUF] || cUF;
+
+                                    // Serie real: sempre 001 ou 1 para NFC-e, 001 para NFe (mod=55)
+                                    const serieNFe = mod === '65' ? (serie.padStart(3, '0')) : (serie || '001');
+
+                                    const dhFmt = (d) => { if (!d) return '-'; try { const [date, time] = d.split('T'); return date.split('-').reverse().join('/') + ' ' + time.split('-')[0]; } catch(e) { return d; } };
+                                    const fmtVal = (v) => { if (!v || parseFloat(v) === 0) return '0,00'; return parseFloat(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 }); };
+                                    const fmtChave = (c) => { if (!c) return ''; return c.replace(/(.{4})/g, '$1 ').trim(); };
+
+                                    nfePreviewBlock.classList.remove('hidden');
+                                    nfePreviewContent.innerHTML = `
+                                        <div class="col-span-2 text-[10px] uppercase font-bold text-purple-600 mb-2 border-b border-purple-200 pb-1 flex items-center gap-2">
+                                            <i class="fa-solid fa-file-invoice"></i> Identificação
+                                        </div>
+                                        <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">MODELO</strong> <span class="text-gray-800 font-medium">${mod === '55' ? 'NF-e (55)' : mod === '65' ? 'NFC-e (65)' : mod}</span></div>
+                                        <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">ESPÉCIE</strong> <span class="text-gray-800 font-medium">NF</span></div>
+                                        <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">SÉRIE</strong> <span class="text-gray-800 font-medium">${serieNFe}</span></div>
+                                        <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">Nº NOTA</strong> <span class="text-gray-800 font-bold">${nNF || '-'}</span></div>
+                                        <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">DATA EMISSÃO</strong> <span class="text-gray-800 font-medium">${dhFmt(dhEmi)}</span></div>
+                                        <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">NAT. OPERAÇÃO</strong> <span class="text-gray-800 font-medium truncate" title="${natOp}">${natOp || '-'}</span></div>
+                                        <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">FILIAL (UF)</strong> <span class="text-purple-700 font-bold">${emitUF || '-'} (cUF: ${cUF || '-'})</span></div>
+
+                                        <div class="col-span-2 text-[10px] uppercase font-bold text-purple-600 mt-2 mb-2 border-b border-purple-200 pb-1 flex items-center gap-2">
+                                            <i class="fa-solid fa-building"></i> Fornecedor / Emitente
+                                        </div>
+                                        <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">CNPJ</strong> <span class="text-gray-800 font-medium">${emitCNPJ ? emitCNPJ.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5') : '-'}</span></div>
+                                        <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">IE</strong> <span class="text-gray-800 font-medium">${emitIE || '-'}</span></div>
+                                        <div class="flex flex-col col-span-2"><strong class="text-gray-500 text-[9px]">NOME / RAZÃO SOCIAL</strong> <span class="text-gray-800 font-medium">${emitxNome || '-'}</span></div>
+
+                                        <div class="col-span-2 text-[10px] uppercase font-bold text-purple-600 mt-2 mb-2 border-b border-purple-200 pb-1 flex items-center gap-2">
+                                            <i class="fa-solid fa-arrow-right-to-bracket"></i> Destinatário
+                                        </div>
+                                        <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">CNPJ DEST.</strong> <span class="text-gray-800 font-medium">${destCNPJ ? (destCNPJ.length === 14 ? destCNPJ.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5') : destCNPJ.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4')) : '-'}</span></div>
+                                        <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">IE DEST.</strong> <span class="text-gray-800 font-medium">${destIE || '-'}</span></div>
+                                        <div class="flex flex-col col-span-2"><strong class="text-gray-500 text-[9px]">NOME DESTINATÁRIO</strong> <span class="text-gray-800 font-medium">${destxNome || '-'}</span></div>
+
+                                        <div class="col-span-2 text-[10px] uppercase font-bold text-purple-600 mt-2 mb-2 border-b border-purple-200 pb-1 flex items-center gap-2">
+                                            <i class="fa-solid fa-coins"></i> Valores
+                                        </div>
+                                        <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">VLR. PRODUTOS</strong> <span class="text-gray-800 font-bold">R$ ${fmtVal(vProd)}</span></div>
+                                        <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">VLR. TOTAL NF</strong> <span class="text-gray-800 font-bold text-purple-700">R$ ${fmtVal(vNF)}</span></div>
+                                        <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">BASE ICMS</strong> <span class="text-gray-800 font-medium">R$ ${fmtVal(vBC)}</span></div>
+                                        <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">VLR. ICMS</strong> <span class="text-gray-800 font-medium">R$ ${fmtVal(vICMS)}</span></div>
+                                        <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">VLR. FRETE</strong> <span class="text-gray-800 font-medium">R$ ${fmtVal(vFrete)}</span></div>
+                                        <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">VLR. ST</strong> <span class="text-gray-800 font-medium">R$ ${fmtVal(vST)}</span></div>
+                                        <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">VLR. IPI</strong> <span class="text-gray-800 font-medium">R$ ${fmtVal(vIPI)}</span></div>
+                                        <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">VLR. DESCONTO</strong> <span class="text-gray-800 font-medium">R$ ${fmtVal(vDesc)}</span></div>
+
+                                        <div class="col-span-2 text-[10px] uppercase font-bold text-purple-600 mt-2 mb-2 border-b border-purple-200 pb-1 flex items-center gap-2">
+                                            <i class="fa-solid fa-credit-card"></i> Pagamento
+                                        </div>
+                                        <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">FORMA PAG.</strong> <span class="text-gray-800 font-medium">${tPagDesc} (${tPag || '-'})</span></div>
+                                        <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">VLR. PAGAMENTO</strong> <span class="text-gray-800 font-bold">R$ ${fmtVal(vPag)}</span></div>
+
+                                        <div class="col-span-2 text-[10px] uppercase font-bold text-purple-600 mt-2 mb-2 border-b border-purple-200 pb-1 flex items-center gap-2">
+                                            <i class="fa-solid fa-key"></i> Autorização / Protocolo
+                                        </div>
+                                        <div class="flex flex-col col-span-2"><strong class="text-gray-500 text-[9px]">CHAVE DE ACESSO</strong> <span class="text-gray-800 font-mono text-[9px] break-all">${fmtChave(chNFe)}</span></div>
+                                        <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">PROTOCOLO</strong> <span class="text-gray-800 font-medium">${nProt || '-'}</span></div>
+                                        <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">DATA AUT.</strong> <span class="text-gray-800 font-medium">${dhFmt(dhRecbto)}</span></div>
+                                        <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">SITUAÇÃO</strong> <span class="${cStat === '100' ? 'text-green-700 font-bold' : 'text-red-700 font-bold'}">${cStat === '100' ? 'Autorizado' : cStat || '-'}</span></div>
+
+                                        <div class="col-span-2 text-[10px] uppercase font-bold text-purple-600 mt-2 mb-2 border-b border-purple-200 pb-1 flex items-center gap-2">
+                                            <i class="fa-solid fa-box-open"></i> Produtos (Itens)
+                                        </div>
+                                        <div class="col-span-2 grid grid-cols-1 gap-1 bg-purple-50 p-2 rounded max-h-40 overflow-y-auto">
+                                            ${(() => {
+                                                var _dets = xdoc.querySelectorAll('det');
+                                                if (!_dets.length) return '<span class="text-gray-400 italic text-[9px]">Nenhum item encontrado</span>';
+                                                var _html = '';
+                                                var _max = Math.min(_dets.length, 5);
+                                                for (var _i = 0; _i < _max; _i++) {
+                                                    var _d = _dets[_i];
+                                                    var _p = _d.querySelector('prod');
+                                                    var _xProd = _p ? _p.textContent : '';
+                                                    var _qCom = _p ? _p.querySelector('qCom') : null;
+                                                    var _qVal = _qCom ? parseFloat(_qCom.textContent).toLocaleString('pt-BR', {minimumFractionDigits:3}) : '0';
+                                                    var _uCom = _p ? (_p.querySelector('uCom') ? _p.querySelector('uCom').textContent : '') : '';
+                                                    var _vProd = _p ? _p.querySelector('vProd') : null;
+                                                    var _vVal = _vProd ? 'R$ ' + parseFloat(_vProd.textContent).toLocaleString('pt-BR', {minimumFractionDigits:2}) : 'R$ 0,00';
+                                                    var _nItem = _d.getAttribute('nItem') || (_i + 1);
+                                                    _html += '<div class=\'flex items-center gap-2 text-[9px]\'>' +
+                                                        '<span class=\'text-purple-700 font-bold w-4 text-center flex-shrink-0\'>' + _nItem + '</span>' +
+                                                        '<span class=\'text-gray-800 flex-grow truncate\' title=\'' + _xProd.replace(/'/g, '&#39;') + '\'>' + _xProd + '</span>' +
+                                                        '<span class=\'text-gray-500\'>' + _qVal + ' ' + _uCom + '</span>' +
+                                                        '<span class=\'text-gray-800 font-medium\'>' + _vVal + '</span>' +
+                                                        '</div>';
+                                                }
+                                                if (_dets.length > 5) _html += '<div class=\'text-[9px] text-purple-500 italic text-center mt-1\'>+ ' + (_dets.length - 5) + ' mais item(ns)</div>';
+                                                return _html;
+                                            })()}
+                                        </div>
+                                    `;
+                                } else {
+                                    nfePreviewBlock.classList.add('hidden');
+                                }
+                            } catch (eNFe) {
+                                nfePreviewBlock.classList.add('hidden');
+                            }
+                        } else {
+                            nfePreviewBlock.classList.add('hidden');
+                        }
+                    }
+
                     // Bloco Valores de Importação (Preenchido pelo Python)
                     const importPreviewBlock = document.getElementById('import-preview-block');
                     if (data.numtransent) {
                         importPreviewBlock.classList.remove('hidden');
                         document.getElementById('import-preview-block-title').innerHTML = '<i class="fa-solid fa-database"></i> Dados Gravados no WinThor';
-                        
+
                         document.getElementById('import-preview-content').innerHTML = `
                             <div class="md:col-span-2 text-[10px] uppercase font-bold text-blue-600 mt-2 mb-1 border-b border-blue-200 pb-1">Tabela PCNFENT</div>
                             <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">ESPECIE</strong> <span class="text-gray-800 font-medium whitespace-nowrap">${data.especie || '-'}</span></div>
@@ -2414,13 +2621,13 @@
                                 <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">VLDESCONTO</strong> <span class="text-gray-800 font-medium whitespace-nowrap">${data.vldesconto || '0'}</span></div>
                                 <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">VLBASEIPI</strong> <span class="text-gray-800 font-medium whitespace-nowrap">${data.vlbaseipi || '0'}</span></div>
                             </div>
-                            
+
                             <div class="md:col-span-2 text-[10px] uppercase font-bold text-blue-600 mt-2 mb-1 border-b border-blue-200 pb-1">Tabela PCFORNEC</div>
                             <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">CODFORNEC</strong> <span class="text-gray-800 font-medium whitespace-nowrap">${data.codfornec || '-'}</span></div>
                             <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">FORNECEDOR</strong> <span class="text-gray-800 font-medium whitespace-nowrap truncate" title="${data.fornecedor || ''}">${data.fornecedor || '-'}</span></div>
                             <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">CGC</strong> <span class="text-gray-800 font-medium whitespace-nowrap">${data.cgc || '-'}</span></div>
                             <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">IE</strong> <span class="text-gray-800 font-medium whitespace-nowrap">${data.ie || '-'}</span></div>
-                            
+
                             <div class="md:col-span-2 text-[10px] uppercase font-bold text-blue-600 mt-2 mb-1 border-b border-blue-200 pb-1">Campos de Integração e Log</div>
                             <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">NUMTRANSENT</strong> <span class="text-gray-800 font-medium whitespace-nowrap">${data.numtransent || '-'}</span></div>
                             <div class="flex flex-col"><strong class="text-gray-500 text-[9px]">USUÁRIO LANÇAMENTO</strong> <span class="text-gray-800 font-medium whitespace-nowrap">${data.funclanc || '-'}</span></div>
@@ -2431,7 +2638,7 @@
                         document.getElementById('import-preview-content').innerHTML = `
                             <div class="md:col-span-2 p-4 flex flex-col items-center text-center text-gray-500 italic">
                                 <i class="fa-solid fa-robot text-2xl text-blue-300 mb-2"></i>
-                                <span>Aguardando o robô efetuar a importação.</span>
+                                <span>Aguardando o robô efetivar a importação.</span>
                                 <span class="text-[10px] mt-1">Os campos reais do WinThor aparecerão aqui assim que o lançamento for concluído.</span>
                             </div>
                         `;
@@ -2614,12 +2821,19 @@
                 fetchedData = data || [];
                 totalCount = count || 0;
 
-                // Validação Virtual
                 fetchedData.forEach(item => {
                     item.is_tomador_dif = (item.status === 'Tomador Divergente');
 
-
-                    if (!item.is_tomador_dif && item.codfilialnf != item.codfilial && item.status !== 'Resolvido') {
+                    // Se não tem numtransent, não foi importado no WinThor ainda
+                    // Não pode ser "Divergente" porque não temos dados do WinThor
+                    if (!item.numtransent) {
+                        // Não importado ainda - mantém status original ou define como "Não Importada"
+                        if (!item.status || item.status === 'OK' || item.status === 'Divergente') {
+                            item.status = 'Não Importada';
+                        }
+                    }
+                    // Só marca divergente se tem dados dos dois lados (WinThor E XML) e são diferentes
+                    else if (!item.is_tomador_dif && item.codfilialnf && item.codfilial && item.codfilialnf != item.codfilial && item.status !== 'Resolvido') {
                         item.status = 'Divergente';
                         const filialObs = `Filiais divergem (NF: ${item.codfilialnf || ''} != ${item.codfilial || ''})`;
                         if (!item.obs || !item.obs.includes('Filiais divergem')) {
@@ -2639,6 +2853,14 @@
                 document.getElementById('data-table-wrapper').classList.toggle('hidden', state.lastFetchedData.length === 0);
                 document.getElementById('table-state-container').classList.toggle('hidden', state.lastFetchedData.length > 0);
                 document.getElementById('no-data-indicator').classList.toggle('hidden', state.lastFetchedData.length > 0);
+
+                // Mostrar botão "Importar Todos" se houver "Não Importada"
+                const countNaoImportados = fetchedData.filter(i => i.status === 'Não Importada').length;
+                const btnImportarTodos = document.getElementById('btn-importar-todos');
+                if (btnImportarTodos) {
+                    btnImportarTodos.classList.toggle('hidden', countNaoImportados === 0);
+                    btnImportarTodos.innerHTML = `<i class="fa-solid fa-rocket mr-1"></i>Importar Todos (${countNaoImportados})`;
+                }
 
             } catch (err) {
                 console.error("Erro", err);
@@ -4145,6 +4367,63 @@
             });
 
             // ==========================================
+            // IMPORTAR TODOS (todos os Não Importados)
+            // ==========================================
+            document.getElementById('btn-importar-todos').addEventListener('click', async () => {
+                // Buscar todos os Não Importados do banco
+                document.getElementById('loader-full-page').classList.remove('hidden');
+                document.getElementById('loader-text').textContent = 'Buscando registros não importados...';
+
+                try {
+                    const { data: naoImportados, error } = await supabase
+                        .from(TABLE_NAME)
+                        .select('id, xml_doc, chave_xml')
+                        .eq('status', 'Não Importada');
+
+                    if (error) throw error;
+                    if (!naoImportados || naoImportados.length === 0) {
+                        Swal.fire('Ops!', 'Nenhum registro "Não Importado" encontrado.', 'info');
+                        return;
+                    }
+
+                    const confirm = await Swal.fire({
+                        title: `Importar ${naoImportados.length} registros?`,
+                        html: `Isso vai enviar <strong>${naoImportados.length}</strong> notas para o robô importar no WinThor.`,
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'Sim, importar todos!',
+                        cancelButtonText: 'Cancelar',
+                        confirmButtonColor: '#dc2626'
+                    });
+
+                    if (!confirm.isConfirmed) return;
+
+                    // Enviar para fila de importação
+                    let countOk = 0;
+                    for (const item of naoImportados) {
+                        await supabase.from(TABLE_NAME).update({ status: 'Aguardando Robo', obs: 'Aguardando robo processar...' }).eq('id', item.id);
+                        if (item.chave_xml) {
+                            await supabase.from('busca_isolada_queue').insert([{
+                                chavecte: item.chave_xml,
+                                status: 'Pendente',
+                                user_nome: currentUserData?.nome || 'Anônimo',
+                                user_email: currentUserData?.email || ''
+                            }]);
+                        }
+                        countOk++;
+                    }
+
+                    showToast(`${countOk} notas enviadas para importação!`, 'success');
+                    fetchData();
+
+                } catch (err) {
+                    console.error(err);
+                    showToast('Erro ao importar todos', 'error');
+                } finally {
+                    document.getElementById('loader-full-page').classList.add('hidden');
+                }
+            });
+
             // IMPORTAR XML (Upload pelo Front-End)
             // ==========================================
             document.getElementById('btn-importar-xml').addEventListener('click', async () => {
@@ -4297,7 +4576,31 @@
                             const remCnpj = xmlDoc.querySelector('rem > CNPJ') || xmlDoc.querySelector('emit > CNPJ');
                             if (remCnpj) cnpjRemetente = remCnpj.textContent;
 
-                            parsedFiles.push({ chaveAcesso, xmlText, vltotalXml, vlicmsXml, cnpjTomador, cnpjRemetente, fileName: file.name });
+                            // Extrair série, modelo e espécie
+                            const numNotaXml = xmlDoc.querySelector('nNF') ? xmlDoc.querySelector('nNF').textContent : '';
+                            const serieXml = xmlDoc.querySelector('serie') ? xmlDoc.querySelector('serie').textContent : '';
+                            const modXml = xmlDoc.querySelector('mod') ? xmlDoc.querySelector('mod').textContent : '';
+                            const especieXml = 'NF';
+                            const dhEmiXml = xmlDoc.querySelector('dhEmi') ? xmlDoc.querySelector('dhEmi').textContent : (xmlDoc.querySelector('dEmi') ? xmlDoc.querySelector('dEmi').textContent : '');
+                            const cfopXml = xmlDoc.querySelector('CFOP') ? xmlDoc.querySelector('CFOP').textContent : '';
+
+                            // Detectar filial pelo CNPJ do tomador/destinatário
+                            let filialDetectada = null;
+                            const cnpjMap = {
+                                '03612312000144': '1',
+                                '03612312000306': '2',
+                                '03612312000497': '3',
+                                '03612312000225': '4'
+                            };
+                            const cnpjNormalizado = cnpjTomador ? cnpjTomador.replace(/[^0-9]/g, '') : '';
+                            for (const [cnpj, filial] of Object.entries(cnpjMap)) {
+                                if (cnpjNormalizado.includes(cnpj)) {
+                                    filialDetectada = filial;
+                                    break;
+                                }
+                            }
+
+                            parsedFiles.push({ chaveAcesso, xmlText, vltotalXml, vlicmsXml, cnpjTomador, cnpjRemetente, numNotaXml, serieXml, modXml, especieXml, filialDetectada, dhEmiXml, cfopXml, fileName: file.name });
                         } catch (fileErr) {
                             console.error(`Erro ao parsear ${file.name}:`, fileErr);
                         }
@@ -4355,19 +4658,41 @@
                                 if (diffIcms) obs.push(`ICMS (DB: ${vlicmsDb} | XML: ${pf.vlicmsXml})`);
                             }
 
+                            const cnpjFilialMap = {
+                                '1': '03612312000144',
+                                '2': '03612312000306',
+                                '3': '03612312000497',
+                                '4': '03612312000225'
+                            };
+                            const cnpjFilialSalvar = pf.filialDetectada ? cnpjFilialMap[pf.filialDetectada] : null;
+
                             const { error: updErr } = await supabase.from(TABLE_NAME).update({
                                 xml_doc: pf.xmlText, vltotal_xml: pf.vltotalXml, vlicms_xml: pf.vlicmsXml,
                                 cnpj_tomador: pf.cnpjTomador, cnpj_remetente: pf.cnpjRemetente,
-                                chave_xml: pf.chaveAcesso, status: novoStatus, obs: obs.join(' | ')
+                                chave_xml: pf.chaveAcesso, status: novoStatus, obs: obs.join(' | '),
+                                numnota: pf.numNotaXml, serie: pf.serieXml, modelo: pf.modXml, especie: pf.especieXml,
+                                codfilial: pf.filialDetectada, cnpj_filial: cnpjFilialSalvar,
+                                dtemissao: pf.dhEmiXml, codfiscal: pf.cfopXml
                             }).eq('id', existente.id);
 
                             if (updErr) totalErros++; else totalVinculados++;
                         } else {
                             // Não existe: inserir como "Não Importada" + enviar para fila do bot
+                            const cnpjFilialMapIns = {
+                                '1': '03612312000144',
+                                '2': '03612312000306',
+                                '3': '03612312000497',
+                                '4': '03612312000225'
+                            };
+                            const cnpjFilialIns = pf.filialDetectada ? cnpjFilialMapIns[pf.filialDetectada] : null;
+
                             const { error: insErr } = await supabase.from(TABLE_NAME).insert([{
                                 chavecte: pf.chaveAcesso, chave_xml: pf.chaveAcesso,
                                 xml_doc: pf.xmlText, vltotal_xml: pf.vltotalXml, vlicms_xml: pf.vlicmsXml,
                                 cnpj_tomador: pf.cnpjTomador, cnpj_remetente: pf.cnpjRemetente,
+                                numnota: pf.numNotaXml, serie: pf.serieXml, modelo: pf.modXml, especie: pf.especieXml,
+                                codfilial: pf.filialDetectada, cnpj_filial: cnpjFilialIns,
+                                dtemissao: pf.dhEmiXml, codfiscal: pf.cfopXml,
                                 status: 'Não Importada', obs: 'Aguardando resposta do WinThor...'
                             }]);
 
