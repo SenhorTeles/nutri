@@ -1790,29 +1790,29 @@
             <header class="flex flex-col gap-1.5 flex-shrink-0">
                 <!-- ROW 1: Filter pills + page info -->
                 <div class="flex items-center justify-between gap-2">
-                    <div class="flex items-center gap-1" id="main-view-filters">
-                        <button id="view-divergente-btn" class="filter-pill active" data-view="divergente"
-                            style="--pill-active-bg:#dc2626;--pill-active-color:#fff" title="Divergentes">
-                            <i class="fa-solid fa-triangle-exclamation"></i> Divergentes</button>
-                        <button id="view-nao-encontrado-btn" class="filter-pill" data-view="nao_encontrado"
-                            style="--pill-active-bg:#4b5563;--pill-active-color:#fff" title="Não Encontrados no Sieg">
-                            <i class="fa-solid fa-ghost"></i> Não Encontrados</button>
-                        <button id="view-ok-btn" class="filter-pill" data-view="ok"
-                            style="--pill-active-bg:#16a34a;--pill-active-color:#fff" title="Notas OK">
-                            <i class="fa-solid fa-circle-check"></i> OK</button>
-                        <button id="view-tomador-dif-btn" class="filter-pill" data-view="tomador_dif"
-                            style="--pill-active-bg:#ea580c;--pill-active-color:#fff" title="Tomador diferente da Filial NF">
-                            <i class="fa-solid fa-shuffle"></i> Tomador ≠ Filial</button>
-                        <button id="view-sem-xml-btn" class="filter-pill" data-view="sem_xml"
+<div class="flex items-center gap-1" id="main-view-filters">
+                        <button id="view-sem-xml-btn" class="filter-pill" data_view="sem_xml"
                             style="--pill-active-bg:#eab308;--pill-active-color:#fff" title="Sem XML importado">
                             <i class="fa-solid fa-file-circle-question"></i> Sem XML</button>
-                        <button id="view-nao-importada-btn" class="filter-pill" data-view="nao_importada"
+                        <button id="view-ok-btn" class="filter-pill" data_view="ok"
+                            style="--pill-active-bg:#16a34a;--pill-active-color:#fff" title="Notas OK">
+                            <i class="fa-solid fa-circle-check"></i> OK</button>
+                        <button id="view-divergente-btn" class="filter-pill" data_view="divergente"
+                            style="--pill-active-bg:#dc2626;--pill-active-color:#fff" title="Divergentes">
+                            <i class="fa-solid fa-triangle-exclamation"></i> Divergentes</button>
+                        <button id="view-nao-encontrado-btn" class="filter-pill" data_view="nao_encontrado"
+                            style="--pill-active-bg:#4b5563;--pill-active-color:#fff" title="Não Encontrados no Sieg">
+                            <i class="fa-solid fa-ghost"></i> Não Encontrados</button>
+                        <button id="view-tomador-dif-btn" class="filter-pill" data_view="tomador_dif"
+                            style="--pill-active-bg:#ea580c;--pill-active-color:#fff" title="Tomador diferente da Filial NF">
+                            <i class="fa-solid fa-shuffle"></i> Tomador ≠ Filial</button>
+                        <button id="view-nao-importada-btn" class="filter-pill" data_view="nao_importada"
                             style="--pill-active-bg:#7c3aed;--pill-active-color:#fff" title="XML importado mas não encontrada no WinThor">
                             <i class="fa-solid fa-cloud-arrow-up"></i> Não Importada</button>
-                        <button id="view-aguardando-btn" class="filter-pill" data-view="aguardando_robo"
+                        <button id="view-aguardando-btn" class="filter-pill" data_view="aguardando_robo"
                             style="--pill-active-bg:#0891b2;--pill-active-color:#fff" title="Aguardando o robô importar no WinThor">
                             <i class="fa-solid fa-robot"></i> Aguardando Robo</button>
-                        <button id="view-validados-btn" class="filter-pill" data-view="validados"
+                        <button id="view-validados-btn" class="filter-pill" data_view="validados"
                             style="--pill-active-bg:#2563eb;--pill-active-color:#fff" title="Validados no WinThor">
                             <i class="fa-solid fa-badge-check"></i> Validados</button>
                     </div>
@@ -1936,17 +1936,17 @@
         const _startM = `${_y}-${_m}-01`;
         const _endM = new Date(_y, _now.getMonth() + 1, 0).toISOString().substring(0, 10);
 
-        const state = {
-            totalRows: 0, isLoading: false, searchTerm: '', searchColumn: 'chavecte',
-            lastFetchedData: [], viewMode: 'divergente',
-            selectedFiliais: [], selectedStatus: [], selectedEspecies: [],
-            filterDtentInicio: _startM, filterDtentFim: _endM,
-            currentPage: 1, totalPages: 1,
-            verificandoIds: new Set(),
-            verificandoTomadorIds: new Set(),
-            selectedIds: new Set(),
-            selectionMode: false
-        };
+const state = {
+    totalRows: 0, isLoading: false, searchTerm: '', searchColumn: 'chavecte',
+    lastFetchedData: [], viewMode: 'sem_xml',
+    selectedFiliais: [], selectedStatus: [], selectedEspecies: [],
+    filterDtentInicio: _startM, filterDtentFim: _endM,
+    currentPage: 1, totalPages: 1,
+    verificandoIds: new Set(),
+    verificandoTomadorIds: new Set(),
+    selectedIds: new Set(),
+    selectionMode: false
+};
 
         // Dados do Usuário logado (via Supabase Auth, igual sistema.html)
         let currentUserData = { nome: 'Usuário Padrão', email: '' };
@@ -3191,13 +3191,13 @@
                 const especies = [...new Set(allData.map(d => d.especie).filter(Boolean))].sort();
 
                 fillList('filial-filter-list', filiais.length ? filiais : []);
-                fillList('status-filter-list', statuses.length ? statuses : ['OK', 'Sem XML', 'Divergente', 'Não Encontrado no Sieg', 'Tomador Divergente', 'Resolvido', 'Validado']);
+                fillList('status-filter-list', statuses.length ? statuses : ['Sem XML', 'OK', 'Divergente', 'Não Encontrado no Sieg', 'Tomador Divergente', 'Resolvido', 'Validado']);
                 fillList('especie-filter-list', especies.length ? especies : ['CT', 'NF']);
             } catch (err) {
                 console.error('Erro ao buscar filtros dinamicamente:', err);
                 const fillList = (id, vals) => document.getElementById(id).innerHTML = vals.map(v => `<label class="flex items-center px-2 py-1 cursor-pointer hover:bg-gray-100 rounded text-sm"><input type="checkbox" data-value="${v}" class="mr-2"><span>${v}</span></label>`).join('');
                 fillList('filial-filter-list', []);
-                fillList('status-filter-list', ['OK', 'Sem XML', 'Divergente', 'Não Encontrado no Sieg', 'Tomador Divergente', 'Resolvido', 'Validado']);
+                fillList('status-filter-list', ['Sem XML', 'OK', 'Divergente', 'Não Encontrado no Sieg', 'Tomador Divergente', 'Resolvido', 'Validado']);
                 fillList('especie-filter-list', ['CT', 'NF']);
             }
         };
@@ -3831,6 +3831,13 @@
                 unselectViewPills(); e.target.classList.add('active', 'text-cyan-600'); fetchData();
             });
 
+            // Initialize view mode to Sem XML on load
+            unselectViewPills();
+            document.getElementById('view-sem-xml-btn')?.classList.add('active', 'text-yellow-600');
+            state.viewMode = 'sem_xml';
+            state.currentPage = 1;
+            fetchData();
+
             // Sidebar and Modals
             const toggleShow = (id, show) => { document.getElementById(id).classList.toggle('open', show); };
 
@@ -3868,6 +3875,8 @@
                 toggleShow('filters-sidebar', false); toggleShow('sidebar-overlay', false);
                 fetchData();
             });
+
+            
 
             // Pagination
             document.getElementById('page-first').addEventListener('click', () => goToPage(1));
