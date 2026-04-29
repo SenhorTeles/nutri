@@ -2543,10 +2543,10 @@ const state = {
                     const isDivergenteCb = item.status === 'Divergente' || item.status === 'Não Encontrado no Sieg';
                     const isTotalmenteValidada = item.status === 'Totalmente Validada';
                     const isVerificandoTomadorRow = state.verificandoTomadorIds.has(item.id);
-                    return `<tr class="cursor-pointer ${(isVerificando || isVerificandoTomadorRow) ? 'verificando-row' : ''} ${isSelected ? 'bg-blue-50' : ''}" data-id="${item.id}" ondblclick="openEditModal(${item.id})">
+                    return `<tr class="cursor-pointer ${(isVerificando || isVerificandoTomadorRow) ? 'verificando-row' : ''} ${isSelected ? 'bg-blue-50' : ''}" data-id="${item.id}" onclick="openEditModal(${item.id})">
                                <td class="selection-col" onclick="event.stopPropagation()"><input type="checkbox" class="row-checkbox" data-id="${item.id}" ${isSelected ? 'checked' : ''} ${isValidado || isDivergenteCb || isTotalmenteValidada ? 'disabled' : ''}></td>
                                ${tds}
-                               <td class="text-center" style="white-space:nowrap">${acoesHtml}</td>
+                               <td class="text-center" style="white-space:nowrap" onclick="event.stopPropagation()">${acoesHtml}</td>
                             </tr>`;
                 }).join('');
             }
