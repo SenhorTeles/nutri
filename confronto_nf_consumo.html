@@ -1704,7 +1704,7 @@
                         <h3 class="form-section-title">
                             <div><i class="fa-solid fa-scale-balanced"></i>Valores</div>
                         </h3>
-                        <div class="grid grid-cols-2 gap-2">
+                        <div class="grid grid-cols-2 gap-2 mt-2">
                             <div><label class="block text-xs font-medium mb-1">Vlr. Total (WinThor)</label><input
                                     type="text" name="vltotal_banco" class="w-full form-input" readonly></div>
                             <div><label class="block text-xs font-medium mb-1">Vlr. Total (XML)</label><input
@@ -1713,6 +1713,14 @@
                                     type="text" name="vlicms_banco" class="w-full form-input" readonly></div>
                             <div><label class="block text-xs font-medium mb-1">Vlr. ICMS (XML)</label><input type="text"
                                     name="vlicms_xml" class="w-full form-input" readonly></div>
+                            <div><label class="block text-xs font-medium mb-1">Vlr. PIS (WinThor)</label><input
+                                    type="text" name="vlpis_banco" class="w-full form-input" readonly></div>
+                            <div><label class="block text-xs font-medium mb-1">Vlr. PIS (XML)</label><input type="text"
+                                    name="vlpis_xml" class="w-full form-input" readonly></div>
+                            <div><label class="block text-xs font-medium mb-1">Vlr. COFINS (WinThor)</label><input
+                                    type="text" name="vlcofins_banco" class="w-full form-input" readonly></div>
+                            <div><label class="block text-xs font-medium mb-1">Vlr. COFINS (XML)</label><input type="text"
+                                    name="vlcofins_xml" class="w-full form-input" readonly></div>
                         </div>
                     </div>
                 </div>
@@ -1976,9 +1984,11 @@ const state = {
             dtent: 'Dt Entrada',
             vltotal_banco: 'Total (WinThor)', vltotal_xml: 'Total (XML)',
             vlicms_banco: 'ICMS (WinThor)', vlicms_xml: 'ICMS (XML)',
+            vlpis_banco: 'PIS (WinThor)', vlpis_xml: 'PIS (XML)',
+            vlcofins_banco: 'COFINS (WinThor)', vlcofins_xml: 'COFINS (XML)',
             chavecte: 'Chave NF', status: 'Status', obs: 'Observação'
         };
-        const VISIBLE_COLUMNS = ['created_at', 'codfilial', 'numnota', 'modelo', 'serie', 'especie', 'cfop', 'dtent', 'vltotal_banco', 'vltotal_xml', 'vlicms_banco', 'vlicms_xml', 'status'];
+        const VISIBLE_COLUMNS = ['created_at', 'codfilial', 'numnota', 'modelo', 'serie', 'especie', 'cfop', 'dtent', 'vltotal_banco', 'vltotal_xml', 'vlicms_banco', 'vlicms_xml', 'vlpis_banco', 'vlpis_xml', 'vlcofins_banco', 'vlcofins_xml', 'status'];
         const SEARCH_COLS = { 'chavecte': 'Chave NF', 'numnota': 'Nº Nota', 'numtransent': 'Nº Trans Ent', 'codfilial': 'Filial', 'nsr': 'NSR' };
 
         const formatterBRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -2047,7 +2057,7 @@ const state = {
             } else {
                 tbody.innerHTML = itemsToRender.map(item => {
                     // Extrair dados do XML quando não há WinThor (sem numtransent)
-                    let xmlParsed = { vltotal_xml: null, vlicms_xml: null, serie: null, modelo: null, especie: null };
+                    let xmlParsed = { vltotal_xml: null, vlicms_xml: null, vlpis_xml: null, vlcofins_xml: null, serie: null, modelo: null, especie: null };
                     if (!item.numtransent && item.xml_doc && item.xml_doc.trim()) {
                         try {
                             const cleanXml = item.xml_doc.replace(/xmlns=".*?"/g, "").replace(/cte:/g, "").replace(/nfe:/g, "");
@@ -2056,8 +2066,10 @@ const state = {
                             const xv = (sel) => { const el = xdoc.querySelector(sel); return el ? el.textContent.trim() : ''; };
 
                             if (xdoc.querySelector('infNFe')) {
-                                xmlParsed.vltotal_xml = parseFloat(xv('ICMSTot > vNF')) || null;
-                                xmlParsed.vlicms_xml = parseFloat(xv('ICMSTot > vICMS')) || null;
+                                xmlParsed.vltotal_xml = parseFloat(xv('ICMSTot > vNF') || xv('vTPrest')) || null;
+                                xmlParsed.vlicms_xml = parseFloat(xv('ICMSTot > vICMS') || xv('vICMS')) || null;
+                                xmlParsed.vlpis_xml = parseFloat(xv('vPIS')) || null;
+                                xmlParsed.vlcofins_xml = parseFloat(xv('vCOFINS')) || null;
                                 xmlParsed.serie = xv('ide > serie') || null;
                                 xmlParsed.modelo = xv('ide > mod') || null;
                                 xmlParsed.especie = 'NF';
@@ -2068,8 +2080,12 @@ const state = {
                     let parsedVals = {
                         vltotal_banco: item.vltotal,
                         vlicms_banco: item.vlicms,
+                        vlpis_banco: item.vlpis,
+                        vlcofins_banco: item.vlcofins,
                         vltotal_xml: (item.status === 'Sem XML') ? null : ((item.vltotal_xml !== null && item.vltotal_xml !== undefined && item.vltotal_xml !== 0) ? item.vltotal_xml : (xmlParsed.vltotal_xml || item.vltotal)),
                         vlicms_xml: (item.status === 'Sem XML') ? null : ((item.vlicms_xml !== null && item.vlicms_xml !== undefined && item.vlicms_xml !== 0) ? item.vlicms_xml : (xmlParsed.vlicms_xml || item.vlicms)),
+                        vlpis_xml: (item.status === 'Sem XML') ? null : ((item.vlpis_xml !== null && item.vlpis_xml !== undefined && item.vlpis_xml !== 0) ? item.vlpis_xml : (xmlParsed.vlpis_xml || item.vlpis)),
+                        vlcofins_xml: (item.status === 'Sem XML') ? null : ((item.vlcofins_xml !== null && item.vlcofins_xml !== undefined && item.vlcofins_xml !== 0) ? item.vlcofins_xml : (xmlParsed.vlcofins_xml || item.vlcofins)),
                         serie: item.serie || xmlParsed.serie,
                         modelo: item.modelo || xmlParsed.modelo,
                         especie: item.especie || xmlParsed.especie
@@ -2089,8 +2105,8 @@ const state = {
                         let val = item[col];
                         if (parsedVals[col] !== undefined) val = parsedVals[col];
 
-                        if (['vltotal_banco', 'vlicms_banco'].includes(col)) val = formatBRL(val);
-                        else if (['vltotal_xml', 'vlicms_xml'].includes(col)) val = val !== null ? formatBRL(val) : '-';
+                        if (['vltotal_banco', 'vlicms_banco', 'vlpis_banco', 'vlcofins_banco'].includes(col)) val = formatBRL(val);
+                        else if (['vltotal_xml', 'vlicms_xml', 'vlpis_xml', 'vlcofins_xml'].includes(col)) val = val !== null ? formatBRL(val) : '-';
                         else if (col === 'created_at' || col === 'dtent') val = formatDate(val);
                         else if (col === 'cfop' && !val && item['codfiscal']) val = item['codfiscal']; // Fallback automático codfiscal -> cfop
                         else if (col === 'status') {
@@ -2300,13 +2316,20 @@ const state = {
             let parsedData = { ...data };
             parsedData.vltotal_banco = formatBRL(data.vltotal);
             parsedData.vlicms_banco = formatBRL(data.vlicms);
+            parsedData.vlpis_banco = formatBRL(data.vlpis);
+            parsedData.vlcofins_banco = formatBRL(data.vlcofins);
             
             if (data.status === 'Sem XML') {
                 parsedData.vltotal_xml = '-';
                 parsedData.vlicms_xml = '-';
+                parsedData.vlpis_xml = '-';
+                parsedData.vlcofins_xml = '-';
             } else {
                 let vltotal_xml = (data.vltotal_xml !== null && data.vltotal_xml !== undefined && data.vltotal_xml !== 0) ? data.vltotal_xml : data.vltotal;
                 let vlicms_xml = (data.vlicms_xml !== null && data.vlicms_xml !== undefined && data.vlicms_xml !== 0) ? data.vlicms_xml : data.vlicms;
+                let vlpis_xml = (data.vlpis_xml !== null && data.vlpis_xml !== undefined && data.vlpis_xml !== 0) ? data.vlpis_xml : data.vlpis;
+                let vlcofins_xml = (data.vlcofins_xml !== null && data.vlcofins_xml !== undefined && data.vlcofins_xml !== 0) ? data.vlcofins_xml : data.vlcofins;
+                
                 if (data.obs) {
                     const totMatch = data.obs.match(/TOTAL[^(]*\(DB:\s*[^|]+\|\s*XML:\s*([^)]+)\)/);
                     if (totMatch) vltotal_xml = parseFloat(totMatch[1]);
@@ -2315,6 +2338,8 @@ const state = {
                 }
                 parsedData.vltotal_xml = formatBRL(vltotal_xml);
                 parsedData.vlicms_xml = formatBRL(vlicms_xml);
+                parsedData.vlpis_xml = formatBRL(vlpis_xml);
+                parsedData.vlcofins_xml = formatBRL(vlcofins_xml);
             }
 
             parsedData.chave_winthor = data.chave_winthor || data.chavecte || data.chavenfe || '';
@@ -4565,6 +4590,14 @@ const state = {
                                 }
                             }
 
+                            let vlpisXml = 0;
+                            const vPIS = xmlDoc.querySelector('vPIS');
+                            if (vPIS) vlpisXml = parseFloat(vPIS.textContent) || 0;
+
+                            let vlcofinsXml = 0;
+                            const vCOFINS = xmlDoc.querySelector('vCOFINS');
+                            if (vCOFINS) vlcofinsXml = parseFloat(vCOFINS.textContent) || 0;
+
                             let cnpjTomador = '', tomaVal = null;
                             if (infNFe) {
                                 const tdest = xmlDoc.querySelector('dest > CNPJ') || xmlDoc.querySelector('dest > CPF');
@@ -4609,7 +4642,7 @@ const state = {
                                 }
                             }
 
-                            parsedFiles.push({ chaveAcesso, xmlText, vltotalXml, vlicmsXml, cnpjTomador, cnpjRemetente, numNotaXml, serieXml, modXml, especieXml, filialDetectada, dhEmiXml, cfopXml, fileName: file.name });
+                            parsedFiles.push({ chaveAcesso, xmlText, vltotalXml, vlicmsXml, vlpisXml, vlcofinsXml, cnpjTomador, cnpjRemetente, numNotaXml, serieXml, modXml, especieXml, filialDetectada, dhEmiXml, cfopXml, fileName: file.name });
                         } catch (fileErr) {
                             console.error(`Erro ao parsear ${file.name}:`, fileErr);
                         }
@@ -4676,7 +4709,7 @@ const state = {
                             const cnpjFilialSalvar = pf.filialDetectada ? cnpjFilialMap[pf.filialDetectada] : null;
 
                             const { error: updErr } = await supabase.from(TABLE_NAME).update({
-                                xml_doc: pf.xmlText, vltotal_xml: pf.vltotalXml, vlicms_xml: pf.vlicmsXml,
+                                xml_doc: pf.xmlText, vltotal_xml: pf.vltotalXml, vlicms_xml: pf.vlicmsXml, vlpis_xml: pf.vlpisXml, vlcofins_xml: pf.vlcofinsXml,
                                 cnpj_tomador: pf.cnpjTomador, cnpj_remetente: pf.cnpjRemetente,
                                 chave_xml: pf.chaveAcesso, status: novoStatus, obs: obs.join(' | '),
                                 numnota: pf.numNotaXml, serie: pf.serieXml, modelo: pf.modXml, especie: pf.especieXml,
@@ -4697,7 +4730,7 @@ const state = {
 
                             const { error: insErr } = await supabase.from(TABLE_NAME).insert([{
                                 chavecte: pf.chaveAcesso, chave_xml: pf.chaveAcesso,
-                                xml_doc: pf.xmlText, vltotal_xml: pf.vltotalXml, vlicms_xml: pf.vlicmsXml,
+                                xml_doc: pf.xmlText, vltotal_xml: pf.vltotalXml, vlicms_xml: pf.vlicmsXml, vlpis_xml: pf.vlpisXml, vlcofins_xml: pf.vlcofinsXml,
                                 cnpj_tomador: pf.cnpjTomador, cnpj_remetente: pf.cnpjRemetente,
                                 numnota: pf.numNotaXml, serie: pf.serieXml, modelo: pf.modXml, especie: pf.especieXml,
                                 codfilial: pf.filialDetectada, cnpj_filial: cnpjFilialIns,
