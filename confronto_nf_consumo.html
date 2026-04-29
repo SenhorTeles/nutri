@@ -4435,20 +4435,33 @@ const state = {
                     // Enviar para fila de importação
                     let countOk = 0;
                     for (const item of naoImportados) {
-                        await supabase.from(TABLE_NAME).update({ status: 'Aguardando Robo', obs: 'Aguardando robo processar...' }).eq('id', item.id);
-                        if (item.chave_xml) {
-                            await supabase.from('busca_isolada_queue').insert([{
-                                chavecte: item.chave_xml,
-                                status: 'Pendente',
-                                user_nome: currentUserData?.nome || 'Anônimo',
-                                user_email: currentUserData?.email || ''
-                            }]);
-                        }
+                        state.verificandoIds.add(item.id);
+                        await supabase.from(TABLE_NAME).update({ status: 'Aguardando Robo', obs: 'Aguardando o robo processar a importacao...' }).eq('id', item.id);
+                        
+                        // Não precisa inserir na busca_isolada_queue se é pra importar no Winthor
                         countOk++;
+
+                        // Polling para cada item, igual ao botão individual
+                        const pollId = item.id;
+                        const pollImport = setInterval(async () => {
+                            try {
+                                const { data: pollData } = await supabase.from(TABLE_NAME).select('status, obs, numtransent, codfornec, fornecedor, vltotal, codfilial').eq('id', pollId).single();
+                                if (pollData && pollData.status !== 'Aguardando Robo') {
+                                    clearInterval(pollImport);
+                                    state.verificandoIds.delete(pollId);
+                                    if (pollData.status === 'OK' || pollData.status === 'Sem XML') {
+                                        showToast(`✅ NF Importada! Trans=${pollData.numtransent || '?'}`, 'success');
+                                    } else if (pollData.status === 'Erro Import' || pollData.status === 'Erro Importação') {
+                                        showToast(`❌ Erro: ${pollData.obs || 'Desconhecido'}`, 'error');
+                                    }
+                                    await fetchData(false);
+                                }
+                            } catch(e) {}
+                        }, 2000);
                     }
 
-                    showToast(`${countOk} notas enviadas para importação!`, 'success');
-                    fetchData();
+                    renderTable();
+                    showToast(`${countOk} notas enviadas para importação... Aguardando robô!`, 'success');
 
                 } catch (err) {
                     console.error(err);
