@@ -31,29 +31,31 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root {
-            --color-bg: #f8f9fa;
+            --color-bg: #f1f5f9;
             --color-surface: #ffffff;
             --color-surface-hover: #fdf8f0;
             --color-surface-active: #faecd4;
-            --color-border: #e5e7eb;
-            --color-text-primary: #111827;
-            --color-text-secondary: #6b7280;
-            --color-text-disabled: #9ca3af;
+            --color-border: #e2e8f0;
+            --color-text-primary: #0f172a;
+            --color-text-secondary: #64748b;
+            --color-text-disabled: #94a3b8;
             --color-primary: #b8860b;
             --color-primary-hover: #9a7209;
             --color-primary-focus-ring: rgba(184, 134, 11, 0.4);
             --color-primary-text: #ffffff;
-            --scrollbar-thumb: #d1d5db;
-            --scrollbar-thumb-hover: #9ca3af;
+            --scrollbar-thumb: #cbd5e1;
+            --scrollbar-thumb-hover: #94a3b8;
             --scrollbar-track: transparent;
-            --table-row-striped-bg: #f9fafb;
-            --table-row-hover-bg: #faecd4;
+            --table-row-striped-bg: #f8fafc;
+            --table-row-hover-bg: #fef3c7;
             --color-status-finalizado-bg: #dcfce7;
             --color-status-finalizado-text: #166534;
             --color-status-aguardando-bg: #fee2e2;
             --color-status-aguardando-text: #991b1b;
             --color-status-updated-today-bg: #bfdbfe;
             --color-status-updated-today-text: #075985;
+            --header-gradient-start: #44311e;
+            --header-gradient-end: #7c5b07;
         }
 
         html[data-theme="dark"] {
@@ -75,6 +77,8 @@
             --color-status-aguardando-text: #fee2e2;
             --color-status-updated-today-bg: #0c4a6e;
             --color-status-updated-today-text: #e0f2fe;
+            --header-gradient-start: #1c1917;
+            --header-gradient-end: #44311e;
         }
 
         html,
@@ -255,7 +259,7 @@
             flex-grow: 1;
         }
 
-        /* --- REQ 1 & 2: Redução de fontes e inputs --- */
+        /* --- REDESIGN: Estilos base de Form Inputs e Buttons --- */
         .form-input,
         .date-input,
         .select-filter {
@@ -263,11 +267,10 @@
             border: 1px solid var(--color-border);
             color: var(--color-text-primary);
             border-radius: 0.5rem;
-            transition: border-color 0.2s, box-shadow 0.2s;
+            transition: all 0.2s ease;
             font-size: 0.8rem;
-            /* Reduzido de 0.875rem */
-            padding: 0.35rem 0.6rem;
-            /* Reduzido de 0.4rem 0.6rem */
+            padding: 0.4rem 0.6rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02) inset;
         }
 
         .form-input:focus,
@@ -276,55 +279,67 @@
             border-color: var(--color-primary) !important;
             box-shadow: 0 0 0 3px var(--color-primary-focus-ring) !important;
             outline: none;
+            background-color: #fff;
         }
 
         .form-input:read-only,
         .form-input:disabled {
-            background-color: #f3f4f6;
+            background-color: #f8fafc;
+            color: var(--color-text-secondary);
+            border-color: #e2e8f0;
             cursor: not-allowed;
+            box-shadow: none;
         }
 
         html[data-theme="dark"] .form-input:read-only,
         html[data-theme="dark"] .form-input:disabled {
-            background-color: #374151;
+            background-color: #292524;
+            border-color: #3d2e0a;
         }
 
         .form-input.is-invalid {
             border-color: #ef4444;
+            background-color: #fef2f2;
         }
 
-        /* --- REQ 1 & 2: Redução de botões --- */
+        /* --- REDESIGN: Botões --- */
         .btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            padding: 0.35rem 0.7rem;
-            /* Reduzido de 0.4rem 0.8rem */
+            padding: 0.4rem 0.8rem;
             font-weight: 600;
             border-radius: 0.5rem;
             border: 1px solid transparent;
-            transition: all 0.2s;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             cursor: pointer;
             font-size: 0.8rem;
-            /* Reduzido de 0.875rem */
+            letter-spacing: 0.01em;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
         }
 
         .btn-sm {
-            padding: 0.25rem 0.5rem;
+            padding: 0.3rem 0.6rem;
             font-size: 0.75rem;
-            border-radius: 0.375rem;
-            height: 28px;
+            border-radius: 0.4rem;
+            height: auto;
+            min-height: 28px;
         }
 
         .btn-secondary {
             background-color: var(--color-surface);
             color: var(--color-text-primary);
             border-color: var(--color-border);
-            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
         }
 
         .btn-secondary:hover {
             background-color: var(--table-row-hover-bg);
+            border-color: #cbd5e1;
+            color: #0f172a;
         }
 
         .btn-secondary.active {
@@ -334,28 +349,37 @@
         }
 
         .btn-secondary:disabled {
-            background-color: var(--color-surface);
+            background-color: var(--color-bg);
             color: var(--color-text-disabled);
+            border-color: var(--color-border);
             cursor: not-allowed;
-            opacity: 0.6;
+            box-shadow: none;
+            opacity: 0.7;
         }
 
         .btn-primary {
             background-color: var(--color-primary);
             color: var(--color-primary-text);
+            border: 1px solid rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(184, 134, 11, 0.2);
         }
 
         .btn-primary:hover {
             background-color: var(--color-primary-hover);
+            box-shadow: 0 4px 6px rgba(184, 134, 11, 0.3);
+            transform: translateY(-1px);
         }
 
         .btn-danger {
-            background-color: #dc2626;
+            background-color: #ef4444;
             color: white;
+            border-color: rgba(0,0,0,0.1);
         }
 
         .btn-danger:hover {
-            background-color: #b91c1c;
+            background-color: #dc2626;
+            box-shadow: 0 4px 6px rgba(239, 68, 68, 0.3);
+            transform: translateY(-1px);
         }
 
         .data-table-wrapper {
@@ -373,23 +397,22 @@
             position: sticky;
             top: 0;
             z-index: 10;
-            background-color: #212B36;
+            background-color: var(--header-gradient-start);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
-        /* --- REQ 1 & 2: Redução cabeçalho da tabela --- */
+        /* --- REDESIGN: Estilos premium para a tabela --- */
         .data-table th {
             color: #ffffff;
             text-align: left;
             vertical-align: middle;
-            font-size: 0.7rem;
-            /* Reduzido de 0.75rem */
-            font-weight: 500;
+            font-size: 0.72rem;
+            font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
-            padding: 0.5rem 0.75rem;
-            /* Reduzido de 0.6rem 0.75rem */
+            letter-spacing: 0.04em;
+            padding: 0.6rem 0.75rem;
             white-space: nowrap;
-            border-bottom: 1px solid #374151;
+            border-bottom: none;
             user-select: none;
             position: relative;
         }
@@ -402,7 +425,7 @@
         }
 
         .data-table th:hover {
-            background-color: #4a5568;
+            background-color: rgba(255, 255, 255, 0.05);
         }
 
         .data-table th .sort-icon {
@@ -505,11 +528,12 @@
         .sidebar-overlay {
             position: fixed;
             inset: 0;
-            background-color: rgba(0, 0, 0, 0.5);
+            background-color: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(2px);
             z-index: 40;
             opacity: 0;
             visibility: hidden;
-            transition: opacity 0.3s, visibility 0.3s;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
         }
 
         .modal-overlay.open,
@@ -522,48 +546,61 @@
             position: fixed;
             top: 50%;
             left: 50%;
-            transform: translate(-50%, -50%);
+            transform: translate(-50%, -48%) scale(0.95);
             background-color: var(--color-surface);
             border-radius: 1rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, .1);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
             z-index: 50;
             width: 90%;
             max-height: 90vh;
             display: none;
             flex-direction: column;
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .modal-container.open {
             display: flex;
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
         }
 
         .modal-container-lg {
             max-width: 1024px;
         }
 
-        /* --- REQ 1 & 2: Redução padding do modal --- */
+        /* --- REDESIGN: Modal Header, Body e Footer Premium --- */
         .modal-header {
-            padding: 0.75rem 1.25rem;
+            padding: 1rem 1.5rem;
             border-bottom: 1px solid var(--color-border);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            background-color: var(--table-row-striped-bg);
+            background: linear-gradient(to right, var(--color-surface), var(--table-row-hover-bg));
+            border-radius: 1rem 1rem 0 0;
+        }
+
+        .modal-header h3 {
+            font-weight: 700;
+            color: var(--color-text-primary);
+            font-size: 1.1rem;
         }
 
         .modal-body {
-            padding: 1.25rem;
+            padding: 1.5rem;
             overflow-y: auto;
+            background-color: var(--color-bg);
         }
 
         .modal-footer {
-            padding: 0.75rem 1.25rem;
+            padding: 1rem 1.5rem;
             border-top: 1px solid var(--color-border);
             display: flex;
             align-items: center;
             justify-content: flex-start;
             gap: 0.75rem;
-            background-color: var(--table-row-striped-bg);
+            background-color: var(--color-surface);
+            border-radius: 0 0 1rem 1rem;
         }
 
         .form-modal-container {
@@ -576,11 +613,16 @@
             background-color: var(--color-surface);
             z-index: 50;
             transform: translateX(100%);
-            transition: transform 0.3s ease-in-out, width 0.3s ease-in-out;
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
             display: flex;
             flex-direction: column;
             border-left: 1px solid var(--color-border);
-            border-radius: 0;
+            box-shadow: -10px 0 25px rgba(0, 0, 0, 0.08);
+            border-radius: 1.5rem 0 0 1.5rem; /* Borda arredondada suave na esquerda */
+        }
+
+        .form-modal-container .modal-header {
+            border-radius: 1.5rem 0 0 0;
         }
 
         .form-modal-container.open {
@@ -778,34 +820,40 @@
             /* Reduzido de 8px */
         }
 
-        /* --- REQ 1 & 2: Redução padding da seção do form --- */
+        /* --- REDESIGN: Form Sections do Modal --- */
         .form-section {
-            background-color: var(--table-row-striped-bg);
-            padding: 1rem;
-            /* Reduzido de 1.25rem */
-            border-radius: 0.75rem;
+            background-color: var(--color-surface);
+            padding: 1.25rem;
+            border-radius: 0.875rem;
             margin-bottom: 1.25rem;
-            /* Reduzido de 1.5rem */
             border: 1px solid var(--color-border);
+            box-shadow: 0 2px 4px -2px rgba(0, 0, 0, 0.02), 0 4px 6px -1px rgba(0, 0, 0, 0.04);
+            transition: box-shadow 0.2s, transform 0.2s;
         }
 
-        /* --- REQ 1 & 2: Redução título da seção do form --- */
+        .form-section:hover {
+            box-shadow: 0 4px 6px -2px rgba(0, 0, 0, 0.04), 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+        }
+
         .form-section-title {
-            font-size: 0.9rem;
-            /* Reduzido de 1rem */
-            font-weight: 600;
+            font-size: 0.95rem;
+            font-weight: 700;
             color: var(--color-text-primary);
-            margin-bottom: 1rem;
-            /* Reduzido de 1.5rem */
+            margin-bottom: 1.25rem;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--color-border);
         }
 
         .form-section-title i {
             color: var(--color-primary);
             margin-right: 0.5rem;
-            font-size: 0.8rem;
+            font-size: 0.9rem;
+            background: rgba(184, 134, 11, 0.1);
+            padding: 0.4rem;
+            border-radius: 0.375rem;
         }
 
         .container-card {
@@ -1483,6 +1531,333 @@
         .filter-pill i {
             font-size: 0.875rem;
         }
+
+        /* ═══════════════════════════════════════════════════ */
+        /* ══  REDESIGN: Page Header com Identidade Visual  ══ */
+        /* ═══════════════════════════════════════════════════ */
+
+        .page-header-bar {
+            background: linear-gradient(135deg, var(--header-gradient-start) 0%, var(--header-gradient-end) 100%);
+            border-radius: 0.875rem;
+            padding: 0.75rem 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            box-shadow: 0 4px 15px -3px rgba(124, 91, 7, 0.25);
+            position: relative;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .page-header-bar::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px);
+            background-size: 20px 20px;
+            pointer-events: none;
+        }
+
+        .page-header-left {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            z-index: 1;
+        }
+
+        .page-header-logo {
+            width: 36px;
+            height: 36px;
+            object-fit: contain;
+            border-radius: 0.5rem;
+            background: rgba(255,255,255,0.12);
+            padding: 4px;
+            flex-shrink: 0;
+        }
+
+        .page-header-title {
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            line-height: 1.2;
+        }
+
+        .page-header-subtitle {
+            color: rgba(255,255,255,0.6);
+            font-size: 0.7rem;
+            font-weight: 400;
+            letter-spacing: 0.02em;
+        }
+
+        .page-header-right {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            z-index: 1;
+        }
+
+        .page-header-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 0.25rem 0.6rem;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 2rem;
+            color: rgba(255,255,255,0.85);
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            backdrop-filter: blur(4px);
+        }
+
+        .page-header-badge .pulse-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #fbbf24;
+            animation: pulse 2s infinite ease-in-out;
+        }
+
+        @media (max-width: 640px) {
+            .page-header-bar {
+                border-radius: 0.75rem;
+                padding: 0.625rem 1rem;
+            }
+            .page-header-title { font-size: 0.875rem; }
+            .page-header-subtitle { display: none; }
+            .page-header-badge span { display: none; }
+            .page-header-logo { width: 30px; height: 30px; }
+        }
+
+        /* ═══════════════════════════════════════════════════ */
+        /* ══  REDESIGN: Pills Scrolláveis no Mobile        ══ */
+        /* ═══════════════════════════════════════════════════ */
+
+        .pills-scroll-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            flex-shrink: 0;
+        }
+
+        .pills-scroll-container {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            padding-bottom: 2px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .pills-scroll-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        .pills-scroll-container .filter-pill {
+            flex-shrink: 0;
+        }
+
+        /* ═══════════════════════════════════════════════════ */
+        /* ══  REDESIGN: Toolbar Responsiva                 ══ */
+        /* ═══════════════════════════════════════════════════ */
+
+        .toolbar-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            flex-shrink: 0;
+            background-color: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 0.75rem;
+            padding: 0.5rem 0.75rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+
+        .toolbar-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .toolbar-separator {
+            width: 1px;
+            height: 20px;
+            background-color: var(--color-border);
+            flex-shrink: 0;
+        }
+
+        .toolbar-date-wrapper {
+            display: flex;
+            align-items: center;
+            background-color: var(--color-bg);
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            overflow: hidden;
+            font-size: 0.7rem;
+            transition: border-color 0.2s;
+        }
+
+        .toolbar-date-wrapper:focus-within {
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 2px var(--color-primary-focus-ring);
+        }
+
+        .toolbar-date-wrapper span {
+            padding: 0 6px;
+            color: var(--color-text-disabled);
+            font-weight: 600;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+        }
+
+        .toolbar-date-wrapper input[type="date"] {
+            background: transparent;
+            border: none;
+            outline: none;
+            padding: 0.3rem 0.25rem;
+            font-size: 0.7rem;
+            color: var(--color-text-primary);
+            cursor: pointer;
+            width: 110px;
+        }
+
+        .toolbar-date-wrapper .date-divider {
+            width: 1px;
+            height: 18px;
+            background-color: var(--color-border);
+        }
+
+        .toolbar-search {
+            display: flex;
+            align-items: center;
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            background-color: var(--color-bg);
+            overflow: hidden;
+            flex: 1;
+            min-width: 140px;
+            max-width: 280px;
+            transition: border-color 0.2s;
+        }
+
+        .toolbar-search:focus-within {
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 2px var(--color-primary-focus-ring);
+        }
+
+        .toolbar-search select {
+            padding: 0.3rem 1.25rem 0.3rem 0.5rem;
+            font-size: 0.68rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+            background: transparent;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 24 24'%3E%3Cpath fill='%2394a3b8' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 4px center;
+        }
+
+        .toolbar-search .search-divider {
+            width: 1px;
+            height: 18px;
+            background-color: var(--color-border);
+            flex-shrink: 0;
+        }
+
+        .toolbar-search .search-icon {
+            padding: 0 6px;
+            color: var(--color-text-disabled);
+            font-size: 0.7rem;
+            flex-shrink: 0;
+        }
+
+        .toolbar-search input[type="text"] {
+            flex: 1;
+            border: none;
+            outline: none;
+            background: transparent;
+            padding: 0.3rem 0.5rem 0.3rem 0;
+            font-size: 0.72rem;
+            color: var(--color-text-primary);
+            min-width: 60px;
+        }
+
+        @media (max-width: 768px) {
+            .toolbar-row {
+                padding: 0.4rem 0.5rem;
+                gap: 6px;
+            }
+            .toolbar-search {
+                max-width: none;
+                order: 10;
+                flex-basis: 100%;
+            }
+            .toolbar-date-wrapper {
+                order: 9;
+                flex-basis: 100%;
+            }
+            .toolbar-group.actions-primary {
+                flex-wrap: wrap;
+            }
+            .toolbar-group.actions-primary .btn {
+                font-size: 0.68rem;
+                padding: 0.2rem 0.4rem;
+            }
+        }
+
+        /* ═══════════════════════════════════════════════════ */
+        /* ══  REDESIGN: Content Card Premium               ══ */
+        /* ═══════════════════════════════════════════════════ */
+
+        .content-card {
+            background-color: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 0.875rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.06), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        /* Pagination bar premium */
+        #pagination-bar {
+            background-color: var(--table-row-striped-bg) !important;
+            border-top: 1px solid var(--color-border) !important;
+            border-radius: 0 0 0.875rem 0.875rem;
+        }
+
+        /* ═══════════════════════════════════════════════════ */
+        /* ══  REDESIGN: Empty State Premium                ══ */
+        /* ═══════════════════════════════════════════════════ */
+
+        #table-state-container {
+            padding: 3rem 1rem !important;
+        }
+
+        #no-data-indicator i {
+            font-size: 4rem !important;
+            opacity: 0.3;
+            margin-bottom: 1rem;
+        }
+
+        #no-data-indicator h2 {
+            font-size: 1.125rem !important;
+            font-weight: 600;
+        }
+
     </style>
     <script>
         (function () {
@@ -1568,47 +1943,53 @@
 
     <div id="edit-modal" class="form-modal-container">
         <div class="modal-header">
-            <h2 id="edit-modal-title" class="text-base font-bold">Detalhes do Confronto</h2>
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg flex items-center justify-center text-lg" 
+                     style="background: rgba(184, 134, 11, 0.1); color: var(--color-primary);">
+                    <i class="fa-solid fa-file-invoice"></i>
+                </div>
+                <h2 id="edit-modal-title" class="text-lg font-bold tracking-wide" style="color: var(--color-text-primary);">Detalhes do Confronto</h2>
+            </div>
             <button id="edit-modal-close-btn"
-                class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 text-xl">&times;</button>
+                class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-200 text-gray-500 transition-colors text-xl">&times;</button>
         </div>
         <form id="edit-form" class="flex flex-col flex-grow overflow-hidden">
             <div class="modal-body custom-scrollbar">
 
                 <!-- LINHA 1: Identificação + Partes lado a lado -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
                     <div class="form-section">
                         <h3 class="form-section-title">
                             <div><i class="fa-solid fa-box"></i>Identificação</div>
                         </h3>
-                        <div class="grid grid-cols-3 gap-2">
-                            <div><label class="block text-xs font-medium mb-1">Filial NF</label><input type="text"
+                        <div class="grid grid-cols-3 gap-3">
+                            <div><label class="block text-xs font-semibold text-slate-500 mb-1">Filial NF</label><input type="text"
                                     name="codfilialnf" class="w-full form-input" readonly></div>
-                            <div><label class="block text-xs font-medium mb-1">Filial</label><input type="text"
+                            <div><label class="block text-xs font-semibold text-slate-500 mb-1">Filial</label><input type="text"
                                     name="codfilial" class="w-full form-input" readonly></div>
-                            <div><label class="block text-xs font-medium mb-1">Nº Nota</label><input type="text"
+                            <div><label class="block text-xs font-semibold text-slate-500 mb-1">Nº Nota</label><input type="text"
                                     name="numnota" class="w-full form-input" readonly></div>
                         </div>
-                        <div class="grid grid-cols-3 gap-2 mt-2">
-                            <div><label class="block text-xs font-medium mb-1">Modelo</label><input type="text"
+                        <div class="grid grid-cols-3 gap-3 mt-3">
+                            <div><label class="block text-xs font-semibold text-slate-500 mb-1">Modelo</label><input type="text"
                                     name="modelo" class="w-full form-input" readonly></div>
-                            <div><label class="block text-xs font-medium mb-1">Série</label><input type="text"
+                            <div><label class="block text-xs font-semibold text-slate-500 mb-1">Série</label><input type="text"
                                     name="serie" class="w-full form-input" readonly></div>
-                            <div><label class="block text-xs font-medium mb-1">Espécie</label><input type="text"
+                            <div><label class="block text-xs font-semibold text-slate-500 mb-1">Espécie</label><input type="text"
                                     name="especie" class="w-full form-input" readonly></div>
                         </div>
-                        <div class="grid grid-cols-3 gap-2 mt-2">
-                            <div><label class="block text-xs font-medium mb-1">Nº Trans Ent</label><input type="text"
+                        <div class="grid grid-cols-3 gap-3 mt-3">
+                            <div><label class="block text-xs font-semibold text-slate-500 mb-1">Nº Trans Ent</label><input type="text"
                                     name="numtransent" class="w-full form-input" readonly></div>
-                            <div><label class="block text-xs font-medium mb-1">Data Emissão</label><input type="text"
+                            <div><label class="block text-xs font-semibold text-slate-500 mb-1">Data Emissão</label><input type="text"
                                     name="dtemissao" class="w-full form-input" readonly></div>
-                            <div><label class="block text-xs font-medium mb-1">Data Entrada</label><input type="text"
+                            <div><label class="block text-xs font-semibold text-slate-500 mb-1">Data Entrada</label><input type="text"
                                     name="dtent" class="w-full form-input" readonly></div>
                         </div>
-                        <div class="grid grid-cols-3 gap-2 mt-2">
-                            <div><label class="block text-xs font-medium mb-1">CFOP</label><input type="text"
+                        <div class="grid grid-cols-3 gap-3 mt-3">
+                            <div><label class="block text-xs font-semibold text-slate-500 mb-1">CFOP</label><input type="text"
                                     name="codfiscal" class="w-full form-input" readonly></div>
-                            <div><label class="block text-xs font-medium mb-1">Conferido NF</label><input type="text"
+                            <div><label class="block text-xs font-semibold text-slate-500 mb-1">Conferido NF</label><input type="text"
                                     name="conferido" class="w-full form-input text-center font-bold" readonly></div>
                         </div>
                     </div>
@@ -1617,85 +1998,92 @@
                         <h3 class="form-section-title">
                             <div><i class="fa-solid fa-users"></i>Partes Envolvidas</div>
                         </h3>
-                        <div class="grid grid-cols-1 gap-2">
-                            <div class="grid grid-cols-3 gap-2">
-                                <div><label class="block text-xs font-medium mb-1">Cód. Fornec</label><input type="text"
+                        <div class="flex flex-col gap-3">
+                            <div class="grid grid-cols-3 gap-3">
+                                <div><label class="block text-xs font-semibold text-slate-500 mb-1">Cód. Fornec</label><input type="text"
                                         name="codfornec" class="w-full form-input" readonly></div>
                                 <div class="col-span-2"><label
-                                        class="block text-xs font-medium mb-1">Fornecedor</label><input type="text"
+                                        class="block text-xs font-semibold text-slate-500 mb-1">Fornecedor</label><input type="text"
                                         name="fornecedor" class="w-full form-input" readonly></div>
                             </div>
-                            <div class="grid grid-cols-3 gap-2">
-                                <div><label class="block text-xs font-medium mb-1">CGC (CNPJ/CPF)</label><input
+                            <div class="grid grid-cols-3 gap-3">
+                                <div><label class="block text-xs font-semibold text-slate-500 mb-1">CGC (CNPJ/CPF)</label><input
                                         type="text" name="cgc" class="w-full form-input" readonly></div>
-                                <div><label class="block text-xs font-medium mb-1">CNPJ Remetente</label><input
+                                <div><label class="block text-xs font-semibold text-slate-500 mb-1">CNPJ Remetente</label><input
                                         type="text" name="cnpj_remetente" class="w-full form-input" readonly></div>
-                                <div><label class="block text-xs font-medium mb-1">CNPJ Filial</label><input type="text"
+                                <div><label class="block text-xs font-semibold text-slate-500 mb-1">CNPJ Filial</label><input type="text"
                                         name="cnpj_filial" class="w-full form-input" readonly></div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- BLOCO TRIBUTÁRIO DESTACADO -->
-                <div id="tax-info-block" class="mt-4 rounded-lg overflow-hidden border border-slate-300"
-                    style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%);">
-                    <div class="px-4 py-2 text-white text-xs font-bold uppercase tracking-wider flex items-center gap-2"
-                        style="background:rgba(0,0,0,0.2)">
-                        <i class="fa-solid fa-landmark"></i> Informações Relativas ao Imposto
+                <!-- BLOCOS DE DESTAQUE: TRIBUTAÇÃO E XML -->
+                <div class="grid grid-cols-1 gap-5 mt-5">
+                    
+                    <!-- BLOCO TRIBUTÁRIO DESTACADO -->
+                    <div id="tax-info-block" class="rounded-xl overflow-hidden border border-slate-700 shadow-md transition-all duration-300"
+                        style="background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);">
+                        <div class="px-5 py-3 text-white text-[11px] font-bold uppercase tracking-wider flex items-center gap-2 border-b border-white/10"
+                            style="background:rgba(255,255,255,0.03)">
+                            <i class="fa-solid fa-landmark text-amber-500"></i> Informações Relativas ao Imposto
+                        </div>
+                        <div class="grid grid-cols-2 md:grid-cols-4 divide-x divide-white/10">
+                            <div class="px-5 py-4">
+                                <div class="text-slate-400 text-[10px] font-semibold uppercase tracking-wider">Situação Tributária</div>
+                                <div id="tax-cst" class="text-white text-sm font-bold mt-1.5">-</div>
+                            </div>
+                            <div class="px-5 py-4">
+                                <div class="text-slate-400 text-[10px] font-semibold uppercase tracking-wider">Base de Cálculo</div>
+                                <div id="tax-vbc" class="text-white text-sm font-bold mt-1.5">-</div>
+                            </div>
+                            <div class="px-5 py-4">
+                                <div class="text-slate-400 text-[10px] font-semibold uppercase tracking-wider">Alíq ICMS</div>
+                                <div id="tax-picms" class="text-amber-400 text-sm font-bold mt-1.5">-</div>
+                            </div>
+                            <div class="px-5 py-4">
+                                <div class="text-slate-400 text-[10px] font-semibold uppercase tracking-wider">Valor ICMS</div>
+                                <div id="tax-vicms" class="text-emerald-400 text-sm font-bold mt-1.5">-</div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="grid grid-cols-4 divide-x divide-slate-600">
-                        <div class="px-4 py-3">
-                            <div class="text-slate-400 text-[10px] font-semibold uppercase">Situação Tributária</div>
-                            <div id="tax-cst" class="text-white text-sm font-bold mt-1">-</div>
-                        </div>
-                        <div class="px-4 py-3">
-                            <div class="text-slate-400 text-[10px] font-semibold uppercase">Base de Cálculo</div>
-                            <div id="tax-vbc" class="text-white text-sm font-bold mt-1">-</div>
-                        </div>
-                        <div class="px-4 py-3">
-                            <div class="text-slate-400 text-[10px] font-semibold uppercase">Alíq ICMS</div>
-                            <div id="tax-picms" class="text-amber-400 text-sm font-bold mt-1">-</div>
-                        </div>
-                        <div class="px-4 py-3">
-                            <div class="text-slate-400 text-[10px] font-semibold uppercase">Valor ICMS</div>
-                            <div id="tax-vicms" class="text-emerald-400 text-sm font-bold mt-1">-</div>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- BLOCO DADOS EXTRAÍDOS DO XML NFE (antes da importação WinThor) -->
-                <div id="nfe-preview-block" class="mt-4 rounded-lg overflow-hidden border border-purple-300 hidden" style="background-color: #faf5ff;">
-                    <div class="px-4 py-2 text-purple-800 text-xs font-bold uppercase tracking-wider flex items-center gap-2 border-b border-purple-200" style="background:linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); color: white;">
-                        <i class="fa-solid fa-file-code"></i> Dados Extraídos do XML (NFe / NFC-e)
+                    <!-- BLOCO DADOS EXTRAÍDOS DO XML NFE (antes da importação WinThor) -->
+                    <div id="nfe-preview-block" class="rounded-xl overflow-hidden border border-purple-200 shadow-md hidden transition-all duration-300 bg-white">
+                        <div class="px-5 py-3 text-white text-[11px] font-bold uppercase tracking-wider flex items-center gap-2" 
+                            style="background:linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);">
+                            <i class="fa-solid fa-file-code text-purple-200"></i> Dados Extraídos do XML (NFe / NFC-e)
+                        </div>
+                        <div id="nfe-preview-content" class="p-5 text-sm grid grid-cols-2 md:grid-cols-4 gap-4 bg-purple-50/50">
+                        </div>
                     </div>
-                    <div id="nfe-preview-content" class="p-3 text-xs grid grid-cols-2 md:grid-cols-4 gap-3">
-                    </div>
-                </div>
 
-                <!-- BLOCO PRÉVIA DE IMPORTAÇÃO -->
-                <div id="import-preview-block" class="mt-4 rounded-lg overflow-hidden border border-blue-300 hidden" style="background-color: #eff6ff;">
-                    <div id="import-preview-block-title" class="px-4 py-2 text-blue-800 text-xs font-bold uppercase tracking-wider flex items-center gap-2 border-b border-blue-200">
-                        <i class="fa-solid fa-table-list"></i> Dados Gravados no WinThor
+                    <!-- BLOCO PRÉVIA DE IMPORTAÇÃO -->
+                    <div id="import-preview-block" class="rounded-xl overflow-hidden border border-blue-200 shadow-md hidden transition-all duration-300 bg-white">
+                        <div id="import-preview-block-title" class="px-5 py-3 text-white text-[11px] font-bold uppercase tracking-wider flex items-center gap-2"
+                            style="background:linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">
+                            <i class="fa-solid fa-table-list text-blue-200"></i> Dados Gravados no WinThor
+                        </div>
+                        <div class="p-5 text-sm grid grid-cols-1 md:grid-cols-2 gap-4 bg-blue-50/50" id="import-preview-content">
+                        </div>
                     </div>
-                    <div class="p-3 text-xs grid grid-cols-1 md:grid-cols-2 gap-3" id="import-preview-content">
-                    </div>
+
                 </div>
 
                 <!-- LINHA 2: Validação Tomador + Valores lado a lado -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-5 mt-5">
                     <div class="form-section">
                         <h3 class="form-section-title">
                             <div><i class="fa-solid fa-code-compare"></i>Validação Tomador</div>
                         </h3>
-                        <div class="grid grid-cols-3 gap-2">
-                            <div><label class="block text-xs font-medium mb-1">CNPJ Tomador (XML)</label><input
+                        <div class="grid grid-cols-3 gap-3">
+                            <div><label class="block text-xs font-semibold text-slate-500 mb-1">CNPJ Tomador (XML)</label><input
                                     type="text" name="cnpj_tomador_xml" class="w-full form-input" readonly></div>
-                            <div><label class="block text-xs font-medium mb-1">CNPJ Filial (DB)</label><input
+                            <div><label class="block text-xs font-semibold text-slate-500 mb-1">CNPJ Filial (DB)</label><input
                                     type="text" name="cnpj_filial_db"
-                                    class="w-full form-input border-blue-200 bg-blue-50" readonly>
+                                    class="w-full form-input border-blue-200 bg-blue-50/50 text-blue-900" readonly>
                             </div>
-                            <div><label class="block text-xs font-medium mb-1">Resultado</label><input type="text"
+                            <div><label class="block text-xs font-semibold text-slate-500 mb-1">Resultado</label><input type="text"
                                     name="tomador_validacao" class="w-full form-input font-bold" readonly></div>
                         </div>
                     </div>
@@ -1704,78 +2092,81 @@
                         <h3 class="form-section-title">
                             <div><i class="fa-solid fa-scale-balanced"></i>Valores</div>
                         </h3>
-                        <div class="grid grid-cols-2 gap-2 mt-2">
-                            <div><label class="block text-xs font-medium mb-1">Vlr. Total (WinThor)</label><input
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2">
+                            <div><label class="block text-xs font-semibold text-slate-500 mb-1">Vlr. Total (WinThor)</label><input
                                     type="text" name="vltotal_banco" class="w-full form-input" readonly></div>
-                            <div><label class="block text-xs font-medium mb-1">Vlr. Total (XML)</label><input
+                            <div><label class="block text-xs font-semibold text-slate-500 mb-1">Vlr. Total (XML)</label><input
                                     type="text" name="vltotal_xml" class="w-full form-input" readonly></div>
-                            <div><label class="block text-xs font-medium mb-1">Vlr. ICMS (WinThor)</label><input
+                            <div><label class="block text-xs font-semibold text-slate-500 mb-1">Vlr. ICMS (WinThor)</label><input
                                     type="text" name="vlicms_banco" class="w-full form-input" readonly></div>
-                            <div><label class="block text-xs font-medium mb-1">Vlr. ICMS (XML)</label><input type="text"
+                            <div><label class="block text-xs font-semibold text-slate-500 mb-1">Vlr. ICMS (XML)</label><input type="text"
                                     name="vlicms_xml" class="w-full form-input" readonly></div>
-                            <div><label class="block text-xs font-medium mb-1">Vlr. PIS (WinThor)</label><input
+                            <div><label class="block text-xs font-semibold text-slate-500 mb-1">Vlr. PIS (WinThor)</label><input
                                     type="text" name="vlpis_banco" class="w-full form-input" readonly></div>
-                            <div><label class="block text-xs font-medium mb-1">Vlr. PIS (XML)</label><input type="text"
+                            <div><label class="block text-xs font-semibold text-slate-500 mb-1">Vlr. PIS (XML)</label><input type="text"
                                     name="vlpis_xml" class="w-full form-input" readonly></div>
-                            <div><label class="block text-xs font-medium mb-1">Vlr. COFINS (WinThor)</label><input
+                            <div><label class="block text-xs font-semibold text-slate-500 mb-1">Vlr. COFINS (WinThor)</label><input
                                     type="text" name="vlcofins_banco" class="w-full form-input" readonly></div>
-                            <div><label class="block text-xs font-medium mb-1">Vlr. COFINS (XML)</label><input type="text"
+                            <div><label class="block text-xs font-semibold text-slate-500 mb-1">Vlr. COFINS (XML)</label><input type="text"
                                     name="vlcofins_xml" class="w-full form-input" readonly></div>
                         </div>
                     </div>
                 </div>
 
-                <!-- LINHA 3: Chaves de Acesso -->
-                <div class="form-section mt-4">
-                    <h3 class="form-section-title">
-                        <div><i class="fa-solid fa-key"></i>Chaves de Acesso</div>
-                        <button type="button" id="btn-copy-chave"
-                            class="btn btn-secondary btn-sm text-indigo-600 border-indigo-300 hover:bg-indigo-50 flex items-center gap-1.5"
-                            title="Copiar chave NF para a área de transferência">
-                            <i class="fa-regular fa-clipboard"></i> Copiar Chave
-                        </button>
-                    </h3>
-                    <div class="grid grid-cols-2 gap-2">
-                        <div><label class="block text-xs font-medium mb-1">Chave WinThor</label><input type="text"
-                                name="chave_winthor" class="w-full form-input font-mono text-xs" readonly></div>
-                        <div><label class="block text-xs font-medium mb-1">Chave XML</label><input type="text"
-                                name="chave_xml" class="w-full form-input font-mono text-xs" readonly></div>
+                <!-- LINHA 3: Chaves de Acesso e Status da Análise -->
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-5 mt-5">
+                    <div class="form-section mb-0">
+                        <h3 class="form-section-title">
+                            <div><i class="fa-solid fa-key"></i>Chaves de Acesso</div>
+                            <button type="button" id="btn-copy-chave"
+                                class="btn btn-secondary btn-sm text-indigo-600 border-indigo-200 hover:bg-indigo-50/80 flex items-center gap-1.5"
+                                title="Copiar chave NF para a área de transferência">
+                                <i class="fa-regular fa-clipboard"></i> Copiar Chave
+                            </button>
+                        </h3>
+                        <div class="grid grid-cols-1 gap-3">
+                            <div><label class="block text-xs font-semibold text-slate-500 mb-1">Chave WinThor</label><input type="text"
+                                    name="chave_winthor" class="w-full form-input font-mono text-xs tracking-wider" readonly></div>
+                            <div><label class="block text-xs font-semibold text-slate-500 mb-1">Chave XML</label><input type="text"
+                                    name="chave_xml" class="w-full form-input font-mono text-xs tracking-wider" readonly></div>
+                        </div>
+                    </div>
+
+                    <div class="form-section mb-0">
+                        <div class="form-section-title">
+                            <div><i class="fa-solid fa-comment-dots"></i>Status e Observações</div>
+                            <button type="button" id="btn-view-dacte"
+                                class="btn btn-secondary btn-sm hidden text-blue-600 border-blue-200 hover:bg-blue-50/80">
+                                <i class="fa-solid fa-file-invoice mr-2"></i>Visualizar XML
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-1 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-500 mb-1">Status Final</label>
+                                <select name="status" class="w-full form-input font-medium" disabled>
+                                    <option value="OK">OK</option>
+                                    <option value="Divergente">Divergente</option>
+                                    <option value="Resolvido">Resolvido</option>
+                                </select>
+                            </div>
+                            <div><label class="block text-xs font-semibold text-slate-500 mb-1">Observação Analista</label><textarea name="obs"
+                                    class="w-full form-input" style="min-height: 52px; resize: none;" disabled></textarea></div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- LINHA 4: Status e Observações -->
-                <div class="form-section mt-4">
-                    <div class="form-section-title">
-                        <div><i class="fa-solid fa-comment-dots"></i>Status e Observações</div>
-                        <button type="button" id="btn-view-dacte"
-                            class="btn btn-secondary btn-sm hidden text-blue-600 border-blue-600 hover:bg-blue-50">
-                            <i class="fa-solid fa-file-invoice mr-2"></i>Visualizar XML
-                        </button>
-                    </div>
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-xs font-medium mb-1">Status</label>
-                            <select name="status" class="w-full form-input" disabled>
-                                <option value="OK">OK</option>
-                                <option value="Divergente">Divergente</option>
-                                <option value="Resolvido">Resolvido</option>
-                            </select>
-                        </div>
-                        <div><label class="block text-xs font-medium mb-1">Observação</label><textarea name="obs"
-                                class="w-full form-input" style="min-height: 60px;" disabled></textarea></div>
-                    </div>
-                </div>
             </div>
-            <div class="modal-footer justify-between">
+            
+            <div class="modal-footer justify-between bg-slate-50">
                 <div>
                     <button type="button" id="edit-modal-delete-btn" class="btn btn-danger hidden"><i
-                            class="fa-solid fa-trash mr-1"></i> Apagar Registro</button>
+                            class="fa-solid fa-trash mr-2"></i> Apagar Registro</button>
                 </div>
                 <div class="flex gap-2">
-                    <button type="submit" id="edit-modal-save-btn" class="btn btn-primary hidden">Salvar
+                    <button type="submit" id="edit-modal-save-btn" class="btn btn-primary hidden shadow-md">Salvar
                         Alterações</button>
                     <button type="button" id="edit-modal-cancel-btn" class="btn btn-secondary hidden">Cancelar</button>
-                    <button type="button" id="edit-modal-enable-edit-btn" class="btn btn-primary">Editar
+                    <button type="button" id="edit-modal-enable-edit-btn" class="btn btn-primary shadow-md">Editar
                         Conclusão</button>
                     <button type="button" id="edit-modal-close-view-btn" class="btn btn-secondary">Fechar</button>
                 </div>
@@ -1795,10 +2186,10 @@
     <!-- Tabela Principal -->
     <div id="main-content" class="h-full">
         <div class="w-full h-full flex flex-col gap-2 p-3">
-            <header class="flex flex-col gap-1.5 flex-shrink-0">
-                <!-- ROW 1: Filter pills + page info -->
-                <div class="flex items-center justify-between gap-2">
-<div class="flex items-center gap-1" id="main-view-filters">
+            <header class="flex flex-col gap-3 flex-shrink-0 mb-1">
+                <!-- ROW 1: Filter pills + page info (Scrollable Mobile) -->
+                <div class="pills-scroll-row">
+                    <div class="pills-scroll-container custom-scrollbar" id="main-view-filters">
                         <button id="view-sem-xml-btn" class="filter-pill" data_view="sem_xml"
                             style="--pill-active-bg:#eab308;--pill-active-color:#fff" title="Sem XML importado">
                             <i class="fa-solid fa-file-circle-question"></i> Sem XML</button>
@@ -1824,70 +2215,63 @@
                             style="--pill-active-bg:#2563eb;--pill-active-color:#fff" title="Validados no WinThor">
                             <i class="fa-solid fa-badge-check"></i> Validados</button>
                     </div>
-                    <span id="results-info" class="text-xs font-medium flex-shrink-0"
-                        style="color: var(--color-text-secondary);"></span>
+                    <span id="results-info" class="text-xs font-medium"
+                        style="color: var(--color-text-secondary); white-space: nowrap;"></span>
                 </div>
 
-                <!-- ROW 2: Dates + Search + Actions (tudo numa linha) -->
-                <div class="flex items-center gap-1.5 flex-wrap">
-                    <!-- Datas -->
-                    <div class="flex items-center bg-white border border-gray-300 rounded-md shadow-sm overflow-hidden text-[11px]">
-                        <span class="pl-1.5 pr-0.5 text-gray-400 font-medium">De</span>
-                        <input type="date" id="filter-dtent-inicio"
-                            class="py-1 px-0.5 focus:outline-none focus:ring-0 text-gray-700 bg-transparent cursor-pointer text-[11px]" />
-                        <div class="w-px h-4 bg-gray-300"></div>
-                        <span class="px-0.5 text-gray-400 font-medium">Até</span>
-                        <input type="date" id="filter-dtent-fim"
-                            class="py-1 px-0.5 pr-1.5 focus:outline-none focus:ring-0 text-gray-700 bg-transparent cursor-pointer text-[11px]" />
-                    </div>
-
+                <!-- ROW 2: Dates + Search + Actions (Responsive Toolbar) -->
+                <div class="toolbar-row">
+                    
                     <!-- Busca -->
-                    <div class="flex items-center border border-gray-300 rounded-md bg-white shadow-sm flex-grow max-w-xs">
-                        <div class="relative">
-                            <select id="search-column-select"
-                                class="pl-1.5 pr-6 py-1 text-[11px] font-medium text-gray-600 bg-transparent border-none focus:ring-0 focus:outline-none cursor-pointer appearance-none"></select>
-                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1 text-gray-700">
-                                <i class="fa-solid fa-chevron-down text-[9px]"></i>
-                            </div>
-                        </div>
-                        <div class="w-px h-4 bg-gray-300"></div>
-                        <div class="pl-1.5 py-1 text-gray-400 text-[11px]"><i class="fa-solid fa-magnifying-glass"></i></div>
-                        <input type="text" id="search-input"
-                            class="w-full py-1 px-1 border-none bg-transparent focus:ring-0 text-[11px] text-gray-900"
-                            placeholder="Pesquisar...">
+                    <div class="toolbar-search">
+                        <select id="search-column-select"></select>
+                        <div class="search-divider"></div>
+                        <div class="search-icon"><i class="fa-solid fa-magnifying-glass"></i></div>
+                        <input type="text" id="search-input" placeholder="Pesquisar...">
                     </div>
 
-                    <!-- Separador visual -->
-                    <div class="w-px h-5 bg-gray-300 mx-0.5"></div>
+                    <!-- Datas -->
+                    <div class="toolbar-date-wrapper">
+                        <span>De</span>
+                        <input type="date" id="filter-dtent-inicio" />
+                        <div class="date-divider"></div>
+                        <span>Até</span>
+                        <input type="date" id="filter-dtent-fim" />
+                    </div>
 
-                    <!-- Ações principais -->
-                    <button id="btn-importar-xml" class="btn btn-secondary btn-sm" style="color:#f59e0b; border-color:#fcd34d;"
-                        title="Importar XML"><i class="fa-solid fa-file-import mr-1"></i>Importar XML</button>
-                    <button id="btn-importar-todos" class="btn btn-secondary btn-sm hidden" style="color:#dc2626; border-color:#fca5a5;"
-                        title="Importar Todos Não Importados"><i class="fa-solid fa-rocket mr-1"></i>Importar Todos</button>
-                    <button id="btn-busca-nv" class="btn btn-secondary btn-sm" style="color:#d946ef; border-color:#f0abfc;"
-                        title="Busca NV - Validar lista de NFs"><i class="fa-solid fa-list-ol mr-1"></i>Busca NV</button>
-                    <button id="btn-busca-isolada" class="btn btn-secondary btn-sm"
-                        style="color:#0ea5e9; border-color:#bae6fd;" title="Buscar NF específica no WinThor">
-                        <i class="fa-solid fa-cloud-arrow-down mr-1"></i>Busca Isolada</button>
-                    <button id="btn-validar-todos-ok" class="btn btn-primary btn-sm"
-                        style="background-color:#16a34a;border-color:#16a34a"
-                        title="Validar TODOS os OK no WinThor"><i class="fa-solid fa-rocket mr-1"></i>Validar Todos OK</button>
+                    <div class="toolbar-separator hidden md:block"></div>
 
-                    <!-- Separador visual -->
-                    <div class="w-px h-5 bg-gray-300 mx-0.5"></div>
+                    <!-- Ações Principais -->
+                    <div class="toolbar-group actions-primary">
+                        <button id="btn-importar-xml" class="btn btn-secondary btn-sm" style="color:#f59e0b; border-color:#fcd34d;"
+                            title="Importar XML"><i class="fa-solid fa-file-import mr-1"></i><span class="hidden sm:inline">Importar XML</span></button>
+                        <button id="btn-importar-todos" class="btn btn-secondary btn-sm hidden" style="color:#dc2626; border-color:#fca5a5;"
+                            title="Importar Todos Não Importados"><i class="fa-solid fa-rocket mr-1"></i><span class="hidden sm:inline">Importar Todos</span></button>
+                        <button id="btn-busca-nv" class="btn btn-secondary btn-sm" style="color:#d946ef; border-color:#f0abfc;"
+                            title="Busca NV - Validar lista de NFs"><i class="fa-solid fa-list-ol mr-1"></i><span class="hidden sm:inline">Busca NV</span></button>
+                        <button id="btn-busca-isolada" class="btn btn-secondary btn-sm"
+                            style="color:#0ea5e9; border-color:#bae6fd;" title="Buscar NF específica no WinThor">
+                            <i class="fa-solid fa-cloud-arrow-down mr-1"></i><span class="hidden sm:inline">Busca Isolada</span></button>
+                        <button id="btn-validar-todos-ok" class="btn btn-primary btn-sm"
+                            style="background-color:#16a34a;border-color:#16a34a"
+                            title="Validar TODOS os OK no WinThor"><i class="fa-solid fa-rocket mr-1"></i><span class="hidden lg:inline">Validar Todos OK</span></button>
+                    </div>
+
+                    <div class="toolbar-separator hidden md:block"></div>
 
                     <!-- Ferramentas -->
-                    <button id="btn-toggle-selecao" class="btn btn-secondary btn-sm" title="Selecionar"><i
-                            class="fa-solid fa-list-check"></i></button>
-                    <button id="btn-validar-selecionados" class="btn btn-primary btn-sm hidden"><i
-                            class="fa-solid fa-check-double mr-1"></i><span id="count-selecionados">0</span></button>
-                    <button id="open-filters-sidebar-btn" class="btn btn-secondary btn-sm" title="Filtros"><i
-                            class="fa-solid fa-filter"></i></button>
-                    <button id="download-xml-btn" class="btn btn-secondary btn-sm" title="Baixar XML (CML)"><i
-                            class="fa-solid fa-file-code"></i></button>
-                    <button id="export-excel-btn" class="btn btn-secondary btn-sm" title="Exportar Excel"><img
-                            src="https://i.imgur.com/ft3NeJC.png" alt="Excel" class="w-4 h-4"></button>
+                    <div class="toolbar-group">
+                        <button id="btn-toggle-selecao" class="btn btn-secondary btn-sm" title="Selecionar Vários"><i
+                                class="fa-solid fa-list-check"></i></button>
+                        <button id="btn-validar-selecionados" class="btn btn-primary btn-sm hidden"><i
+                                class="fa-solid fa-check-double mr-1"></i><span id="count-selecionados">0</span></button>
+                        <button id="open-filters-sidebar-btn" class="btn btn-secondary btn-sm" title="Filtros Avançados"><i
+                                class="fa-solid fa-filter"></i></button>
+                        <button id="download-xml-btn" class="btn btn-secondary btn-sm" title="Baixar XML (CML)"><i
+                                class="fa-solid fa-file-code"></i></button>
+                        <button id="export-excel-btn" class="btn btn-secondary btn-sm" title="Exportar para Excel"><img
+                                src="https://i.imgur.com/ft3NeJC.png" alt="Excel" class="w-4 h-4"></button>
+                    </div>
                 </div>
             </header>
 
