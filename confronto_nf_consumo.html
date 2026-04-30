@@ -2515,7 +2515,7 @@ const state = {
                         acoesHtml = `<button class="action-icon-btn btn-xml view-btn" data-id="${item.id}" title="Ver NF Consumo XML"><i class="fa-solid fa-file-code"></i></button>
                                       <button class="action-icon-btn btn-log view-log-btn" data-id="${item.id}" title="Ver Log"><i class="fa-solid fa-clock-rotate-left"></i></button>
                                       ${btnCopiarChave}
-                                      <button class="action-icon-btn btn-download download-cml-btn" data-id="${item.id}" title="Baixar CML"><i class="fa-solid fa-download"></i></button>`;
+                                      <button class="action-icon-btn btn-download download-cml-btn" data-id="${item.id}" title="Baixar XML"><i class="fa-solid fa-download"></i></button>`;
                     } else {
                         const isDivergente = item.status === 'Divergente';
 
@@ -2537,7 +2537,7 @@ const state = {
                                       ${btnValidarHtml}
                                       ${btnImportarHtml}
                                       ${btnCopiarChave}
-                                      <button class="action-icon-btn btn-download download-cml-btn" data-id="${item.id}" title="Baixar CML"><i class="fa-solid fa-download"></i></button>`;
+                                      <button class="action-icon-btn btn-download download-cml-btn" data-id="${item.id}" title="Baixar XML"><i class="fa-solid fa-download"></i></button>`;
                     }
 
                     const isDivergenteCb = item.status === 'Divergente' || item.status === 'Não Encontrado no Sieg';
@@ -4398,7 +4398,7 @@ const state = {
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement('a');
                         a.href = url;
-                        a.download = `cml_${item.numnota || item.id}_${item.codfilial || ''}.xml`;
+                        a.download = `xml_${item.numnota || item.id}_${item.codfilial || ''}.xml`;
                         document.body.appendChild(a);
                         a.click();
                         document.body.removeChild(a);
