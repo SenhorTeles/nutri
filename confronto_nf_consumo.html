@@ -2247,7 +2247,7 @@
                             title="Importar XML"><i class="fa-solid fa-file-import mr-1"></i><span class="hidden sm:inline">Importar XML</span></button>
                         <button id="btn-importar-todos" class="btn btn-secondary btn-sm hidden" style="color:#dc2626; border-color:#fca5a5;"
                             title="Importar Todos Não Importados"><i class="fa-solid fa-rocket mr-1"></i><span class="hidden sm:inline">Importar Todos</span></button>
-                        <button id="btn-busca-nv" class="btn btn-secondary btn-sm" style="color:#d946ef; border-color:#f0abfc;"
+                        <button id="btn-busca-nv" class="btn btn-secondary btn-sm hidden" style="color:#d946ef; border-color:#f0abfc; display:none;"
                             title="Busca NV - Validar lista de NFs"><i class="fa-solid fa-list-ol mr-1"></i><span class="hidden sm:inline">Busca NV</span></button>
                         <button id="btn-busca-isolada" class="btn btn-secondary btn-sm"
                             style="color:#0ea5e9; border-color:#bae6fd;" title="Buscar NF específica no WinThor">
@@ -2267,7 +2267,7 @@
                                 class="fa-solid fa-check-double mr-1"></i><span id="count-selecionados">0</span></button>
                         <button id="open-filters-sidebar-btn" class="btn btn-secondary btn-sm" title="Filtros Avançados"><i
                                 class="fa-solid fa-filter"></i></button>
-                        <button id="download-xml-btn" class="btn btn-secondary btn-sm" title="Baixar XML (CML)"><i
+                        <button id="download-xml-btn" class="btn btn-secondary btn-sm" title="Baixar Lote de XMLs"><i
                                 class="fa-solid fa-file-code"></i></button>
                         <button id="export-excel-btn" class="btn btn-secondary btn-sm" title="Exportar para Excel"><img
                                 src="https://i.imgur.com/ft3NeJC.png" alt="Excel" class="w-4 h-4"></button>
@@ -2524,7 +2524,7 @@ const state = {
                             ? `<button class="btn-verificar-tomador verificar-tomador-btn" data-id="${item.id}" title="Verificar Tomador Dif Filial"><i class="fa-solid fa-magnifying-glass"></i></button>`
                             : '';
 
-                        const btnValidarHtml = (item.status === 'Divergente' || item.status === 'Aguardando Robo')
+                        const btnValidarHtml = (item.status === 'Divergente' || item.status === 'Aguardando Robo' || item.status === 'Não Importada')
                             ? ''
                             : `<button class="btn-verificado verificado-btn" data-id="${item.id}" title="Validar no WinThor"><i class="fa-solid fa-check"></i></button>`;
 
@@ -4334,7 +4334,7 @@ const state = {
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = `cml_xmls_${new Date().toISOString().slice(0, 10)}.xml`;
+                    a.download = `xml_lote_${new Date().toISOString().slice(0, 10)}.xml`;
                     document.body.appendChild(a);
                     a.click();
                     document.body.removeChild(a);
@@ -5076,7 +5076,8 @@ const state = {
                             .maybeSingle();
 
                         if (existente && existente.status !== 'Sem XML') {
-                            // Já existe com dados: ignorar para não sobrescrever
+                            // Já existe com dados: informar ao usuário e ignorar
+                            Swal.fire('Atenção', `O XML da NF ${pf.numNotaXml || pf.chaveAcesso} já existe no sistema e não necessita de nova importação.`, 'info');
                             totalVinculados++;
                             continue;
                         } else if (existente && existente.status === 'Sem XML') {
