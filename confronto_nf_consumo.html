@@ -5061,6 +5061,7 @@ const state = {
                     const chavesParaEsperar = []; // chaves que foram para a fila do bot
                     let totalVinculados = 0;
                     let totalErros = 0;
+                    const xmlsIgnorados = [];
 
                     for (let i = 0; i < parsedFiles.length; i++) {
                         const pf = parsedFiles[i];
@@ -5076,9 +5077,8 @@ const state = {
                             .maybeSingle();
 
                         if (existente && existente.status !== 'Sem XML') {
-                            // Já existe com dados: informar ao usuário e ignorar
-                            Swal.fire('Atenção', `O XML da NF ${pf.numNotaXml || pf.chaveAcesso} já existe no sistema e não necessita de nova importação.`, 'info');
-                            totalVinculados++;
+                            // Já existe com dados: ignorar e registrar
+                            xmlsIgnorados.push(pf.numNotaXml || pf.chaveAcesso);
                             continue;
                         } else if (existente && existente.status === 'Sem XML') {
                             // Existe mas está "Sem XML": complementar com os dados do XML importado
@@ -5196,24 +5196,38 @@ const state = {
                         const naoEncontrados = resultadosFinais.filter(r => r.status === 'Não Importada');
                         totalVinculados += encontrados.length;
 
+                        let msgAdicional = '';
+                        if (xmlsIgnorados.length > 0) {
+                            msgAdicional = `<p class="mt-2 text-blue-600">⚠️ <strong>${xmlsIgnorados.length}</strong> XML(s) ignorado(s) por já existirem no sistema</p>`;
+                        }
+
                         Swal.fire({
                             title: 'Importação Concluída!',
                             html: `<div style="text-align:left;font-size:0.9rem">
-                                <p>✅ <strong>${totalVinculados}</strong> XML(s) vinculado(s) e validado(s)</p>
+                                <p>✅ <strong>${totalVinculados}</strong> XML(s) importado(s) com sucesso</p>
                                 ${naoEncontrados.length > 0 ? `<p>⚠️ <strong>${naoEncontrados.length}</strong> chave(s) não encontrada(s) no WinThor</p>` : ''}
                                 ${totalErros > 0 ? `<p>❌ <strong>${totalErros}</strong> erro(s) no processamento</p>` : ''}
+                                ${msgAdicional}
                             </div>`,
                             icon: totalErros > 0 || naoEncontrados.length > 0 ? 'warning' : 'success'
                         });
                     } else {
-                        Swal.fire({
-                            title: 'Importação Concluída!',
-                            html: `<div style="text-align:left;font-size:0.9rem">
-                                <p>✅ <strong>${totalVinculados}</strong> XML(s) vinculado(s) com sucesso (já existiam no Supabase)</p>
-                                ${totalErros > 0 ? `<p>❌ <strong>${totalErros}</strong> erro(s) no processamento</p>` : ''}
-                            </div>`,
-                            icon: totalErros > 0 ? 'warning' : 'success'
-                        });
+                        if (xmlsIgnorados.length > 0) {
+                            Swal.fire({
+                                title: 'Aviso', 
+                                html: `A(s) NF(s) a seguir já constam no sistema e não precisam ser importadas novamente:<br><br><div style="max-height: 200px; overflow-y: auto; text-align: left; padding: 10px; background: #f3f4f6; border-radius: 8px;"><b>${xmlsIgnorados.join('<br>')}</b></div>`, 
+                                icon: 'info'
+                            });
+                        } else {
+                            Swal.fire({
+                                title: 'Importação Concluída!',
+                                html: `<div style="text-align:left;font-size:0.9rem">
+                                    <p>✅ <strong>${totalVinculados}</strong> XML(s) importado(s) com sucesso</p>
+                                    ${totalErros > 0 ? `<p>❌ <strong>${totalErros}</strong> erro(s) no processamento</p>` : ''}
+                                </div>`,
+                                icon: totalErros > 0 ? 'warning' : 'success'
+                            });
+                        }
                     }
 
                     fetchData(false);
