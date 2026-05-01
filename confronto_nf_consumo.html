@@ -2199,9 +2199,6 @@
                         <button id="view-divergente-btn" class="filter-pill" data_view="divergente"
                             style="--pill-active-bg:#dc2626;--pill-active-color:#fff" title="Divergentes">
                             <i class="fa-solid fa-triangle-exclamation"></i> Divergentes</button>
-                        <button id="view-nao-encontrado-btn" class="filter-pill" data_view="nao_encontrado"
-                            style="--pill-active-bg:#4b5563;--pill-active-color:#fff" title="Não Encontrados no Sieg">
-                            <i class="fa-solid fa-ghost"></i> Não Encontrados</button>
                         <button id="view-tomador-dif-btn" class="filter-pill" data_view="tomador_dif"
                             style="--pill-active-bg:#ea580c;--pill-active-color:#fff" title="Tomador diferente da Filial NF">
                             <i class="fa-solid fa-shuffle"></i> Tomador ≠ Filial</button>
@@ -2421,8 +2418,6 @@ const state = {
                     itemsToRender = itemsToRender.filter(item => item.is_tomador_dif && !item.validado_winthor);
                 } else if (state.viewMode === 'ok') {
                     itemsToRender = itemsToRender.filter(item => item.status === 'OK' && !item.validado_winthor && !item.is_tomador_dif);
-                } else if (state.viewMode === 'nao_encontrado') {
-                    itemsToRender = itemsToRender.filter(item => item.status === 'Não Encontrado no Sieg' && !item.validado_winthor && !item.is_tomador_dif);
                 } else if (state.viewMode === 'divergente') {
                     itemsToRender = itemsToRender.filter(item => item.status === 'Divergente' && !item.validado_winthor && !item.is_tomador_dif);
                 } else if (state.viewMode === 'validados') {
@@ -3178,11 +3173,9 @@ const state = {
 
                 if (!sTerm) {
                     if (state.viewMode === 'divergente') {
-                        query = query.not('status', 'eq', 'OK').not('status', 'eq', 'Não Encontrado no Sieg').not('status', 'eq', 'Não Importada').eq('validado_winthor', false);
+                        query = query.not('status', 'eq', 'OK').not('status', 'eq', 'Não Importada').eq('validado_winthor', false);
                     } else if (state.viewMode === 'ok') {
                         query = query.eq('status', 'OK').eq('validado_winthor', false);
-                    } else if (state.viewMode === 'nao_encontrado') {
-                        query = query.eq('status', 'Não Encontrado no Sieg').eq('validado_winthor', false);
                     } else if (state.viewMode === 'validados') {
                         query = query.or('validado_winthor.eq.true,status.eq.Totalmente Validada');
                     } else if (state.viewMode === 'tomador_dif') {
@@ -3600,7 +3593,7 @@ const state = {
                 const especies = [...new Set(allData.map(d => d.especie).filter(Boolean))].sort();
 
                 fillList('filial-filter-list', filiais.length ? filiais : []);
-                fillList('status-filter-list', statuses.length ? statuses : ['Sem XML', 'OK', 'Divergente', 'Não Encontrado no Sieg', 'Tomador Divergente', 'Resolvido', 'Validado']);
+                fillList('status-filter-list', statuses.length ? statuses : ['Sem XML', 'OK', 'Divergente', 'Tomador Divergente', 'Resolvido', 'Validado']);
                 fillList('especie-filter-list', especies.length ? especies : ['CT', 'NF']);
             } catch (err) {
                 console.error('Erro ao buscar filtros dinamicamente:', err);
@@ -3654,11 +3647,9 @@ const state = {
                 let query = supabase.from(TABLE_NAME).select('*');
 
                 if (state.viewMode === 'divergente') {
-                    query = query.not('status', 'eq', 'OK').not('status', 'eq', 'Não Encontrado no Sieg').not('status', 'eq', 'Não Importada').eq('validado_winthor', false);
+                    query = query.not('status', 'eq', 'OK').not('status', 'eq', 'Não Importada').eq('validado_winthor', false);
                 } else if (state.viewMode === 'ok') {
                     query = query.eq('status', 'OK').eq('validado_winthor', false);
-                } else if (state.viewMode === 'nao_encontrado') {
-                    query = query.eq('status', 'Não Encontrado no Sieg').eq('validado_winthor', false);
                 } else if (state.viewMode === 'validados') {
                     query = query.or('validado_winthor.eq.true,status.eq.Totalmente Validada');
                 } else if (state.viewMode === 'tomador_dif') {
