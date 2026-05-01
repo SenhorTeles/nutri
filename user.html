@@ -9,8 +9,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -18,28 +18,27 @@
     <style>
         /* === PALETA DE CORES PADRÃO DO SISTEMA === */
         :root {
-            /* Tema Claro - Dona Chique */
-            --color-bg: #f8fafc;
+            /* Tema Claro — Premium Areia */
+            --color-bg: #f8f5f2;
             --color-surface: #ffffff;
-            --color-border: #e5e7eb;
-            --color-border-hover: #d1d5db;
-            --color-text-primary: #111827;
-            --color-text-secondary: #4b5563;
-            --color-text-tertiary: #9ca3af;
-            --color-surface-hover: #f3f4f6;
+            --color-border: #d4c6b8;
+            --color-border-hover: #b8a898;
+            --color-text-primary: #1a110a;
+            --color-text-secondary: #58321b;
+            --color-text-tertiary: #a08870;
+            --color-surface-hover: #f3ebe1;
 
             /* Cores Primárias da Marca */
             --color-primary: #b8860b;
             --color-primary-hover: #9a7209;
             --color-primary-text: #ffffff;
-            --color-primary-focus-ring: rgba(184, 134, 11, 0.4);
-            --color-primary-soft-bg: #fdf8f0;
+            --color-primary-focus-ring: rgba(196, 152, 42, 0.35);
+            --color-primary-soft-bg: #f3ebe1;
 
             /* Cores Semânticas */
             --color-danger: #ef4444;
             --color-danger-soft-bg: #fee2e2;
             --color-success: #16a34a;
-            /* Verde padrão para melhor distinção */
             --color-success-soft-bg: #dcfce7;
             --color-info: #3b82f6;
             --color-info-soft-bg: #dbeafe;
@@ -47,33 +46,32 @@
             --color-warning-soft-bg: #fef3c7;
 
             /* Configurações Globais */
-            --radius: 0.5rem;
+            --radius: 0.75rem;
             --transition: 0.2s ease-in-out;
+
+            /* Header da tabela */
+            --header-bg: #2b1a0e;
         }
 
         html[data-theme="dark"] {
-            /* Tema Escuro - Interpretação para Dona Chique */
-            --color-bg: #18181b;
-            /* Fundo escuro mais neutro */
-            --color-surface: #27272a;
-            --color-border: #3f3f46;
-            --color-border-hover: #52525b;
-            --color-text-primary: #f8fafc;
-            --color-text-secondary: #a1a1aa;
-            --color-text-tertiary: #71717a;
-            --color-surface-hover: #3a3a40;
+            /* Tema Escuro — Premium Marrom */
+            --color-bg: #160d08;
+            --color-surface: #2b170e;
+            --color-border: #3d2112;
+            --color-border-hover: #5c3a21;
+            --color-text-primary: #f8f5f2;
+            --color-text-secondary: #df9e7d;
+            --color-text-tertiary: #8a6a52;
+            --color-surface-hover: #3a1f12;
 
-            /* Cores Primárias da Marca - Tema Escuro */
-            --color-primary: #b8860b;
-            /* Mantém a cor principal, que tem bom contraste no escuro */
-            --color-primary-hover: #9a7209;
-            /* Versão ligeiramente mais escura para hover */
-            --color-primary-text: #111827;
-            /* Texto escuro para contraste no botão claro */
-            --color-primary-focus-ring: rgba(184, 134, 11, 0.4);
-            --color-primary-soft-bg: #3d2e0a;
+            /* Cores Primárias da Marca — Tema Escuro */
+            --color-primary: #c4982a;
+            --color-primary-hover: #b8860b;
+            --color-primary-text: #ffffff;
+            --color-primary-focus-ring: rgba(196, 152, 42, 0.35);
+            --color-primary-soft-bg: #4d2b17;
 
-            /* Cores Semânticas - Tema Escuro */
+            /* Cores Semânticas — Tema Escuro */
             --color-danger: #f87171;
             --color-danger-soft-bg: #452323;
             --color-success: #4ade80;
@@ -82,6 +80,8 @@
             --color-info-soft-bg: #203555;
             --color-warning: #facc15;
             --color-warning-soft-bg: #4a3f1d;
+
+            --header-bg: #23150d;
         }
 
         /* === ESTILOS GERAIS E LOADER (COMPACTOS) === */
@@ -157,7 +157,7 @@
             background-color: var(--color-surface);
             border: 1px solid var(--color-border);
             border-radius: var(--radius);
-            box-shadow: 0 2px 4px -2px rgb(0 0 0 / 0.05);
+            box-shadow: 0 4px 16px -4px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04);
         }
 
         .form-input {
@@ -204,12 +204,16 @@
         }
 
         .btn-primary {
-            background-color: var(--color-primary);
+            background: linear-gradient(135deg, #b8860b 0%, #d4a017 100%);
             color: var(--color-primary-text);
+            box-shadow: 0 2px 8px rgba(184, 134, 11, 0.3);
+            font-weight: 600;
         }
 
         .btn-primary:hover:not(:disabled) {
-            background-color: var(--color-primary-hover);
+            background: linear-gradient(135deg, #9a7209 0%, #b8860b 100%);
+            box-shadow: 0 4px 12px rgba(184, 134, 11, 0.4);
+            transform: translateY(-1px);
         }
 
         .btn:disabled {
@@ -282,7 +286,19 @@
 
         thead th {
             padding: 0.8rem 1rem;
-            font-size: 0.75rem;
+            font-size: 0.72rem;
+            background: linear-gradient(135deg, #2b1a0e 0%, #3d2112 100%);
+            color: rgba(255,255,255,0.9);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            font-weight: 600;
+        }
+
+        thead th:first-child {
+            border-radius: 0.5rem 0 0 0;
+        }
+        thead th:last-child {
+            border-radius: 0 0.5rem 0 0;
         }
 
         tbody td {
@@ -403,7 +419,7 @@
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             gap: 0.75rem;
-            max-height: 240px;
+            max-height: 340px;
             /* ALTURA MÁXIMA PARA ATIVAR O SCROLL */
             overflow-y: auto;
             /* MOSTRAR SCROLL VERTICAL QUANDO NECESSÁRIO */
@@ -417,24 +433,32 @@
             display: flex;
             align-items: center;
             background-color: var(--color-surface);
-            padding: 0.6rem 0.75rem;
-            border-radius: 0.375rem;
-            border: 1px solid var(--color-border);
+            padding: 0.7rem 0.85rem;
+            border-radius: 0.5rem;
+            border: 1.5px solid var(--color-border);
             cursor: pointer;
-            transition: all var(--transition);
+            transition: all 0.2s ease;
         }
 
         .permission-item:hover {
+            background-color: var(--color-primary-soft-bg);
+            border-color: var(--color-primary);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(184,134,11,0.1);
+        }
+
+        .permission-item:has(input:checked) {
             background-color: var(--color-primary-soft-bg);
             border-color: var(--color-primary);
         }
 
         .permission-item input[type="checkbox"] {
             accent-color: var(--color-primary);
-            width: 1rem;
-            height: 1rem;
+            width: 1.1rem;
+            height: 1.1rem;
             margin-right: 0.75rem;
             flex-shrink: 0;
+            cursor: pointer;
         }
 
         .permission-item label {
@@ -445,15 +469,117 @@
             width: 100%;
         }
 
-        .permission-item:hover label {
+        .permission-item:hover label,
+        .permission-item:has(input:checked) label {
             color: var(--color-text-primary);
         }
+
+        /* === CAMPO DE SENHA COM TOGGLE === */
+        .password-wrapper {
+            position: relative;
+        }
+        .password-toggle-btn {
+            position: absolute;
+            top: 50%;
+            right: 0.875rem;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--color-text-tertiary);
+            transition: color var(--transition);
+            z-index: 2;
+            padding: 0.25rem;
+        }
+        .password-toggle-btn:hover {
+            color: var(--color-primary);
+        }
+
+        /* Indicador de Força da Senha */
+        .password-strength-bar {
+            height: 4px;
+            border-radius: 99px;
+            background-color: var(--color-border);
+            margin-top: 0.5rem;
+            overflow: hidden;
+        }
+        .password-strength-fill {
+            height: 100%;
+            border-radius: 99px;
+            transition: width 0.3s ease, background-color 0.3s ease;
+            width: 0%;
+        }
+        .password-strength-text {
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-top: 0.25rem;
+            color: var(--color-text-tertiary);
+        }
+
+        /* === MODAL SLIDE-IN PREMIUM === */
+        .modal-container {
+            transition: opacity 0.3s ease;
+        }
+        .modal-box {
+            transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            max-width: 64rem;
+            border-radius: 1rem;
+            border: 1px solid var(--color-border);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        .modal-container.hidden {
+            pointer-events: none;
+            opacity: 0;
+        }
+        .modal-container.hidden .modal-box {
+            transform: translateY(20px) scale(0.96);
+        }
+
+        .card-header {
+            padding: 1.25rem 1.75rem;
+            border-bottom: none;
+            background: linear-gradient(135deg, #2b170e 0%, #5c3a21 50%, #87512d 100%);
+            border-radius: 1rem 1rem 0 0;
+        }
+        .card-header h2 {
+            color: #ffffff;
+        }
+        .card-header .close-modal-button {
+            color: rgba(255,255,255,0.6);
+        }
+        .card-header .close-modal-button:hover {
+            color: #ffffff;
+        }
+
+        .card-body {
+            padding: 1.75rem;
+            background-color: var(--color-bg);
+        }
+
+        .card-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--color-border);
+            background-color: var(--color-surface);
+            border-radius: 0 0 1rem 1rem;
+        }
+
+        /* Section Header no modal */
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 700;
+            font-size: 0.85rem;
+            padding-bottom: 0.75rem;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid var(--color-border);
+            color: var(--color-text-primary);
+        }
+        .section-header i {
+            color: var(--color-primary);
+        }
+
     </style>
-    <script>
-        (function () {
-            try { if (JSON.parse(localStorage.getItem('gestaovscontabil_theme'))?.mode === 'escuro') { document.documentElement.setAttribute('data-theme', 'dark'); } } catch (e) { }
-        })();
-    </script>
 </head>
 
 <body class="p-4 sm:p-6 lg:p-8">
@@ -462,7 +588,7 @@
     </div>
     <div class="max-w-screen-xl mx-auto space-y-6">
         <header>
-            <h1 class="text-3xl font-bold tracking-tight">Gerenciamento de Usuários</h1>
+            <h1 class="text-3xl font-bold tracking-tight" style="font-family:'Montserrat',sans-serif;">Gerenciamento de Usuários</h1>
             <p class="mt-1 text-base" style="color: var(--color-text-secondary);">Adicione, edite e controle as
                 permissões de acesso dos usuários.</p>
         </header>
@@ -488,7 +614,7 @@
                         <option value="Somente Leitura">Leitura</option>
                     </select>
                 </div>
-                <button id="add-user-button" class="btn btn-primary ml-auto flex-shrink-0 w-full md:w-auto">
+                <button id="add-user-button" class="btn btn-primary ml-auto flex-shrink-0 w-full md:w-auto" style="border-radius:0.5rem;padding:0.625rem 1.5rem;">
                     <i class="fa-solid fa-user-plus mr-2"></i>Novo Usuário
                 </button>
             </div>
@@ -497,8 +623,7 @@
             <div class="content-card">
                 <div class="overflow-x-auto thin-scrollbar">
                     <table class="w-full text-sm text-left">
-                        <thead class="text-xs uppercase"
-                            style="background-color: var(--color-surface-hover); color: var(--color-text-tertiary);">
+                        <thead>
                             <tr>
                                 <th scope="col" class="w-1/3">Nome Completo</th>
                                 <th scope="col">E-mail</th>
@@ -527,22 +652,25 @@
         <div class="modal-box content-card w-full max-h-[95vh] flex flex-col">
             <form id="user-form" novalidate>
                 <header class="card-header flex justify-between items-center">
-                    <h2 id="modal-title" class="text-lg font-semibold">Editar Usuário</h2>
+                    <div class="flex items-center gap-3">
+                        <div style="width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;">
+                            <i class="fa-solid fa-user-gear text-white/90"></i>
+                        </div>
+                        <h2 id="modal-title" class="text-lg font-bold" style="font-family:'Montserrat',sans-serif;">Editar Usuário</h2>
+                    </div>
                     <button type="button"
-                        class="close-modal-button text-xl hover:text-[var(--color-primary)] transition-colors"
-                        style="color: var(--color-text-tertiary);">&times;</button>
+                        class="close-modal-button text-2xl transition-colors" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:rgba(255,255,255,0.1);">&times;</button>
                 </header>
 
                 <div class="card-body overflow-y-auto thin-scrollbar space-y-6" style="max-height: calc(80vh - 6rem);">
                     <!-- Seção 1: Informações do Usuário -->
                     <div>
-                        <h3
-                            class="font-semibold text-base border-b border-[var(--color-border)] pb-2 mb-4 flex items-center gap-2">
-                            <i class="fa-solid fa-address-card text-[var(--color-primary)]"></i>
+                        <h3 class="section-header">
+                            <i class="fa-solid fa-address-card"></i>
                             Informações do Usuário
                         </h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
-                            <div class="floating-form-group">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-4">
+                            <div class="floating-form-group md:col-span-2">
                                 <input type="text" id="nome_completo" class="floating-input" placeholder=" " required>
                                 <label for="nome_completo" class="floating-label"><i
                                         class="fa-solid fa-user-pen fa-fw"></i>Nome Completo</label>
@@ -562,23 +690,30 @@
                                 <label for="cpf_cnpj" class="floating-label"><i
                                         class="fa-solid fa-id-card fa-fw"></i>CPF ou CNPJ</label>
                             </div>
-                            <div id="password-container" class="floating-form-group md:col-span-2">
-                                <input type="password" id="senha" class="floating-input" placeholder=" " required
-                                    minlength="6">
-                                <label for="senha" class="floating-label"><i class="fa-solid fa-key fa-fw"></i>Senha de
-                                    Acesso (mín. 6 caracteres)</label>
+                            <div id="password-container" class="floating-form-group">
+                                <div class="password-wrapper">
+                                    <input type="password" id="senha" class="floating-input" placeholder=" " required
+                                        minlength="6" style="padding-right: 2.5rem !important;">
+                                    <label for="senha" class="floating-label"><i class="fa-solid fa-key fa-fw"></i>Senha (mín. 6)</label>
+                                    <button type="button" id="toggle-password" class="password-toggle-btn" title="Mostrar/Ocultar senha">
+                                        <i class="fa-solid fa-eye"></i>
+                                    </button>
+                                </div>
+                                <div class="password-strength-bar">
+                                    <div id="password-strength-fill" class="password-strength-fill"></div>
+                                </div>
+                                <div id="password-strength-text" class="password-strength-text"></div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Seção 2: Controle de Acesso -->
                     <div>
-                        <h3
-                            class="font-semibold text-base border-b border-[var(--color-border)] pb-2 mb-4 flex items-center gap-2">
-                            <i class="fa-solid fa-shield-halved text-[var(--color-primary)]"></i>
+                        <h3 class="section-header">
+                            <i class="fa-solid fa-shield-halved"></i>
                             Permissões de Acesso
                         </h3>
-                        <div class="grid grid-cols-2 gap-6 mb-5">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
                             <div class="floating-form-group floating-select">
                                 <select id="tipouser">
                                     <option value="Acesso Limitado">Acesso Limitado</option>
@@ -598,8 +733,13 @@
                             </div>
                         </div>
                         <div>
-                            <label class="text-sm font-medium mb-2 block"
-                                style="color: var(--color-text-secondary)">Permissões de Tela</label>
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="text-sm font-semibold"
+                                    style="color: var(--color-text-secondary)">Permissões de Tela</label>
+                                <button type="button" id="toggle-all-perms" class="text-xs font-bold px-2 py-1 rounded-md transition-colors" style="color: var(--color-primary); background: var(--color-primary-soft-bg);">
+                                    Selecionar Todos
+                                </button>
+                            </div>
                             <div id="permission-list-container" class="permission-grid thin-scrollbar">
                                 <!-- Checkboxes serão populados via JS -->
                             </div>
@@ -607,14 +747,13 @@
                     </div>
                 </div>
 
-                <footer class="card-footer flex flex-col sm:flex-row justify-between items-center gap-3"
-                    style="background-color: var(--color-surface-hover);">
+                <footer class="card-footer flex flex-col sm:flex-row justify-between items-center gap-3">
                     <div id="user-form-message" class="text-sm font-medium w-full sm:w-auto text-left"></div>
                     <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
-                        <button type="button" class="btn btn-secondary close-modal-button">Cancelar</button>
-                        <button type="submit" id="user-save-button" class="btn btn-primary w-28">
+                        <button type="button" class="btn btn-secondary close-modal-button" style="border-radius:0.5rem;">Cancelar</button>
+                        <button type="submit" id="user-save-button" class="btn btn-primary" style="min-width:140px;border-radius:0.5rem;">
                             <i id="user-save-spinner" class="fa-solid fa-spinner fa-spin mr-2 hidden"></i>
-                            <span id="user-save-text">Salvar</span>
+                            <span id="user-save-text">Salvar Usuário</span>
                         </button>
                     </div>
                 </footer>
@@ -832,6 +971,54 @@
         async function init() {
             tomSelectInstances.status = new TomSelect(ui.modal.inputs.status, { allowEmptyOption: false, controlInput: null });
             tomSelectInstances.tipouser = new TomSelect(ui.modal.inputs.tipouser, { allowEmptyOption: false, controlInput: null });
+
+            // Toggle de visibilidade da senha
+            const togglePwdBtn = document.getElementById('toggle-password');
+            if (togglePwdBtn) {
+                togglePwdBtn.addEventListener('click', () => {
+                    const senhaInput = ui.modal.inputs.senha;
+                    const isPassword = senhaInput.type === 'password';
+                    senhaInput.type = isPassword ? 'text' : 'password';
+                    togglePwdBtn.innerHTML = isPassword
+                        ? '<i class="fa-solid fa-eye-slash"></i>'
+                        : '<i class="fa-solid fa-eye"></i>';
+                });
+            }
+
+            // Toggle selecionar todas as permissões
+            const toggleAllPerms = document.getElementById('toggle-all-perms');
+            if (toggleAllPerms) {
+                toggleAllPerms.addEventListener('click', () => {
+                    const checkboxes = ui.modal.permissionContainer.querySelectorAll('input[type="checkbox"]');
+                    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+                    checkboxes.forEach(cb => cb.checked = !allChecked);
+                    toggleAllPerms.textContent = allChecked ? 'Selecionar Todos' : 'Desmarcar Todos';
+                });
+            }
+
+            // Indicador de força da senha
+            const senhaInput = ui.modal.inputs.senha;
+            if (senhaInput) {
+                senhaInput.addEventListener('input', () => {
+                    const val = senhaInput.value;
+                    const fill = document.getElementById('password-strength-fill');
+                    const text = document.getElementById('password-strength-text');
+                    if (!fill || !text) return;
+                    let strength = 0, label = '', color = '';
+                    if (val.length >= 2) strength++;
+                    if (val.length >= 6) strength++;
+                    if (/[A-Z]/.test(val)) strength++;
+                    if (/[0-9]/.test(val)) strength++;
+                    if (/[^A-Za-z0-9]/.test(val)) strength++;
+                    if (strength <= 1) { label = 'Fraca'; color = 'var(--color-danger)'; }
+                    else if (strength <= 3) { label = 'Média'; color = 'var(--color-warning)'; }
+                    else { label = 'Forte'; color = 'var(--color-success)'; }
+                    fill.style.width = `${Math.min(strength * 20, 100)}%`;
+                    fill.style.backgroundColor = color;
+                    text.textContent = val.length > 0 ? label : '';
+                    text.style.color = color;
+                });
+            }
 
             await loadUsers();
             const debouncedLoad = debounce(loadUsers, 300);
