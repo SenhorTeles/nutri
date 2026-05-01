@@ -7,10 +7,10 @@
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>NutriPort Comercial</title>
+    <title>ZyNapse</title>
 
     <!-- Favicon -->
-    <link rel="icon" href="https://i.imgur.com/8vy4QAK.png" type="image/png">
+    <link rel="icon" href="https://i.imgur.com/tEScTfN.png" type="image/png">
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -58,16 +58,22 @@
         /* === VARIÁVEIS DE CORES === */
         :root {
             /* Tema Claro */
-            --color-bg: #f8f9fa;
+            --color-bg: #f8f5f2;
             --color-surface: #ffffff;
-            --color-surface-hover: #fdf8f0;
-            /* Dourado bem claro no hover */
-            --color-surface-active: #faecd4;
-            /* Dourado claro ativo */
-            --color-border: #e5e7eb;
+            --color-surface-hover: #f3ebe1;
+            --color-surface-active: #eabda1;
+            --color-border: #d4c6b8;
 
-            --color-text-primary: #111827;
-            --color-text-secondary: #6b7280;
+            --color-text-primary: #1a110a;
+            --color-text-secondary: #58321b;
+
+            /* Sidebar ALWAYS PREMIUM DARK */
+            --color-sidebar-bg: #23150d;
+            --color-sidebar-hover: #371f11;
+            --color-sidebar-active: #5c3a21;
+            --color-sidebar-border: #371f11;
+            --color-sidebar-text: #ffffff;
+            --color-sidebar-text-muted: #c8b9b0;
 
             --safe-area-bottom: env(safe-area-inset-bottom, 0px);
             --safe-area-top: env(safe-area-inset-top, 0px);
@@ -75,15 +81,14 @@
 
         html[data-theme="dark"] {
             /* Tema Escuro */
-            --color-bg: #0c0a09;
-            --color-surface: #1c1917;
-            --color-surface-hover: #292524;
-            --color-surface-active: #3d2e0a;
-            /* Dourado escuro */
-            --color-border: #292524;
+            --color-bg: #160d08;
+            --color-surface: #2b170e;
+            --color-surface-hover: #3a1f12;
+            --color-surface-active: #4d2b17;
+            --color-border: #3d2112;
 
-            --color-text-primary: #f2f2f2;
-            --color-text-secondary: #a8a29e;
+            --color-text-primary: #f8f5f2;
+            --color-text-secondary: #df9e7d;
         }
 
         /* === FIXAÇÃO DE LAYOUT (ANTI-BOUNCE) === */
@@ -166,51 +171,56 @@
         }
 
         /* Sidebar Styling */
+        .sidebar, .mobile-drawer, nav.md\:hidden {
+            background-color: var(--color-sidebar-bg) !important;
+            border-color: var(--color-sidebar-border) !important;
+            color: var(--color-sidebar-text);
+        }
+
         .sidebar {
-            box-shadow: 1px 0 0 0 #3d2e14;
-            background-color: #5a4230 !important;
-            border-right: 1px solid #7a6250;
-            color: #e2e8f0;
+            border-right: 1px solid var(--color-sidebar-border);
             transition: width 0.3s cubic-bezier(0.2, 0, 0, 1), transform 0.3s cubic-bezier(0.2, 0, 0, 1);
         }
 
-        /* Custom overrides for dark sidebar irrespective of theme */
+        /* Text colors for sidebar elements */
+        .sidebar .sidebar-expanded-text, 
+        .sidebar .fa-bars,
+        .sidebar .pin-btn, 
         .sidebar .sidebar-item {
-            color: #94a3b8;
-            /* slate-400 */
+            color: var(--color-sidebar-text-muted);
         }
 
         .sidebar .sidebar-item:hover {
-            background-color: rgba(255, 255, 255, 0.1) !important;
-            color: #ffffff !important;
+            background-color: var(--color-sidebar-hover) !important;
+            color: var(--color-sidebar-text) !important;
         }
 
         .sidebar .sidebar-item:hover i {
-            color: #ffffff !important;
+            color: var(--color-sidebar-text) !important;
         }
 
         .sidebar .sidebar-item.active {
-            background-color: rgba(184, 134, 11, 0.2) !important;
-            color: #c4982a !important;
+            background-color: var(--color-sidebar-active) !important;
+            color: var(--color-sidebar-text) !important;
             border-color: transparent !important;
         }
 
         .sidebar .sidebar-item.active i {
-            color: #c4982a !important;
+            color: var(--color-sidebar-text) !important;
         }
 
         /* Adjust footer/logout button in sidebar */
-        .sidebar .border-t {
-            border-color: #7a6250 !important;
+        .sidebar .border-t, .sidebar .border-b,
+        .mobile-drawer .border-b, .mobile-drawer .border-t {
+            border-color: var(--color-sidebar-border) !important;
         }
 
         .sidebar .bg-surface {
             background-color: transparent !important;
-            /* Remove bg-surface from footer container */
         }
 
         .sidebar #logout-btn-desktop {
-            color: #94a3b8;
+            color: var(--color-sidebar-text-muted);
         }
 
         .sidebar #logout-btn-desktop:hover {
@@ -317,17 +327,36 @@
 
         /* Bottom Nav (Mobile) */
         .bottom-nav-item {
-            color: #94a3b8;
-            /* Light gray for dark background */
+            color: var(--color-sidebar-text-muted);
         }
 
         .bottom-nav-item.active {
-            color: #b8860b;
+            color: var(--color-sidebar-text);
             font-weight: 600;
         }
 
         .bottom-nav-item:not(.active):hover {
-            color: #f1f5f9;
+            color: var(--color-sidebar-text);
+        }
+        
+        /* Mobile Drawer Specific Text/Hover Overrides */
+        .mobile-drawer .text-sec {
+            color: var(--color-sidebar-text-muted);
+        }
+        .mobile-drawer .text-text-main {
+            color: var(--color-sidebar-text);
+        }
+        .mobile-drawer button:not(.bg-surface-active):hover {
+            background-color: var(--color-sidebar-hover) !important;
+            color: var(--color-sidebar-text) !important;
+        }
+        .mobile-drawer button.bg-surface-active {
+            background-color: var(--color-sidebar-active) !important;
+            color: var(--color-sidebar-text) !important;
+            border-color: transparent !important;
+        }
+        .mobile-drawer button.bg-surface-active i {
+            color: var(--color-sidebar-text) !important;
         }
 
         /* User Dropdown */
@@ -480,13 +509,13 @@
 
         <!-- HEADER SIDEBAR -->
         <div
-            class="h-12 flex items-center justify-between px-4 border-b border-[#7a6250] flex-shrink-0 relative bg-transparent overflow-hidden">
+            class="h-12 flex items-center justify-between px-4 border-b flex-shrink-0 relative bg-transparent overflow-hidden">
             <div class="flex items-center gap-3">
-                <i class="fa-solid fa-bars text-xl text-white/80 w-6 text-center"></i>
-                <span class="sidebar-expanded-text font-bold text-white uppercase text-sm tracking-wider">Menu</span>
+                <i class="fa-solid fa-bars text-xl w-6 text-center"></i>
+                <span class="sidebar-expanded-text font-bold uppercase text-sm tracking-wider">Menu</span>
             </div>
 
-            <button id="pin-sidebar-btn" class="pin-btn text-white/50 hover:text-white transition-colors"
+            <button id="pin-sidebar-btn" class="pin-btn text-sec hover:text-text-main transition-colors"
                 title="Fixar menu lateral" onclick="toggleSidebarPin()">
                 <i class="fa-solid fa-thumbtack text-sm"></i>
             </button>
@@ -512,8 +541,8 @@
     <!-- MOBILE MENU DRAWER -->
     <div id="mobile-drawer"
         class="fixed inset-y-0 left-0 w-[280px] bg-surface shadow-2xl z-[60] mobile-drawer flex flex-col border-r border-border md:hidden overscroll-none">
-        <div class="h-12 flex items-center justify-center border-b border-border bg-surface px-4 flex-shrink-0">
-            <img src="https://i.imgur.com/8vy4QAK.png" alt="NutriPort Comercial"
+        <div class="h-12 flex items-center justify-center border-b px-4 flex-shrink-0 gap-3">
+            <img src="https://i.imgur.com/8vy4QAK.png" alt="NutriPort"
                 class="w-8 h-8 object-contain">
         </div>
         <nav class="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-2 no-scrollbar overscroll-contain"
@@ -541,20 +570,21 @@
             <div class="flex items-center gap-4 relative z-10">
                 <!-- Mobile Logo & Name -->
                 <div class="md:hidden flex items-center gap-3">
-                    <img src="https://i.imgur.com/8vy4QAK.png" alt="NutriPort Comercial"
+                    <img src="https://i.imgur.com/8vy4QAK.png" alt="NutriPort"
                         class="h-8 w-8 object-contain">
                     <div class="text-lg font-bold tracking-tight">
-                        <span class="logo-text-main">NutriPort</span>
+                        <span class="logo-text-main text-text-main">NutriPort</span>
                     </div>
                     <span id="status-indicator" class="status-dot"></span>
                 </div>
 
                 <!-- Desktop Logo & Name -->
                 <div class="hidden md:flex items-center gap-3 select-none">
-                    <img src="https://i.imgur.com/8vy4QAK.png" alt="NutriPort Comercial"
+                    <img src="https://i.imgur.com/8vy4QAK.png" alt="NutriPort"
                         class="h-8 w-8 object-contain">
-                    <div class="text-lg font-bold tracking-tight">
-                        <span class="logo-text-main">NutriPort</span> <span class="logo-text-accent">Comercial</span>
+                    <div class="font-bold tracking-tight">
+                        <span class="logo-text-main text-[22px] text-text-main">NutriPort</span>
+                        <span class="logo-text-accent" style="color: #c4982a;">Comercial</span>
                     </div>
                 </div>
             </div>
@@ -643,7 +673,7 @@
 
         <!-- BOTTOM NAV (Mobile Only) -->
         <nav
-            class="md:hidden w-full bg-[#5a4230] border-t border-[#7a6250] z-40 pb-[env(safe-area-inset-bottom)] flex-shrink-0 fixed bottom-0 left-0 right-0">
+            class="md:hidden w-full border-t z-40 pb-[env(safe-area-bottom)] flex-shrink-0 fixed bottom-0 left-0 right-0">
             <div class="h-16 flex items-center justify-around px-2" id="mobile-nav">
                 <!-- Injetado via JS -->
             </div>
@@ -805,7 +835,7 @@
 
                     // Título da Seção (visível apenas expandido)
                     els.desktopMenu.insertAdjacentHTML('beforeend', `
-                        <div class="px-4 py-1.5 mt-2 mb-0.5 text-[9px] font-extrabold text-white/70 uppercase tracking-widest sidebar-expanded-text select-none">
+                        <div class="px-4 py-1.5 mt-2 mb-0.5 text-[9px] font-extrabold uppercase tracking-widest sidebar-expanded-text select-none">
                             ${section.title}
                         </div>
                     `);
@@ -817,10 +847,10 @@
 
                         els.desktopMenu.insertAdjacentHTML('beforeend', `
                             <button onclick="handleNavigation('${id}', '${item.url}', '${item.icon}', '${item.name}')"
-                                    class="sidebar-item w-full p-2.5 rounded-lg gap-3 text-sec group/item mb-0.5 ${isActive ? 'active' : ''}"
+                                    class="sidebar-item w-full p-2.5 rounded-lg gap-3 group/item mb-0.5 ${isActive ? 'active' : ''}"
                                     title="${item.name}">
                                 <div class="w-6 shrink-0 flex items-center justify-center">
-                                    <i class="${item.icon} text-base transition-colors ${isActive ? '' : 'group-hover/item:text-text-main'}"></i>
+                                    <i class="${item.icon} text-base transition-colors"></i>
                                 </div>
                                 <span class="sidebar-expanded-text font-medium text-xs transition-colors duration-200 text-left flex-1">${item.name}</span>
                             </button>
@@ -859,7 +889,7 @@
                     }
 
                     els.mobileDrawerMenu.insertAdjacentHTML('beforeend', `
-                        <div class="px-4 py-1.5 text-xs font-bold text-sec/70 uppercase tracking-wider mb-1">
+                        <div class="px-4 py-1.5 text-xs font-bold uppercase tracking-wider mb-1 text-sec">
                             ${section.title}
                         </div>
                     `);
@@ -870,8 +900,8 @@
 
                         els.mobileDrawerMenu.insertAdjacentHTML('beforeend', `
                             <button onclick="handleNavigation('${id}', '${item.url}', '${item.icon}', '${item.name}')" 
-                                    class="w-full flex items-center p-3 rounded-lg gap-4 text-sec hover:bg-surface-hover hover:text-text-main transition-all duration-200 ${isActive ? 'bg-surface-active text-text-main font-semibold border border-border' : ''}">
-                                <i class="${item.icon} text-lg w-6 text-center ${isActive ? 'text-primary' : ''}"></i>
+                                    class="w-full flex items-center p-3 rounded-lg gap-4 transition-all duration-200 ${isActive ? 'bg-surface-active text-text-main font-semibold border border-transparent' : 'text-sec hover:bg-surface-hover hover:text-text-main'}">
+                                <i class="${item.icon} text-lg w-6 text-center ${isActive ? '' : ''}"></i>
                                 <span class="text-sm">${item.name}</span>
                             </button>
                         `);
