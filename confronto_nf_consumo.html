@@ -4792,6 +4792,10 @@ const state = {
                         .eq('status', 'Não Importada');
 
                     if (error) throw error;
+                    
+                    // Oculta o loader antes de mostrar os popups do SweetAlert
+                    document.getElementById('loader-full-page').classList.add('hidden');
+
                     if (!naoImportados || naoImportados.length === 0) {
                         Swal.fire('Ops!', 'Nenhum registro "Não Importado" encontrado.', 'info');
                         return;
@@ -4808,6 +4812,10 @@ const state = {
                     });
 
                     if (!confirm.isConfirmed) return;
+                    
+                    // Exibe o loader novamente após confirmação
+                    document.getElementById('loader-full-page').classList.remove('hidden');
+                    document.getElementById('loader-text').textContent = 'Enviando registros para importação...';
 
                     // Enviar para fila de importação
                     let countOk = 0;
