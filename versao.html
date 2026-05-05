@@ -228,8 +228,8 @@
                         <div id="drop-zone" class="upload-area">
                             <i class="fa-solid fa-cloud-arrow-up text-4xl mb-2 text-[var(--color-primary)]"></i>
                             <p class="font-medium">Clique ou arraste um arquivo aqui</p>
-                            <p class="text-xs mt-1 text-[var(--color-text-secondary)]">Tipos recomendados: .exe, .zip, .rar</p>
-                            <input type="file" id="file-input" class="hidden">
+                            <p class="text-xs mt-1 text-[var(--color-text-secondary)]">O arquivo deve se chamar exatamente: <strong class="text-[var(--color-primary)]">ZyNapse_Conect.exe</strong></p>
+                            <input type="file" id="file-input" class="hidden" accept=".exe">
                         </div>
                         <div id="selected-file-info" class="hidden text-sm bg-[var(--color-info-soft-bg)] text-[var(--color-info)] p-2 rounded justify-between items-center">
                             <span class="truncate pr-2 font-medium" id="file-name-display"></span>
@@ -641,7 +641,26 @@
             if (e.target.files.length) handleFileSelect(e.target.files[0]);
         });
 
+        const REQUIRED_FILE_NAME = 'ZyNapse_Conect.exe';
+
         function handleFileSelect(file) {
+            // Normaliza: remove espaços e compara
+            const safeName = file.name.replace(/\s+/g, '_');
+            if (safeName !== REQUIRED_FILE_NAME) {
+                showToast(`Nome inválido: "${file.name}". O arquivo deve se chamar exatamente "${REQUIRED_FILE_NAME}".`, 'error');
+                selectedFile = null;
+                ui.btnUpload.disabled = true;
+                ui.selectedFileInfo.classList.add('hidden');
+                ui.selectedFileInfo.classList.remove('flex');
+                // Flash visual de erro no drop-zone
+                ui.dropZone.style.borderColor = 'var(--color-danger)';
+                ui.dropZone.style.backgroundColor = 'var(--color-danger-soft-bg)';
+                setTimeout(() => {
+                    ui.dropZone.style.borderColor = '';
+                    ui.dropZone.style.backgroundColor = '';
+                }, 2000);
+                return;
+            }
             selectedFile = file;
             ui.fileNameDisplay.textContent = file.name;
             ui.fileSizeDisplay.textContent = formatBytes(file.size);
@@ -669,6 +688,14 @@
             try {
                 // Remove espaços do nome do arquivo por segurança
                 const safeName = selectedFile.name.replace(/\s+/g, '_');
+
+                // Validação final: nome deve ser exatamente ZyNapse_Conect.exe
+                if (safeName !== REQUIRED_FILE_NAME) {
+                    showToast(`Bloqueado: o arquivo precisa se chamar "${REQUIRED_FILE_NAME}".`, 'error');
+                    ui.btnUpload.disabled = false;
+                    ui.btnUpload.innerHTML = '<i class="fa-solid fa-upload mr-2"></i>Enviar Arquivo';
+                    return;
+                }
                 
                 // Em supabase js v2 upload:
                 const { data, error } = await supabaseClient.storage.from(bucketName).upload(safeName, selectedFile, {

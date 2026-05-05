@@ -9,13 +9,13 @@ from tkinter import ttk, messagebox, filedialog, font as tkfont
 from datetime import datetime
 import time
 
-ORACLE_USUARIO = "MIGRACAO"
-ORACLE_SENHA = "fzabu69128XPKGY@!"
-ORACLE_HOST = "201.157.211.96"
+ORACLE_USUARIO = "NJF"
+ORACLE_SENHA = "Njf"
+ORACLE_HOST = "192.168.254.200"
 ORACLE_PORTA = 1521
-ORACLE_SERVICE = "CS8NZK_190797_W_high.paas.oracle.com"
+ORACLE_SERVICE = "WINT"
 
-CLIENT_LIB_DIR = r"C:\Users\informatica.ti\Documents\appdiscooveryzynapse\cmdintanci\instantclient_21_19"
+CLIENT_LIB_DIR = r"C:\Users\NJF\Documents\ZyNapse\instantclient-basic-windows.x64-21.19.0.0.0dbru\instantclient_21_19"
 
 COLORS = {
     "bg_dark": "#f5f6fa",

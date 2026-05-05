@@ -463,9 +463,27 @@ def run_ve_ri():
                     conn.commit()
                     log(f"({nome}) UPDATE de {len(aprovados)} NFs para Conferido='S'.", "[VE_RI]")
                     
+                    # Buscar CFOP (codfiscal) atualizado da tabela PCNFBASE após a alteração manual no Winthor
+                    cfop_map = {}
+                    try:
+                        cursor.execute(f"SELECT numtransent, codfiscal FROM pcnfbase WHERE numtransent IN ({binds_upd})")
+                        for row in cursor.fetchall():
+                            cfop_map[str(row[0])] = row[1]
+                    except Exception as e:
+                        log(f"Erro ao buscar CFOP na PCNFBASE: {e}", "[VE_RI]")
+                        
                     for reg in filas:
-                        if str(reg.get('numtransent')) in aprovados:
-                            payload = {"status": "Totalmente Validada", "validado_por": reg.get("user_nome"), "validado_em": datetime.utcnow().isoformat()+"Z"}
+                        nt_str = str(reg.get('numtransent'))
+                        if nt_str in aprovados:
+                            payload = {
+                                "status": "Totalmente Validada", 
+                                "validado_por": reg.get("user_nome"), 
+                                "validado_em": datetime.utcnow().isoformat()+"Z"
+                            }
+                            
+                            if nt_str in cfop_map and cfop_map[nt_str] is not None:
+                                payload["codfiscal"] = cfop_map[nt_str]
+                                
                             requests.patch(f"{SUPABASE_URL}/rest/v1/{cfg['tbl_confronto']}?id=eq.{reg['confronto_id']}", headers=HEADERS, json=payload)
                             requests.delete(f"{SUPABASE_URL}/rest/v1/{cfg['tbl_veri']}?id=eq.{reg['id']}", headers=HEADERS)
                             
@@ -567,9 +585,38 @@ def run_import_consumo():
                         # Extrair dados do XML
                         nNF = (root.find('.//ide/nNF').text if root.find('.//ide/nNF') is not None else "0")
                         serie = (root.find('.//ide/serie').text if root.find('.//ide/serie') is not None else "53")
-                        dhEmi = (root.find('.//ide/dhEmi').text if root.find('.//ide/dhEmi') is not None else "")
+                        # Extrair data de emissao do XML com fallbacks robustos
+                        dhEmi = ""
+                        for tag_emi in ['.//ide/dhEmi', './/ide/dEmi', './/dhEmi', './/dEmi']:
+                            el_emi = root.find(tag_emi)
+                            if el_emi is not None and el_emi.text:
+                                dhEmi = el_emi.text.strip()
+                                break
+                        
                         dt_emissao = dhEmi[:10] if len(dhEmi) >= 10 else ""
-                        dt_emissao_formatada = datetime.strptime(dt_emissao, "%Y-%m-%d").strftime("%d/%m/%Y") if dt_emissao else ""
+                        
+                        # Fallback: usar campo dtemissao do registro Supabase se XML nao tiver a tag
+                        if not dt_emissao:
+                            dtemissao_supa = reg.get('dtemissao', '') or ''
+                            if len(dtemissao_supa) >= 10:
+                                dt_emissao = dtemissao_supa[:10]
+                                log(f"ID {id_req}: dhEmi nao encontrado no XML, usando dtemissao do Supabase: {dt_emissao}", "[IMPORT_CONSUMO]")
+                        
+                        # Converter para formato DD/MM/YYYY
+                        dt_emissao_formatada = ""
+                        if dt_emissao:
+                            try:
+                                dt_emissao_formatada = datetime.strptime(dt_emissao, "%Y-%m-%d").strftime("%d/%m/%Y")
+                            except ValueError:
+                                try:
+                                    dt_emissao_formatada = datetime.strptime(dt_emissao, "%d/%m/%Y").strftime("%d/%m/%Y")
+                                except ValueError:
+                                    log(f"ID {id_req}: ERRO ao parsear dt_emissao='{dt_emissao}', usando data de hoje como fallback!", "[IMPORT_CONSUMO]")
+                                    dt_emissao_formatada = datetime.now().strftime("%d/%m/%Y")
+                        else:
+                            log(f"ID {id_req}: ALERTA - Data de emissao NAO encontrada no XML nem no Supabase!", "[IMPORT_CONSUMO]")
+                        
+                        log(f"ID {id_req}: dhEmi='{dhEmi}' -> dt_emissao='{dt_emissao}' -> dt_emissao_formatada='{dt_emissao_formatada}'", "[IMPORT_CONSUMO]")
                         
                         cnpj_emissor_el = root.find('.//emit/CNPJ')
                         cpf_emissor_el = root.find('.//emit/CPF')
@@ -595,6 +642,12 @@ def run_import_consumo():
                         vNF_el = root.find('.//vNF')
                         vltotal = float(vNF_el.text) if vNF_el is not None else 0.0
                         
+                        vPIS_el = root.find('.//vPIS')
+                        vlpis_xml = float(vPIS_el.text) if vPIS_el is not None and vPIS_el.text else 0.0
+                        
+                        vCOFINS_el = root.find('.//vCOFINS')
+                        vlcofins_xml = float(vCOFINS_el.text) if vCOFINS_el is not None and vCOFINS_el.text else 0.0
+                        
                         log(f"ID {id_req}: NF={nNF} Serie={serie} Emit={cnpj_emissor} Dest={cnpj_dest} VL={vltotal}", "[IMPORT_CONSUMO]")
                         
                         cursor = conn.cursor()
@@ -606,21 +659,33 @@ def run_import_consumo():
                             requests.patch(f"{SUPABASE_URL}/rest/v1/{cfg['tbl_confronto']}?id=eq.{id_req}", headers=HEADERS, json={"status":"Erro Import", "obs": f"Chave ja existe no pcnfent! numtransent={row_exist[0]}"})
                             cursor.close()
                             continue
-                            
-                        # 1. Obter info filial - buscar pelo CGC sem zero
-                        filial_map_key = cnpj_dest.lstrip('0')
-                        codfilial = FILIAIS_MAP.get(filial_map_key) or FILIAIS_MAP.get(cnpj_dest)
                         
-                        if not codfilial:
-                            log(f"ID {id_req}: Filial nao encontrada no mapa para CGC {cnpj_dest} / {filial_map_key}. Mapa: {FILIAIS_MAP}", "[IMPORT_CONSUMO]")
-                            requests.patch(f"{SUPABASE_URL}/rest/v1/{cfg['tbl_confronto']}?id=eq.{id_req}", headers=HEADERS, json={"status":"Erro Import", "obs": f"Filial nao encontrada no mapa para CGC dest={cnpj_dest}"})
+                        cnpj_dest_limpo = cnpj_dest.lstrip('0')
+                        FILIAIS_PRIORITARIAS = {
+                            '3612312000144': 1,
+                            '3612312000306': 2,
+                            '3612312000497': 3,
+                            '3612312000225': 4
+                        }
+                        
+                        if cnpj_dest_limpo not in FILIAIS_PRIORITARIAS:
+                            log(f"ID {id_req}: CNPJ {cnpj_dest} nao e filial valida. Filiais permitidas: {list(FILIAIS_PRIORITARIAS.keys())}", "[IMPORT_CONSUMO]")
+                            requests.patch(f"{SUPABASE_URL}/rest/v1/{cfg['tbl_confronto']}?id=eq.{id_req}", headers=HEADERS, json={"status":"Erro Import", "obs": f"CNPJ {cnpj_dest} nao e filial valida para importacao"})
                             cursor.close()
                             continue
+                        
+                        codfilial = FILIAIS_PRIORITARIAS[cnpj_dest_limpo]
                         
                         log(f"ID {id_req}: codfilial={codfilial}", "[IMPORT_CONSUMO]")
                         
                         cursor.execute("SELECT CODIGO, RAZAOSOCIAL, ENDERECO, CIDADE, UF, CEP, codfornec, CGC, IE FROM PCFILIAL WHERE codigo = :cod", cod=codfilial)
                         filial_db = cursor.fetchone()
+                        if not filial_db:
+                            log(f"ID {id_req}: Filial {codfilial} nao existe no WinThor para CNPJ {cnpj_dest}", "[IMPORT_CONSUMO]")
+                            requests.patch(f"{SUPABASE_URL}/rest/v1/{cfg['tbl_confronto']}?id=eq.{id_req}", headers=HEADERS, json={"status":"Erro Import", "obs": f"Filial {codfilial} nao existe no WinThor para CNPJ dest={cnpj_dest}"})
+                            cursor.close()
+                            continue
+                        
                         uf_filial = filial_db[4] if filial_db else uf_dest
                         cgc_filial = filial_db[7] if filial_db else cnpj_dest
                         codfor_filial = filial_db[6] if filial_db else None
@@ -653,8 +718,8 @@ def run_import_consumo():
                             cursor.execute("UPDATE pcconsum SET proxnumfornec = :val", val=novo_proxnumfornec)
                             log(f"ID {id_req}: Novo fornecedor codfornec={codfornec}", "[IMPORT_CONSUMO]")
                             
-                            sql_ins_forn = """INSERT INTO PCFORNEC (CODFORNEC, FORNECEDOR, TIPOPESSOA, CGC, IE, ENDER, BAIRRO, CIDADE, ESTADO, CEP, CODMUNICIPIO, CODCONTAS) 
-                                              VALUES (:CODFORNEC, :FORNECEDOR, :TIPOPESSOA, :CGC, :IE, :ENDER, :BAIRRO, :CIDADE, :ESTADO, :CEP, :CODMUNICIPIO, :CODCONTAS)"""
+                            sql_ins_forn = """INSERT INTO PCFORNEC (CODFORNEC, FORNECEDOR, TIPOPESSOA, CGC, IE, ENDER, BAIRRO, CIDADE, ESTADO, CEP, CODMUNICIPIO, CODCONTA) 
+                                              VALUES (:CODFORNEC, :FORNECEDOR, :TIPOPESSOA, :CGC, :IE, :ENDER, :BAIRRO, :CIDADE, :ESTADO, :CEP, :CODMUNICIPIO, :CODCONTA)"""
                             cursor.execute(sql_ins_forn, {
                                 'CODFORNEC': codfornec,
                                 'FORNECEDOR': xNome_emit[:60],
@@ -667,7 +732,7 @@ def run_import_consumo():
                                 'ESTADO': uf_emit[:2],
                                 'CEP': cep_emit[:8],
                                 'CODMUNICIPIO': cMun_emit,
-                                'CODCONTAS': 40183
+                                'CODCONTA': 40183
                             })
                         
                         # 3. Check existing and Gerar numtransent
@@ -774,7 +839,7 @@ def run_import_consumo():
                             cursor.execute(sql_ins_piscofins, {
                                 'NUMTRANSPISCOFINS': numtranspiscofins,
                                 'CODTRIBPISCOFINS': 70, 'VLBASEPIS': 0, 'VLBASECOFINS': 0, 'PERPIS': 0, 'PERCOFINS': 0,
-                                'VLCOFINS': 0, 'VLPIS': 0, 'NUMTRANSENT': numtransent, 'CODCONT': 401003,
+                                'VLCOFINS': vlcofins_xml, 'VLPIS': vlpis_xml, 'NUMTRANSENT': numtransent, 'CODCONT': 401003,
                                 'NATCREDITO': 0, 'PERCREDBASEPISCOFINSFRETE': 0
                             })
                             log(f"ID {id_req}: PCNFENTPISCOFINS inserido", "[IMPORT_CONSUMO]")

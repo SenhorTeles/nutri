@@ -114,6 +114,23 @@
             animation-delay: 0.3s;
             opacity: 0;
         }
+
+        /* Estrelas piscando */
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.4); }
+        }
+        .star { animation: twinkle ease-in-out infinite; }
+
+        /* Rodapé */
+        .login-footer {
+            position: fixed;
+            bottom: 16px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            z-index: 5;
+        }
     </style>
 </head>
 
@@ -129,11 +146,13 @@
     <!-- Background Scenery (Vector Dunes) -->
     <div class="fixed inset-0 z-[-1] overflow-hidden pointer-events-none">
         <!-- Stars -->
-        <div class="absolute top-[10%] left-[20%] w-1 h-1 bg-white rounded-full opacity-60 shadow-[0_0_4px_white]"></div>
-        <div class="absolute top-[25%] right-[20%] w-1.5 h-1.5 bg-white rounded-full opacity-80 shadow-[0_0_6px_white]"></div>
-        <div class="absolute top-[40%] right-[35%] w-0.5 h-0.5 bg-white rounded-full opacity-50"></div>
-        <div class="absolute top-[15%] left-[45%] w-1 h-1 bg-white rounded-full opacity-70"></div>
-        <div class="absolute top-[30%] left-[10%] w-1.5 h-1.5 bg-white rounded-full opacity-40"></div>
+        <div class="star absolute top-[10%] left-[20%] w-1 h-1 bg-white rounded-full shadow-[0_0_4px_white]" style="animation-duration: 3s;"></div>
+        <div class="star absolute top-[25%] right-[20%] w-1.5 h-1.5 bg-white rounded-full shadow-[0_0_6px_white]" style="animation-duration: 4s; animation-delay: 1s;"></div>
+        <div class="star absolute top-[40%] right-[35%] w-0.5 h-0.5 bg-white rounded-full" style="animation-duration: 2.5s; animation-delay: 0.5s;"></div>
+        <div class="star absolute top-[15%] left-[45%] w-1 h-1 bg-white rounded-full" style="animation-duration: 3.5s; animation-delay: 2s;"></div>
+        <div class="star absolute top-[30%] left-[10%] w-1.5 h-1.5 bg-white rounded-full" style="animation-duration: 5s; animation-delay: 0.8s;"></div>
+        <div class="star absolute top-[8%] left-[60%] w-0.5 h-0.5 bg-white rounded-full" style="animation-duration: 2.8s; animation-delay: 1.5s;"></div>
+        <div class="star absolute top-[18%] left-[75%] w-1 h-1 bg-white rounded-full shadow-[0_0_3px_white]" style="animation-duration: 4.2s; animation-delay: 0.3s;"></div>
         
         <!-- Shooting Stars -->
         <div class="absolute top-[10%] left-[10%] w-[60px] h-[1px] bg-gradient-to-r from-transparent to-white/60 transform -rotate-45"></div>
@@ -168,7 +187,7 @@
     </div>
 
     <!-- Login Card -->
-    <div class="w-full max-w-[340px] bg-[#f8f5f2] rounded-none shadow-2xl overflow-hidden relative z-10 flex flex-col mx-4 transform transition-all">
+    <div class="w-full max-w-[340px] bg-[#f8f5f2] rounded-2xl shadow-2xl overflow-hidden relative z-10 flex flex-col mx-4 transform transition-all">
         
         <!-- Card Header (Illustration) -->
         <div class="h-44 relative overflow-hidden flex flex-col items-center justify-center" style="background: linear-gradient(180deg, #2b170e 0%, #87512d 100%);">
@@ -247,10 +266,6 @@
                             lembrar de mim
                         </label>
                     </div>
-                    
-                    <a href="https://wa.me/5562995010222?text=Esqueci%20minha%20senha%20expedicao" class="text-[9px] font-bold text-brand-textLight hover:text-brand-textDark lowercase tracking-widest transition-colors">
-                        esqueci a senha
-                    </a>
                 </div>
                 
                 <!-- Submit -->
@@ -259,13 +274,13 @@
                     <span id="btn-content">Login</span>
                 </button>
                 
-                <div class="text-center mt-6 pt-3">
-                    <a href="#" class="text-[10px] font-bold text-[#826a5c] hover:text-brand-btn lowercase tracking-widest transition-colors">
-                        solicitar acesso
-                    </a>
-                </div>
             </form>
         </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="login-footer">
+        <p class="text-[10px] font-medium text-white/30 tracking-widest uppercase">© 2026 NutriPort · Powered by ZyNapse</p>
     </div>
 
     <!-- Efeitos Sonoros -->

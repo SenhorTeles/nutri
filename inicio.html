@@ -76,27 +76,31 @@
     </script>
     <style>
         :root {
-            --bg: #f8f9fa;
+            /* Tema Claro */
+            --bg: #f8f5f2;
             --surface: #ffffff;
-            --surface-hover: #fafafa;
-            --border: #e5e7eb;
-            --text-primary: #111827;
-            --text-secondary: #6b7280;
-            --accent: #b8860b;
-            --accent-light: #faecd4;
-            --accent-dark: #9a7209;
+            --surface-hover: #f3ebe1;
+            --border: #d4c6b8;
+            --text-primary: #1a110a;
+            --text-secondary: #58321b;
+            --accent: #c4982a;
+            --accent-light: #eabda1;
+            --accent-dark: #b8860b;
+            --stripe-color: #c4982a;
         }
 
         html[data-theme="dark"] {
-            --bg: #0c0a09;
-            --surface: #1c1917;
-            --surface-hover: #292524;
-            --border: #292524;
-            --text-primary: #f2f2f2;
-            --text-secondary: #a8a29e;
-            --accent: #b8860b;
-            --accent-light: #3d2e0a;
-            --accent-dark: #9a7209;
+            /* Tema Escuro */
+            --bg: #160d08;
+            --surface: #2b170e;
+            --surface-hover: #3a1f12;
+            --border: #3d2112;
+            --text-primary: #f8f5f2;
+            --text-secondary: #df9e7d;
+            --accent: #c4982a;
+            --accent-light: #4d2b17;
+            --accent-dark: #b8860b;
+            --stripe-color: #c4982a;
         }
 
         * {
@@ -121,6 +125,35 @@
 
         .scrollable::-webkit-scrollbar {
             display: none;
+        }
+
+        /* Nav Cards */
+        .nav-card {
+            background-color: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+        }
+        .nav-card:hover {
+            background-color: var(--surface-hover);
+            transform: translateY(-2px);
+        }
+        .nav-card.active {
+            border-color: var(--accent);
+            background-color: var(--surface);
+            box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+        }
+        .nav-card .icon-circle {
+            background-color: var(--surface-hover);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+        .nav-card.active .icon-circle {
+            background-color: var(--accent);
+            color: #ffffff;
+            border-color: var(--accent-dark);
+        }
+        .nav-card span {
+            color: var(--text-primary);
         }
 
         /* KPI Cards */
@@ -441,7 +474,7 @@
                 </div>
                 <div class="flex items-center gap-2">
                     <div id="realtime-badge"
-                        class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-emerald-700 text-xs font-semibold" style="background: var(--surface-hover); border: 1px solid var(--border)">
+                        class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-emerald-600 dark:text-emerald-400 text-xs font-semibold" style="background: var(--surface-hover); border: 1px solid var(--border)">
                         <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                         Tempo Real
                     </div>
@@ -461,29 +494,29 @@
 
             <!-- Navigation Cards -->
             <section class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <button onclick="switchDashboard('confrontofiscalnfconsumo', this)" class="nav-card active flex flex-col items-center justify-center p-4 rounded-xl border border-indigo-500 bg-indigo-50 shadow-md transition-all ring-2 ring-offset-2 ring-indigo-500 cursor-pointer">
-                    <div class="w-12 h-12 rounded-full flex items-center justify-center bg-indigo-100 text-indigo-600 mb-2">
+                <button onclick="switchDashboard('confrontofiscalnfconsumo', this)" class="nav-card active flex flex-col items-center justify-center p-4 rounded-xl transition-all shadow-sm cursor-pointer">
+                    <div class="icon-circle w-12 h-12 rounded-full flex items-center justify-center mb-2 transition-colors">
                         <i class="fa-solid fa-cart-shopping text-xl"></i>
                     </div>
-                    <span class="font-bold text-gray-800 text-sm">NF Consumo</span>
+                    <span class="font-bold text-sm">NF Consumo</span>
                 </button>
-                <button onclick="switchDashboard('confrontofiscalnfservico', this)" class="nav-card flex flex-col items-center justify-center p-4 rounded-xl border border-gray-200 bg-white hover:bg-purple-50 hover:shadow-md transition-all shadow-sm cursor-pointer">
-                    <div class="w-12 h-12 rounded-full flex items-center justify-center bg-purple-100 text-purple-600 mb-2">
+                <button onclick="switchDashboard('confrontofiscalnfservico', this)" class="nav-card flex flex-col items-center justify-center p-4 rounded-xl transition-all shadow-sm cursor-pointer">
+                    <div class="icon-circle w-12 h-12 rounded-full flex items-center justify-center mb-2 transition-colors">
                         <i class="fa-solid fa-briefcase text-xl"></i>
                     </div>
-                    <span class="font-bold text-gray-800 text-sm">NF Serviço</span>
+                    <span class="font-bold text-sm">NF Serviço</span>
                 </button>
-                <button onclick="switchDashboard('confrontofiscaldanfe', this)" class="nav-card flex flex-col items-center justify-center p-4 rounded-xl border border-gray-200 bg-white hover:bg-blue-50 hover:shadow-md transition-all shadow-sm cursor-pointer">
-                    <div class="w-12 h-12 rounded-full flex items-center justify-center bg-blue-100 text-blue-600 mb-2">
+                <button onclick="switchDashboard('confrontofiscaldanfe', this)" class="nav-card flex flex-col items-center justify-center p-4 rounded-xl transition-all shadow-sm cursor-pointer">
+                    <div class="icon-circle w-12 h-12 rounded-full flex items-center justify-center mb-2 transition-colors">
                         <i class="fa-solid fa-file-invoice text-xl"></i>
                     </div>
-                    <span class="font-bold text-gray-800 text-sm">DANFE</span>
+                    <span class="font-bold text-sm">DANFE</span>
                 </button>
-                <button onclick="switchDashboard('confrontofiscalcte', this)" class="nav-card flex flex-col items-center justify-center p-4 rounded-xl border border-gray-200 bg-white hover:bg-orange-50 hover:shadow-md transition-all shadow-sm cursor-pointer">
-                    <div class="w-12 h-12 rounded-full flex items-center justify-center bg-orange-100 text-orange-600 mb-2">
+                <button onclick="switchDashboard('confrontofiscalcte', this)" class="nav-card flex flex-col items-center justify-center p-4 rounded-xl transition-all shadow-sm cursor-pointer">
+                    <div class="icon-circle w-12 h-12 rounded-full flex items-center justify-center mb-2 transition-colors">
                         <i class="fa-solid fa-truck-fast text-xl"></i>
                     </div>
-                    <span class="font-bold text-gray-800 text-sm">CT-e</span>
+                    <span class="font-bold text-sm">CT-e</span>
                 </button>
             </section>
 
@@ -640,8 +673,8 @@
                     <div class="flex items-center justify-between mb-3">
                         <div class="flex items-center gap-2">
                             <div
-                                class="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-100 to-indigo-50 flex items-center justify-center">
-                                <i class="fa-solid fa-chart-pie text-indigo-500 text-xs"></i>
+                                class="w-7 h-7 rounded-lg flex items-center justify-center border" style="background: var(--surface-hover); border-color: var(--border);">
+                                <i class="fa-solid fa-chart-pie" style="color: var(--accent);"></i>
                             </div>
                             <div>
                                 <div class="chart-card-title" style="color: var(--text-primary)">Distribuição por Status</div>
@@ -664,8 +697,8 @@
                     <div class="flex items-center justify-between mb-3">
                         <div class="flex items-center gap-2">
                             <div
-                                class="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-100 to-amber-50 flex items-center justify-center">
-                                <i class="fa-solid fa-building text-amber-500 text-xs"></i>
+                                class="w-7 h-7 rounded-lg flex items-center justify-center border" style="background: var(--surface-hover); border-color: var(--border);">
+                                <i class="fa-solid fa-building" style="color: var(--accent);"></i>
                             </div>
                             <div>
                                 <div class="chart-card-title" style="color: var(--text-primary)">Lançamentos por Filial</div>
@@ -683,7 +716,7 @@
                     <div class="flex items-center justify-between mb-3">
                         <div class="flex items-center gap-2">
                             <div
-                                class="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-100 to-emerald-50 flex items-center justify-center">
+                                class="w-7 h-7 rounded-lg flex items-center justify-center border" style="background: var(--surface-hover); border-color: var(--border);">
                                 <i class="fa-solid fa-chart-line text-emerald-500 text-xs"></i>
                             </div>
                             <div>
@@ -692,7 +725,7 @@
                             </div>
                         </div>
                         <span id="validation-pct"
-                            class="text-sm font-extrabold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">0%</span>
+                            class="text-sm font-extrabold text-emerald-600 dark:text-emerald-400 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-900/50" style="background: var(--surface-hover);">0%</span>
                     </div>
                     <div class="relative w-full flex-grow flex items-center justify-center" style="min-height: 220px;">
                         <canvas id="chart-validation"></canvas>
@@ -719,7 +752,7 @@
                     <div class="flex items-center justify-between mb-3">
                         <div class="flex items-center gap-2">
                             <div
-                                class="w-7 h-7 rounded-lg bg-gradient-to-br from-red-100 to-red-50 flex items-center justify-center">
+                                class="w-7 h-7 rounded-lg flex items-center justify-center border" style="background: var(--surface-hover); border-color: var(--border);">
                                 <i class="fa-solid fa-scale-unbalanced text-red-500 text-xs"></i>
                             </div>
                             <div>
@@ -738,8 +771,8 @@
                     <div class="flex items-center justify-between mb-3">
                         <div class="flex items-center gap-2">
                             <div
-                                class="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-100 to-violet-50 flex items-center justify-center">
-                                <i class="fa-solid fa-clock-rotate-left text-violet-500 text-xs"></i>
+                                class="w-7 h-7 rounded-lg flex items-center justify-center border" style="background: var(--surface-hover); border-color: var(--border);">
+                                <i class="fa-solid fa-clock-rotate-left" style="color: var(--accent);"></i>
                             </div>
                             <div>
                                 <div class="chart-card-title" style="color: var(--text-primary)">Atividade Recente</div>
@@ -747,7 +780,7 @@
                             </div>
                         </div>
                         <span id="activity-count"
-                            class="text-xs font-bold text-violet-700 bg-violet-50 px-2 py-0.5 rounded-full border border-violet-200">0</span>
+                            class="text-xs font-bold px-2 py-0.5 rounded-full border" style="color: var(--text-primary); background: var(--surface-hover); border-color: var(--border);">0</span>
                     </div>
                     <div id="activity-list" class="flex-grow overflow-y-auto space-y-1" style="max-height: 280px;">
                         <div class="flex items-center justify-center h-full text-sm py-12" style="color: var(--text-secondary)">
@@ -781,11 +814,9 @@
             
             // Visual Update
             document.querySelectorAll('.nav-card').forEach(btn => {
-                btn.classList.remove('active', 'border-indigo-500', 'bg-indigo-50', 'ring-2', 'ring-offset-2', 'ring-indigo-500');
-                btn.classList.add('bg-white', 'border-gray-200');
+                btn.classList.remove('active');
             });
-            btnElement.classList.remove('bg-white', 'border-gray-200');
-            btnElement.classList.add('active', 'border-indigo-500', 'bg-indigo-50', 'ring-2', 'ring-offset-2', 'ring-indigo-500');
+            btnElement.classList.add('active');
 
             // Force Fetch
             document.getElementById('page-loader').classList.remove('hidden');
