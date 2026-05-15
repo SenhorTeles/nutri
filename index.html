@@ -1,74 +1,28 @@
 <!DOCTYPE html>
-<html lang="pt-BR" class="scroll-smooth">
+<html lang="pt-BR">
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <!-- SEO de Alta Conversão -->
-    <meta name="description"
-        content="Gestor ZyNapse: O sistema definitivo para controle de estoque, PDV e emissão fiscal. Automatize a entrada de notas e use IA para vender mais.">
-    <meta name="keywords"
-        content="sistema de gestão, controle de estoque, frente de caixa, PDV, emissor fiscal, NFC-e, gestão de loja, automação comercial, inteligência artificial varejo">
-    <meta name="author" content="C.R.E. TECHNOLOGY LTDA">
-    <meta property="og:title" content="Gestor ZyNapse | Estoque e Vendas no Piloto Automático">
-    <meta property="og:description"
-        content="Automatize sua loja: Entrada de nota por código de barras, PDV rápido e relatórios de IA. Teste grátis.">
-    <meta property="og:type" content="website">
-    <link rel="icon" href="https://i.imgur.com/evJ9zFT.png" type="image/png">
-    <title>Gestor ZyNapse | Controle Total do Seu Comércio</title>
-    <link rel="icon" href="https://i.imgur.com/xllFkuo.png" type="image/png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Login - NutriPort Comercial</title>
+    <link rel="icon" href="https://i.imgur.com/8vy4QAK.png" type="image/png">
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <!-- Fonts -->
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@500;600;700;800&display=swap"
-        rel="stylesheet">
-
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
                         brand: {
-                            DEFAULT: '#ea580c',           // Laranja Principal (ZyNapse)
-                            dark: '#c2410c',              // Laranja Escuro
-                            light: '#fb923c',             // Laranja Claro
-                            accent: '#FFD700',            // Dourado para CTAs
-                            surface: '#fff7ed',           // Fundo suave (Laranja bem claro)
-                            success: '#10b981'
-                        },
-                        navy: {
-                            800: '#1e293b',
-                            900: '#0f172a',
-                            950: '#020617',
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        display: ['Poppins', 'sans-serif'],
-                    },
-                    boxShadow: {
-                        'glow': '0 0 30px rgba(234, 88, 12, 0.3)',
-                        'float': '0 20px 40px -10px rgba(0,0,0,0.1)',
-                    },
-                    animation: {
-                        'float': 'float 6s ease-in-out infinite',
-                        'scan': 'scan 2s linear infinite'
-                    },
-                    keyframes: {
-                        float: {
-                            '0%, 100%': { transform: 'translateY(0)' },
-                            '50%': { transform: 'translateY(-20px)' },
-                        },
-                        scan: {
-                            '0%, 100%': { top: '0%' },
-                            '50%': { top: '100%' },
+                            input: '#ffffff',
+                            inputHover: '#f9f9f9',
+                            btn: '#5c3a21',
+                            btnHover: '#4a2e19',
+                            skyTop: '#2b170e',
+                            skyBot: '#87512d',
+                            textDark: '#1a110a',
+                            textLight: '#58321b'
                         }
                     }
                 }
@@ -76,2061 +30,453 @@
         }
     </script>
 
-    <style>
-        /* Estilos Personalizados */
-        body {
-            background-color: #f8fafc;
-        }
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-        /* Hero com Imagem de Fundo */
-        .hero-bg {
-            position: relative;
-            background: linear-gradient(180deg, #020617 0%, #0f172a 100%);
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        * { -webkit-tap-highlight-color: transparent; }
+        body {
+            background: linear-gradient(180deg, #2b170e 0%, #87512d 100%);
+            font-family: 'Montserrat', sans-serif;
             overflow: hidden;
         }
 
-        /* Camada Escura (Overlay) - Ajustada para Navy/Laranja */
-        .hero-overlay {
-            position: absolute;
-            inset: 0;
-            background: radial-gradient(circle at top center, rgba(234, 88, 12, 0.15) 0%, transparent 70%);
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { display: none; }
+
+        /* Inputs */
+        .input-field::placeholder {
+            color: #9ca3af;
+            font-weight: 500;
+        }
+
+        /* Toggle Switch */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #5c3a21;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #5c3a21;
+        }
+        .toggle-checkbox {
+            right: 0;
             z-index: 1;
+            border-color: #d1d5db;
+            transition: all 0.3s;
+        }
+        .toggle-label {
+            background-color: #d1d5db;
+            border-radius: 9999px;
+            transition: all 0.3s;
         }
 
-        /* Estrelas piscando (login) */
-        @keyframes twinkle {
-
-            0%,
-            100% {
-                opacity: 0.3;
-                transform: scale(1);
-            }
-
-            50% {
-                opacity: 1;
-                transform: scale(1.4);
-            }
+        /* Loader */
+        #loading-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            background-color: #f8f5f2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.5s ease-out, visibility 0.5s;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(92, 58, 33, 0.2);
+            border-top-color: #5c3a21;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
         }
 
-        .star {
-            animation: twinkle ease-in-out infinite;
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
         }
-
-        .text-gradient {
-            background: linear-gradient(135deg, #fb923c 0%, #ffffff 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+        .animate-shake { animation: shake 0.4s ease-in-out; }
+        
+        @keyframes logoPop {
+            0% { transform: scale(0.3) rotate(-20deg); opacity: 0; }
+            60% { transform: scale(1.15) rotate(10deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0); opacity: 1; }
         }
-
-        /* Badge de Destaque */
-        .best-value-badge {
-            position: absolute;
-            top: -16px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #ea580c;
-            color: #fff;
-            padding: 6px 20px;
-            border-radius: 20px;
-            font-weight: 800;
-            font-size: 0.75rem;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            box-shadow: 0 4px 15px rgba(234, 88, 12, 0.4);
-            white-space: nowrap;
-            z-index: 20;
-        }
-
-        /* Laser do Scanner */
-        .laser-line {
-            position: absolute;
-            left: 0;
-            width: 100%;
-            height: 2px;
-            background: #ea580c;
-            box-shadow: 0 0 10px #ea580c;
-            animation: scan 1.5s ease-in-out infinite alternate;
-            z-index: 10;
-        }
-
-        @keyframes scan {
-            0% {
-                top: 10%;
-                opacity: 0.8;
-            }
-
-            100% {
-                top: 90%;
-                opacity: 0.8;
-            }
-        }
-
-        /* Efeito de Reveal (Scroll) */
-        .reveal {
+        .animate-logo-pop {
+            animation: logoPop 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            animation-delay: 0.3s;
             opacity: 0;
-            transform: translateY(40px);
-            transition: all 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
 
-        .reveal.active {
-            opacity: 1;
-            transform: translateY(0);
+        /* Estrelas piscando */
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.4); }
+        }
+        .star { animation: twinkle ease-in-out infinite; }
+
+        /* Rodapé */
+        .login-footer {
+            position: fixed;
+            bottom: 16px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            z-index: 5;
         }
     </style>
 </head>
 
-<body class="antialiased text-slate-600">
+<body class="h-screen w-full flex items-center justify-center relative">
 
-    <!-- Top Bar de Urgência -->
-    <div
-        class="bg-navy-900 text-white py-2 text-center text-xs md:text-sm font-medium tracking-wide z-50 relative border-b border-white/5">
-        <span class="opacity-90">
-            <i class="fas fa-bolt text-brand mr-1"></i>
-            Pare de perder dinheiro no estoque hoje mesmo. <strong>Teste Grátis por 7 dias!</strong>
-        </span>
+    <div id="loading-overlay">
+        <div class="flex flex-col items-center gap-4">
+            <div class="spinner"></div>
+            <p class="text-[11px] text-[#5c3a21] font-bold tracking-widest uppercase animate-pulse">Carregando</p>
+        </div>
     </div>
 
-    <!-- Header Profissional -->
-    <header
-        class="sticky top-0 w-full z-40 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-sm transition-all duration-300">
-        <div class="container mx-auto px-6 h-20 flex items-center justify-between">
-            <!-- Logo Area -->
-            <a href="#" class="flex items-center gap-2 group">
-                <img src="https://i.imgur.com/xllFkuo.png" alt="Gestor ZyNapse Icon"
-                    class="h-24 w-auto object-contain" />
-            </a>
+    <!-- Background Scenery (Vector Dunes) -->
+    <div class="fixed inset-0 z-[-1] overflow-hidden pointer-events-none">
+        <!-- Stars -->
+        <div class="star absolute top-[10%] left-[20%] w-1 h-1 bg-white rounded-full shadow-[0_0_4px_white]" style="animation-duration: 3s;"></div>
+        <div class="star absolute top-[25%] right-[20%] w-1.5 h-1.5 bg-white rounded-full shadow-[0_0_6px_white]" style="animation-duration: 4s; animation-delay: 1s;"></div>
+        <div class="star absolute top-[40%] right-[35%] w-0.5 h-0.5 bg-white rounded-full" style="animation-duration: 2.5s; animation-delay: 0.5s;"></div>
+        <div class="star absolute top-[15%] left-[45%] w-1 h-1 bg-white rounded-full" style="animation-duration: 3.5s; animation-delay: 2s;"></div>
+        <div class="star absolute top-[30%] left-[10%] w-1.5 h-1.5 bg-white rounded-full" style="animation-duration: 5s; animation-delay: 0.8s;"></div>
+        <div class="star absolute top-[8%] left-[60%] w-0.5 h-0.5 bg-white rounded-full" style="animation-duration: 2.8s; animation-delay: 1.5s;"></div>
+        <div class="star absolute top-[18%] left-[75%] w-1 h-1 bg-white rounded-full shadow-[0_0_3px_white]" style="animation-duration: 4.2s; animation-delay: 0.3s;"></div>
+        
+        <!-- Shooting Stars -->
+        <div class="absolute top-[10%] left-[10%] w-[60px] h-[1px] bg-gradient-to-r from-transparent to-white/60 transform -rotate-45"></div>
+        <div class="absolute top-[20%] right-[30%] w-[100px] h-[1px] bg-gradient-to-r from-transparent to-white/40 transform -rotate-45"></div>
+        <div class="absolute top-[35%] left-[30%] w-[40px] h-[1px] bg-gradient-to-r from-transparent to-white/50 transform -rotate-45"></div>
 
-            <!-- Desktop Nav -->
-            <nav class="hidden lg:flex items-center gap-8 text-sm font-medium text-slate-600">
-                <a href="#funcionalidades" class="hover:text-brand transition-colors">Funcionalidades</a>
-                <a href="#automacao" class="hover:text-brand transition-colors">Automação</a>
-                <a href="#pdv" class="hover:text-brand transition-colors">Frente de Caixa</a>
-                <a href="#planos" class="hover:text-brand transition-colors">Planos</a>
-            </nav>
+        <!-- Moon -->
+        <div class="absolute top-[15%] right-[25%] w-20 h-20 rounded-full bg-gradient-to-br from-[#e6a15c] to-[#c77a32] opacity-90 blur-[1px]"></div>
 
-            <!-- CTA Header -->
-            <div class="hidden lg:flex items-center gap-4">
-                <a href="login.html"
-                    class="text-navy-900 font-semibold hover:text-brand px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors">
-                    Entrar
-                </a>
-                <a href="#planos"
-                    class="bg-brand hover:bg-brand-dark text-white px-6 py-2.5 rounded-lg font-bold transition-all shadow-lg shadow-brand/20 transform hover:-translate-y-0.5">
-                    Testar Grátis
-                </a>
-            </div>
+        <!-- Background Dunes SVG -->
+        <svg class="absolute bottom-0 w-full h-[65vh] min-h-[500px] object-cover" preserveAspectRatio="none" viewBox="0 0 1440 600">
+            <!-- Dune 1 Back Right -->
+            <path d="M500,600 L1000,100 L1500,600 Z" fill="#4d2b17"></path>
+            <path d="M1000,100 L1500,600 L1000,600 Z" fill="#361f11"></path>
+            
+            <!-- Dune 2 Back Left -->
+            <path d="M-100,600 L300,200 L700,600 Z" fill="#66391d"></path>
+            <path d="M300,200 L700,600 L300,600 Z" fill="#4d2b17"></path>
+            
+            <!-- Dune 3 Mid Right -->
+            <path d="M800,600 L1250,300 L1700,600 Z" fill="#7a4623"></path>
+            <path d="M1250,300 L1700,600 L1250,600 Z" fill="#66391d"></path>
 
-            <!-- Mobile Menu Toggle -->
-            <button id="mobile-menu-btn" class="lg:hidden text-2xl text-navy-900">
-                <i class="fas fa-bars"></i>
-            </button>
-        </div>
+            <!-- Dune 4 Mid Left -->
+            <path d="M200,600 L650,250 L1100,600 Z" fill="#915228"></path>
+            <path d="M650,250 L1100,600 L650,600 Z" fill="#7a4623"></path>
 
-        <!-- Mobile Menu -->
-        <div id="mobile-menu" class="hidden bg-white border-t border-slate-100 absolute w-full shadow-xl lg:hidden">
-            <nav class="flex flex-col p-6 gap-4 font-medium text-center">
-                <a href="#funcionalidades" class="text-slate-600 py-2">Funcionalidades</a>
-                <a href="#planos" class="text-brand font-bold py-2">Ver Planos</a>
-                <hr>
-                <a href="login.html" class="text-navy-900 py-2">Login</a>
-                <a href="#planos" class="bg-brand text-white py-3 rounded-lg font-bold shadow-md">Criar Conta Grátis</a>
-            </nav>
-        </div>
-    </header>
+            <!-- Dune 5 Front Left -->
+            <path d="M-200,600 L150,350 L500,600 Z" fill="#a86030"></path>
+            <path d="M150,350 L500,600 L150,600 Z" fill="#915228"></path>
+        </svg>
+    </div>
 
-    <!-- Hero Section -->
-    <section class="hero-bg pt-16 pb-24 lg:pt-24 lg:pb-32 overflow-hidden relative">
-        <div class="hero-overlay"></div>
+    <!-- Login Card -->
+    <div class="w-full max-w-[340px] bg-[#f8f5f2] shadow-2xl rounded-xl overflow-hidden relative z-10 flex flex-col mx-4 transform transition-all">
+        
+        <!-- Card Header (Illustration) -->
+        <div class="h-44 relative overflow-hidden flex flex-col items-center justify-center" style="background: linear-gradient(180deg, #2b170e 0%, #87512d 100%);">
+            
+            <!-- Mini Moon -->
+            <div class="absolute top-6 right-10 w-10 h-10 rounded-full bg-gradient-to-br from-[#e6a15c] to-[#c77a32] opacity-90 blur-[1px]"></div>
+            
+            <!-- Mini Shooting Star -->
+            <div class="absolute top-4 left-6 w-[30px] h-[1px] bg-gradient-to-r from-transparent to-white/60 transform -rotate-45"></div>
 
-        <!-- Background Tech Landscape (from Login) -->
-        <div id="hero-bg-container" class="absolute inset-0 z-[0] overflow-hidden pointer-events-none">
-            <!-- Stars / Data Nodes -->
-            <div class="star absolute top-[10%] left-[20%] w-1 h-1 bg-brand rounded-full shadow-[0_0_8px_#ea580c]"
-                style="animation-duration: 3s;"></div>
-            <div class="star absolute top-[25%] right-[20%] w-1.5 h-1.5 bg-brand-light rounded-full shadow-[0_0_10px_#fb923c]"
-                style="animation-duration: 4s; animation-delay: 1s;"></div>
-            <div class="star absolute top-[40%] right-[35%] w-0.5 h-0.5 bg-white rounded-full"
-                style="animation-duration: 2.5s; animation-delay: 0.5s;"></div>
-            <div class="star absolute top-[15%] left-[45%] w-1 h-1 bg-white rounded-full"
-                style="animation-duration: 3.5s; animation-delay: 2s;"></div>
-            <div class="star absolute top-[30%] left-[10%] w-1.5 h-1.5 bg-brand rounded-full shadow-[0_0_6px_#ea580c]"
-                style="animation-duration: 5s; animation-delay: 0.8s;"></div>
-            <div class="star absolute top-[8%] left-[60%] w-0.5 h-0.5 bg-white rounded-full"
-                style="animation-duration: 2.8s; animation-delay: 1.5s;"></div>
-            <div class="star absolute top-[18%] left-[75%] w-1 h-1 bg-white rounded-full shadow-[0_0_5px_white]"
-                style="animation-duration: 4.2s; animation-delay: 0.3s;"></div>
-
-            <!-- Shooting Stars / Data Streams -->
-            <div
-                class="absolute top-[10%] left-[10%] w-[60px] h-[1px] bg-gradient-to-r from-transparent to-brand/80 transform -rotate-45">
-            </div>
-            <div
-                class="absolute top-[20%] right-[30%] w-[100px] h-[1px] bg-gradient-to-r from-transparent to-brand-light/60 transform -rotate-45">
-            </div>
-            <div
-                class="absolute top-[35%] left-[30%] w-[40px] h-[1px] bg-gradient-to-r from-transparent to-white/50 transform -rotate-45">
-            </div>
-
-            <!-- Tech Moon / Core -->
-            <div
-                class="absolute top-[15%] right-[25%] w-20 h-20 rounded-full bg-gradient-to-br from-brand-light to-brand-dark opacity-80 blur-[2px] shadow-[0_0_40px_rgba(234,88,12,0.4)]">
-            </div>
-
-            <!-- Background Mountains/Pyramids SVG -->
-            <svg id="hero-mountains" class="absolute bottom-0 w-full h-[55vh] min-h-[400px] object-cover" preserveAspectRatio="none"
-                viewBox="0 0 1440 600">
-                <path d="M500,600 L1000,100 L1500,600 Z" fill="#0f172a"></path>
-                <path d="M1000,100 L1500,600 L1000,600 Z" fill="#020617"></path>
-                <path d="M-100,600 L300,200 L700,600 Z" fill="#1e293b"></path>
-                <path d="M300,200 L700,600 L300,600 Z" fill="#0f172a"></path>
-                <path d="M800,600 L1250,300 L1700,600 Z" fill="#334155"></path>
-                <path d="M1250,300 L1700,600 L1250,600 Z" fill="#1e293b"></path>
-                <path d="M200,600 L650,250 L1100,600 Z" fill="#475569"></path>
-                <path d="M650,250 L1100,600 L650,600 Z" fill="#334155"></path>
-                <path d="M-200,600 L150,350 L500,600 Z" fill="#64748b"></path>
-                <path d="M150,350 L500,600 L150,600 Z" fill="#475569"></path>
+            <!-- Mini Dunes SVG -->
+            <svg class="absolute bottom-0 w-full h-24" preserveAspectRatio="none" viewBox="0 0 400 100">
+                <!-- Mini Dune 1 -->
+                <path d="M100,100 L250,10 L420,100 Z" fill="#4d2b17"></path>
+                <path d="M250,10 L420,100 L250,100 Z" fill="#361f11"></path>
+                
+                <!-- Mini Dune 2 -->
+                <path d="M-40,100 L150,40 L300,100 Z" fill="#66391d"></path>
+                <path d="M150,40 L300,100 L150,100 Z" fill="#4d2b17"></path>
+                
+                <!-- Mini Dune 3 -->
+                <path d="M180,100 L320,30 L450,100 Z" fill="#915228"></path>
+                <path d="M320,30 L450,100 L320,100 Z" fill="#7a4623"></path>
             </svg>
+            
+            <!-- Logo overlay -->
+            <img src="https://i.imgur.com/8vy4QAK.png" alt="NutriPort" class="h-16 relative z-10 filter drop-shadow-md brightness-0 invert opacity-90 mb-2">
         </div>
-
-        <div class="container mx-auto px-6 relative z-10">
-            <div class="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
-
-                <!-- Copy de Vendas -->
-                <div class="lg:w-1/2 text-center lg:text-left">
-                    <div
-                        class="inline-flex items-center gap-2 bg-red-500/10 border border-red-500/20 text-white px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-6 backdrop-blur-sm">
-                        <span class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-                        PARE DE SANGRAR DINHEIRO
+        
+        <!-- Form Content -->
+        <div class="px-8 pt-6 pb-8 flex-1">
+            <div class="flex items-center justify-center gap-3 mb-6">
+                <img src="https://i.imgur.com/tEScTfN.png" alt="ZyNapse" class="h-9 w-9 object-contain animate-logo-pop filter drop-shadow-md">
+                <h2 class="text-center text-[26px] font-semibold text-brand-textDark tracking-tight">ZyNapse</h2>
+            </div>
+            
+            <form id="login-form" class="space-y-3.5">
+                
+                <!-- Username -->
+                <div class="relative group">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <i class="far fa-user text-brand-textLight opacity-80 group-focus-within:opacity-100 transition-opacity text-sm"></i>
                     </div>
-
-                    <h1
-                        class="text-4xl lg:text-6xl font-display font-bold text-white leading-tight mb-6 drop-shadow-lg">
-                        O sistema definitivo para <br>
-                        <span class="text-brand">qualquer negócio.</span>
-                    </h1>
-
-                    <p
-                        class="text-lg text-slate-300 mb-8 leading-relaxed max-w-xl mx-auto lg:mx-0 font-light drop-shadow-md">
-                        De <strong>padarias e distribuidoras</strong> a <strong>oficinas, serralherias, moda e materiais
-                            de construção</strong>. Cadastre produtos por inteligência artificial, emita notas com 3
-                        cliques e conte com um <strong>sistema de controle financeiro completo</strong> que faz o
-                        sistema basicamente se vender sozinho.
-                    </p>
-
-                    <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                        <a href="#planos"
-                            class="px-8 py-4 bg-brand hover:bg-brand-dark text-white rounded-xl font-bold text-lg shadow-xl shadow-brand/20 transition-all transform hover:scale-105 flex items-center justify-center gap-2">
-                            Assumir o Controle Agora <i class="fas fa-arrow-right"></i>
-                        </a>
-                        <a href="#demo-video"
-                            class="px-8 py-4 bg-white/5 border border-white/20 text-white hover:bg-white/10 rounded-xl font-bold text-lg transition-all flex items-center justify-center gap-2 backdrop-blur-sm">
-                            <i class="fas fa-play"></i> Ver por dentro
-                        </a>
+                    <input id="login-email" type="text" required
+                        class="input-field w-full bg-white text-brand-textDark border border-gray-200 rounded-lg py-2.5 pl-11 pr-4 focus:outline-none focus:border-brand-btn focus:ring-4 focus:ring-brand-btn/10 text-sm font-semibold transition-all"
+                        placeholder="usuário">
+                </div>
+                
+                <!-- Password -->
+                <div class="relative group">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <i class="fas fa-lock text-brand-textLight opacity-80 group-focus-within:opacity-100 transition-opacity text-sm"></i>
                     </div>
-
-                    <div
-                        class="mt-8 flex flex-wrap items-center justify-center lg:justify-start gap-6 text-sm text-slate-400 font-medium">
-                        <div class="flex items-center gap-2">
-                            <i class="fas fa-check text-brand"></i>
-                            Garantia de 7 Dias
+                    <input id="login-password" type="password" required
+                        class="input-field w-full bg-white text-brand-textDark border border-gray-200 rounded-lg py-2.5 pl-11 pr-10 focus:outline-none focus:border-brand-btn focus:ring-4 focus:ring-brand-btn/10 text-sm font-semibold transition-all"
+                        placeholder="senha">
+                    <button type="button" id="toggle-pass" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-brand-textDark transition-colors focus:outline-none">
+                        <i class="far fa-eye text-[13px]"></i>
+                    </button>
+                </div>
+                
+                <!-- Error msg -->
+                <div id="auth-error-container" class="hidden text-center mt-1">
+                    <p id="auth-error" class="text-[11px] font-bold text-red-500">Dados incorretos.</p>
+                </div>
+                
+                <!-- Extras -->
+                <div class="flex items-center justify-between pt-1 pb-1">
+                    <div class="flex items-center gap-2">
+                        <!-- Custom Toggle Switch -->
+                        <div class="relative inline-block w-8 mr-0.5 align-middle select-none transition duration-200 ease-in">
+                            <input type="checkbox" name="toggle" id="remember-me" class="toggle-checkbox absolute block w-4 h-4 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
+                            <label for="remember-me" class="toggle-label block overflow-hidden h-4 rounded-full bg-gray-300 cursor-pointer"></label>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <i class="fas fa-check text-brand"></i>
-                            PDV Antifilas
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <i class="fas fa-check text-brand"></i>
-                            Estoque com IA
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Carousel de Imagens -->
-                <div
-                    class="lg:w-1/2 flex justify-center items-center relative z-20 mt-12 lg:mt-0 w-full max-w-full overflow-hidden">
-                    <div id="hero-carousel"
-                        class="relative w-full overflow-hidden rounded-2xl shadow-[0_0_60px_rgba(234,88,12,0.35)] border border-white/20 hover:shadow-[0_0_90px_rgba(234,88,12,0.5)] transition-all duration-700 group">
-                        <!-- Slides Wrapper -->
-                        <div class="flex transition-transform duration-700 ease-in-out" id="carousel-inner">
-                            <!-- Slide 1 (Dashboard Padrão) -->
-                            <div class="w-full flex-shrink-0 relative">
-                                <img src="https://i.imgur.com/Q2Asqgd.jpeg" alt="Dashboard Gestor ZyNapse"
-                                    class="w-full h-auto object-cover border-none rounded-2xl">
-                                <div
-                                    class="absolute bottom-4 left-4 bg-navy-900/80 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-bold border border-white/10 shadow-lg">
-                                    Gestão Completa</div>
-                            </div>
-                            <!-- Slide 2 (Padaria) -->
-                            <div class="w-full flex-shrink-0 relative">
-                                <img src="https://i.imgur.com/Eih20Xk.png" alt="Dashboard Padaria"
-                                    class="w-full h-auto object-cover aspect-[16/10]">
-                                <div
-                                    class="absolute bottom-4 left-4 bg-navy-900/80 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-bold border border-white/10 shadow-lg">
-                                    Padarias e Confeitarias</div>
-                            </div>
-                            <!-- Slide 3 (Moda) -->
-                            <div class="w-full flex-shrink-0 relative">
-                                <img src="https://i.imgur.com/eC68ysR.png" alt="Dashboard Moda"
-                                    class="w-full h-auto object-cover aspect-[16/10]">
-                                <div
-                                    class="absolute bottom-4 left-4 bg-navy-900/80 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-bold border border-white/10 shadow-lg">
-                                    Lojas de Moda</div>
-                            </div>
-                            <!-- Slide 4 (Serralheria/Oficina) -->
-                            <div class="w-full flex-shrink-0 relative">
-                                <img src="https://i.imgur.com/A6vkKFj.png" alt="Dashboard Oficina"
-                                    class="w-full h-auto object-cover aspect-[16/10]">
-                                <div
-                                    class="absolute bottom-4 left-4 bg-navy-900/80 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-bold border border-white/10 shadow-lg">
-                                    Oficinas e Serralherias</div>
-                            </div>
-                            <!-- Slide 5 (Distribuidora de Bebidas) -->
-                            <div class="w-full flex-shrink-0 relative">
-                                <img src="https://i.imgur.com/h7gTGN9.png" alt="Dashboard Distribuidora"
-                                    class="w-full h-auto object-cover aspect-[16/10]">
-                                <div
-                                    class="absolute bottom-4 left-4 bg-navy-900/80 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-bold border border-white/10 shadow-lg">
-                                    Distribuidoras de Bebidas</div>
-                            </div>
-                            <!-- Slide 6 (Casa de Materiais) -->
-                            <div class="w-full flex-shrink-0 relative">
-                                <img src="https://i.imgur.com/nGYRn0q.png" alt="Dashboard Materiais de Construção"
-                                    class="w-full h-auto object-cover aspect-[16/10]">
-                                <div
-                                    class="absolute bottom-4 left-4 bg-navy-900/80 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-bold border border-white/10 shadow-lg">
-                                    Materiais para Construção</div>
-                            </div>
-                        </div>
-
-                        <!-- Navegação (Setas) -->
-                        <button id="prev-slide"
-                            class="absolute left-2 top-1/2 -translate-y-1/2 bg-navy-900/50 hover:bg-brand text-white w-8 h-8 flex items-center justify-center rounded-full backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all z-10 border border-white/20">
-                            <i class="fas fa-chevron-left text-sm"></i>
-                        </button>
-                        <button id="next-slide"
-                            class="absolute right-2 top-1/2 -translate-y-1/2 bg-navy-900/50 hover:bg-brand text-white w-8 h-8 flex items-center justify-center rounded-full backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all z-10 border border-white/20">
-                            <i class="fas fa-chevron-right text-sm"></i>
-                        </button>
-
-                        <!-- Indicadores -->
-                        <div class="absolute bottom-4 right-4 flex gap-2 z-10" id="carousel-indicators">
-                            <!-- Serão gerados via JS -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Seção de Automação -->
-    <section id="automacao" class="py-20 bg-gradient-to-b from-brand-100 to-white relative overflow-hidden">
-        <div class="container mx-auto px-6 relative z-10">
-            <div class="grid lg:grid-cols-2 gap-16 items-center">
-
-                <!-- Ilustração do Scanner / Inteligência -->
-                <div class="relative flex justify-center order-2 lg:order-1">
-                    <div
-                        class="w-80 h-96 bg-slate-50 rounded-2xl shadow-2xl border border-slate-200 relative overflow-hidden flex flex-col pt-10 px-8">
-
-                        <!-- Mini Mockup de Cadastro -->
-                        <div
-                            class="bg-white rounded-lg shadow-sm w-full p-4 mb-4 border border-slate-100 transform -rotate-2">
-                            <div class="h-2 w-12 bg-slate-200 rounded mb-3"></div>
-                            <div class="flex gap-2 mb-3">
-                                <div class="w-10 h-10 bg-brand/10 rounded flex items-center justify-center text-brand">
-                                    <i class="fas fa-barcode"></i>
-                                </div>
-                                <div class="flex-1">
-                                    <div class="h-3 w-3/4 bg-slate-200 rounded mb-1"></div>
-                                    <div class="h-2 w-1/2 bg-slate-100 rounded"></div>
-                                </div>
-                            </div>
-                            <div class="bg-green-100 text-green-700 text-[10px] font-bold py-1 px-2 rounded w-fit"><i
-                                    class="fas fa-robot mr-1"></i> Preenchido por IA</div>
-                        </div>
-
-                        <!-- Mini Mockup de Alerta Fiscal -->
-                        <div
-                            class="bg-navy-900 rounded-lg shadow-lg w-full p-4 transform rotate-1 relative z-10 border border-navy-800">
-                            <div class="flex justify-between items-center mb-2">
-                                <span class="text-white text-xs font-bold">NFC-e Emitida</span>
-                                <i class="fas fa-check-circle text-green-400"></i>
-                            </div>
-                            <div class="h-2 w-full bg-slate-700 rounded mb-2"></div>
-                            <div class="h-2 w-2/3 bg-slate-700 rounded"></div>
-                        </div>
-
-                        <div class="laser-line mt-10"></div>
-                    </div>
-                </div>
-
-                <!-- Texto Explicativo -->
-                <div class="order-1 lg:order-2">
-                    <div
-                        class="inline-block px-3 py-1 bg-brand/10 text-brand text-xs font-bold rounded-full mb-4 uppercase tracking-widest">
-                        Chega de Sistemas Lentos
-                    </div>
-                    <h2 class="text-3xl lg:text-4xl font-display font-bold text-navy-900 mb-6">
-                        O fim do terror do fechamento de caixa.
-                    </h2>
-                    <p class="text-slate-600 text-lg mb-8 leading-relaxed">
-                        Sistemas tradicionais travam e dependem de você para tudo. O ZyNapse é um <strong>Sócio
-                            Virtual</strong> que lê códigos de barras, precifica os itens automaticamente e cruza os
-                        dados para te dar lucro instantâneo na tela.
-                    </p>
-                    <ul class="space-y-6">
-                        <li class="flex items-start gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
-                            <div
-                                class="bg-white shadow-sm w-12 h-12 flex items-center justify-center rounded-lg text-brand shrink-0 text-xl border border-slate-200">
-                                <i class="fas fa-magic"></i>
-                            </div>
-                            <div>
-                                <strong class="text-navy-900 block text-lg mb-1">Mágica Tributária</strong>
-                                <span class="text-slate-500 text-sm leading-snug block">Importou o XML da nota de
-                                    compra? O ZyNapse já puxa o nome, o NCM, cadastra no estoque e te sugere o preço de
-                                    venda para não perder margem.</span>
-                            </div>
-                        </li>
-                        <li class="flex items-start gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
-                            <div
-                                class="bg-white shadow-sm w-12 h-12 flex items-center justify-center rounded-lg text-brand shrink-0 text-xl border border-slate-200">
-                                <i class="fas fa-sack-dollar"></i>
-                            </div>
-                            <div>
-                                <strong class="text-navy-900 block text-lg mb-1">Raio-X do seu Dinheiro</strong>
-                                <span class="text-slate-500 text-sm leading-snug block">Descubra exatamente qual produto
-                                    mais te dá lucro e registre todos os seus custos operacionais para não viver apenas
-                                    "rodando dinheiro".</span>
-                            </div>
-                        </li>
-                    </ul>
-                </div>
-
-            </div>
-        </div>
-    </section>
-
-    <!-- ============================================ -->
-    <!-- VITRINE DE TELAS DO SISTEMA -->
-    <!-- ============================================ -->
-    <section id="funcionalidades" class="pt-24 pb-12 bg-white relative overflow-hidden z-10">
-        <div class="container mx-auto px-6 relative z-10">
-            <div class="text-center max-w-3xl mx-auto mb-20">
-                <span
-                    class="inline-block px-3 py-1 bg-navy-900 text-white text-xs font-bold rounded-full mb-4 uppercase tracking-widest">O
-                    Ecossistema Completo</span>
-                <h2 class="text-3xl lg:text-5xl font-display font-bold text-navy-900 mb-4">Cada tela foi feita para você
-                    <span class="text-brand">vender mais e gastar menos</span>
-                </h2>
-                <p class="text-slate-600 font-light text-lg">Conheça todas as ferramentas que vão transformar a gestão
-                    do seu comércio. Substitua planilhas, sistemas lentos e dores de cabeça por um único painel
-                    inteligente.</p>
-            </div>
-
-            <!-- 1. PAINEL GERAL (Dashboard) -->
-            <div class="flex flex-col lg:flex-row items-center gap-16 py-16 lg:py-24" id="tela-dashboard">
-                <div class="lg:w-1/2 flex justify-center">
-                    <!-- COLE O LINK DA IMAGEM DO DASHBOARD ABAIXO -->
-                    <img src="https://i.imgur.com/XRVKbn5.png" alt="Painel Geral Dashboard"
-                        class="w-full h-auto rounded-3xl shadow-2xl border border-slate-100 hover:scale-[1.02] transition-transform duration-500">
-                </div>
-                <div class="lg:w-1/2">
-                    <span
-                        class="inline-flex items-center gap-2 px-3 py-1 bg-brand/10 text-brand text-xs font-bold rounded-full mb-4 uppercase tracking-widest"><i
-                            class="fas fa-chart-line"></i> Painel Geral</span>
-                    <h2 class="text-3xl lg:text-4xl font-display font-bold text-navy-900 mb-6">O Raio-X completo do seu
-                        negócio em uma única tela.</h2>
-                    <p class="text-slate-600 text-lg mb-8 leading-relaxed">Chega de adivinhar como vai o caixa. O
-                        Dashboard exibe <strong>faturamento, lucro líquido, ticket médio e ranking de produtos</strong>
-                        em tempo real. Você abre o sistema e já sabe exatamente onde está o seu dinheiro — sem precisar
-                        pedir relatório pra ninguém.</p>
-                    <ul class="space-y-3 text-slate-600 font-medium">
-                        <li class="flex items-center gap-3"><i class="fas fa-check-circle text-brand"></i> Gráficos de
-                            vendas por período</li>
-                        <li class="flex items-center gap-3"><i class="fas fa-check-circle text-brand"></i> Ranking dos
-                            produtos mais vendidos</li>
-                        <li class="flex items-center gap-3"><i class="fas fa-check-circle text-brand"></i> Lucro líquido
-                            automático (cruza com custos)</li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- 2. PDV (Frente de Caixa) -->
-            <div class="flex flex-col lg:flex-row-reverse items-center gap-16 py-16 lg:py-24 relative before:absolute before:inset-y-0 before:w-[200vw] before:left-1/2 before:-translate-x-1/2 before:-z-10 before:bg-slate-50" id="pdv">
-                <div class="lg:w-1/2 flex justify-center">
-                    <img src="https://i.imgur.com/CbYMDpg.png" alt="Frente de Caixa PDV Gestor ZyNapse"
-                        class="w-full h-auto rounded-3xl shadow-2xl border border-slate-100 hover:scale-[1.02] transition-transform duration-500">
-                </div>
-                <div class="lg:w-1/2">
-                    <span
-                        class="inline-flex items-center gap-2 px-3 py-1 bg-brand/10 text-brand text-xs font-bold rounded-full mb-4 uppercase tracking-widest"><i
-                            class="fas fa-cart-shopping"></i> PDV — Frente de Caixa</span>
-                    <h2 class="text-3xl lg:text-4xl font-display font-bold text-navy-900 mb-6">Venda em segundos. Fila
-                        nunca mais.</h2>
-                    <p class="text-slate-600 text-lg mb-8 leading-relaxed">O caixa mais rápido que você já operou. Basta
-                        <strong>ler o código de barras</strong>, aplicar desconto se quiser, escolher o pagamento e
-                        pronto — venda concluída. Tudo na mesma tela, sem travamentos, sem espera.
-                    </p>
-                    <ul class="space-y-3 text-slate-600 font-medium">
-                        <li class="flex items-center gap-3"><i class="fas fa-check-circle text-brand"></i> Leitor de
-                            código de barras integrado</li>
-                        <li class="flex items-center gap-3"><i class="fas fa-check-circle text-brand"></i> Descontos e
-                            acréscimos inteligentes</li>
-                        <li class="flex items-center gap-3"><i class="fas fa-check-circle text-brand"></i> Emissão
-                            fiscal (NFC-e) direto na mesma tela</li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- 3. PRODUTOS (Estoque) -->
-            <div class="flex flex-col lg:flex-row items-center gap-16 py-16 lg:py-24" id="tela-produtos">
-                <div class="lg:w-1/2 flex justify-center">
-                    <!-- COLE O LINK DA IMAGEM DE PRODUTOS ABAIXO -->
-                    <img src="https://i.imgur.com/8gBcMn0.png" alt="Cadastro de Produtos"
-                        class="w-full h-auto rounded-3xl shadow-2xl border border-slate-100 hover:scale-[1.02] transition-transform duration-500">
-                </div>
-                <div class="lg:w-1/2">
-                    <span
-                        class="inline-flex items-center gap-2 px-3 py-1 bg-brand/10 text-brand text-xs font-bold rounded-full mb-4 uppercase tracking-widest"><i
-                            class="fas fa-box-open"></i> Produtos & Estoque</span>
-                    <h2 class="text-3xl lg:text-4xl font-display font-bold text-navy-900 mb-6">Nunca mais perca venda
-                        por falta de produto.</h2>
-                    <p class="text-slate-600 text-lg mb-8 leading-relaxed">Cadastro completo com <strong>ficha técnica,
-                            NCM, código de barras e foto</strong>. O sistema avisa quando o estoque está baixo e calcula
-                        automaticamente a margem entre custo e preço de venda. Você sabe exatamente quanto lucra em cada
-                        item.</p>
-                    <ul class="space-y-3 text-slate-600 font-medium">
-                        <li class="flex items-center gap-3"><i class="fas fa-check-circle text-brand"></i> Alerta de
-                            estoque mínimo</li>
-                        <li class="flex items-center gap-3"><i class="fas fa-check-circle text-brand"></i> Cálculo
-                            automático de margem de lucro</li>
-                        <li class="flex items-center gap-3"><i class="fas fa-check-circle text-brand"></i> Cadastro por
-                            IA via código de barras</li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- 4. PESSOAS (Clientes & Fornecedores) -->
-            <div class="flex flex-col lg:flex-row-reverse items-center gap-16 py-16 lg:py-24 relative before:absolute before:inset-y-0 before:w-[200vw] before:left-1/2 before:-translate-x-1/2 before:-z-10 before:bg-slate-50" id="tela-clientes">
-                <div class="lg:w-1/2 flex justify-center">
-                    <!-- COLE O LINK DA IMAGEM DE PESSOAS ABAIXO -->
-                    <img src="https://i.imgur.com/63F7Di7.png" alt="Cadastro de Pessoas"
-                        class="w-full h-auto rounded-3xl shadow-2xl border border-slate-100 hover:scale-[1.02] transition-transform duration-500">
-                </div>
-                <div class="lg:w-1/2">
-                    <span
-                        class="inline-flex items-center gap-2 px-3 py-1 bg-brand/10 text-brand text-xs font-bold rounded-full mb-4 uppercase tracking-widest"><i
-                            class="fas fa-users"></i> Pessoas (CRM)</span>
-                    <h2 class="text-3xl lg:text-4xl font-display font-bold text-navy-900 mb-6">Seus clientes e
-                        fornecedores organizados como nunca.</h2>
-                    <p class="text-slate-600 text-lg mb-8 leading-relaxed">Cadastre <strong>Clientes e
-                            Fornecedores</strong> com CNPJ/CPF, telefone, endereço e muito mais. Tenha o histórico de
-                        compras de cada cliente na palma da mão e pare de perder vendas por falta de relacionamento.</p>
-                    <ul class="space-y-3 text-slate-600 font-medium">
-                        <li class="flex items-center gap-3"><i class="fas fa-check-circle text-brand"></i> Busca
-                            automática de CNPJ pela Receita Federal</li>
-                        <li class="flex items-center gap-3"><i class="fas fa-check-circle text-brand"></i> Histórico
-                            completo de cada pessoa</li>
-                        <li class="flex items-center gap-3"><i class="fas fa-check-circle text-brand"></i> Ideal para
-                            emissão fiscal com dados do comprador</li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- 5. REL. VENDAS (Relatório de Vendas) -->
-            <div class="flex flex-col lg:flex-row items-center gap-16 py-16 lg:py-24" id="tela-relvendas">
-                <div class="lg:w-1/2 flex justify-center">
-                    <!-- COLE O LINK DA IMAGEM DE REL. VENDAS ABAIXO -->
-                    <img src="https://i.imgur.com/h3BCYrs.png" alt="Relatório de Vendas"
-                        class="w-full h-auto rounded-3xl shadow-2xl border border-slate-100 hover:scale-[1.02] transition-transform duration-500">
-                </div>
-                <div class="lg:w-1/2">
-                    <span
-                        class="inline-flex items-center gap-2 px-3 py-1 bg-brand/10 text-brand text-xs font-bold rounded-full mb-4 uppercase tracking-widest"><i
-                            class="fas fa-receipt"></i> Rel. Vendas</span>
-                    <h2 class="text-3xl lg:text-4xl font-display font-bold text-navy-900 mb-6">Toda venda registrada.
-                        Todo comprovante acessível.</h2>
-                    <p class="text-slate-600 text-lg mb-8 leading-relaxed">Consulte o <strong>histórico completo de
-                            vendas</strong> da sua loja filtrado por período. Encontre qualquer comprovante passado e
-                        reimprima em um clique na impressora térmica. Nunca mais perca o controle do que vendeu.</p>
-                    <ul class="space-y-3 text-slate-600 font-medium">
-                        <li class="flex items-center gap-3"><i class="fas fa-check-circle text-brand"></i> Filtro por
-                            data, forma de pagamento e status</li>
-                        <li class="flex items-center gap-3"><i class="fas fa-check-circle text-brand"></i> Reimpressão
-                            de comprovante em 1 clique</li>
-                        <li class="flex items-center gap-3"><i class="fas fa-check-circle text-brand"></i> Acesse de
-                            qualquer dispositivo, até pelo celular</li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- 6. PEDIDOS (Financeiro) -->
-            <div class="flex flex-col lg:flex-row-reverse items-center gap-16 py-16 lg:py-24 relative before:absolute before:inset-y-0 before:w-[200vw] before:left-1/2 before:-translate-x-1/2 before:-z-10 before:bg-slate-50" id="tela-pedidos">
-                <div class="lg:w-1/2 flex justify-center">
-                    <!-- COLE O LINK DA IMAGEM DE PEDIDOS ABAIXO -->
-                    <img src="https://i.imgur.com/snCua3O.png" alt="Pedidos Online"
-                        class="w-full h-auto rounded-3xl shadow-2xl border border-slate-100 hover:scale-[1.02] transition-transform duration-500">
-                </div>
-                <div class="lg:w-1/2">
-                    <span
-                        class="inline-flex items-center gap-2 px-3 py-1 bg-brand/10 text-brand text-xs font-bold rounded-full mb-4 uppercase tracking-widest"><i
-                            class="fas fa-cash-register"></i> Pedidos Online</span>
-                    <h2 class="text-3xl lg:text-4xl font-display font-bold text-navy-900 mb-6">Receba pedidos do seu
-                        Cardápio Online direto no painel.</h2>
-                    <p class="text-slate-600 text-lg mb-8 leading-relaxed">Seus clientes pedem pelo <strong>Cardápio
-                            Digital</strong> e o pedido aparece instantaneamente na sua tela. Aceite, prepare e finalize
-                        — tudo sem precisar de aplicativo de terceiros cobrando comissão. <strong>Seus pedidos, sua
-                            margem.</strong></p>
-                    <ul class="space-y-3 text-slate-600 font-medium">
-                        <li class="flex items-center gap-3"><i class="fas fa-check-circle text-brand"></i> Notificação
-                            em tempo real de novos pedidos</li>
-                        <li class="flex items-center gap-3"><i class="fas fa-check-circle text-brand"></i> Sem taxa de
-                            marketplace</li>
-                        <li class="flex items-center gap-3"><i class="fas fa-check-circle text-brand"></i> Integrado à
-                            emissão fiscal</li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- 7. RELATÓRIOS GERENCIAIS -->
-            <div class="flex flex-col lg:flex-row items-center gap-16 py-16 lg:py-24" id="tela-relatorios">
-                <div class="lg:w-1/2 flex justify-center">
-                    <!-- COLE O LINK DA IMAGEM DE RELATÓRIOS ABAIXO -->
-                    <img src="https://i.imgur.com/CiWiRjD.png" alt="Relatórios Gerenciais"
-                        class="w-full h-auto rounded-3xl shadow-2xl border border-slate-100 hover:scale-[1.02] transition-transform duration-500">
-                </div>
-                <div class="lg:w-1/2">
-                    <span
-                        class="inline-flex items-center gap-2 px-3 py-1 bg-brand/10 text-brand text-xs font-bold rounded-full mb-4 uppercase tracking-widest"><i
-                            class="fas fa-file-lines"></i> Relatórios Analíticos</span>
-                    <h2 class="text-3xl lg:text-4xl font-display font-bold text-navy-900 mb-6">Dados que transformam
-                        decisões em lucro.</h2>
-                    <p class="text-slate-600 text-lg mb-8 leading-relaxed">Relatórios detalhados que mostram <strong>o
-                            que está vendendo, o que está parado e onde está o buraco no caixa</strong>. Tome decisões
-                        baseadas em números reais, não em achismo. Quem tem dados, tem poder.</p>
-                    <ul class="space-y-3 text-slate-600 font-medium">
-                        <li class="flex items-center gap-3"><i class="fas fa-check-circle text-brand"></i> Relatórios
-                            por categoria, produto e período</li>
-                        <li class="flex items-center gap-3"><i class="fas fa-check-circle text-brand"></i> Gráficos
-                            visuais e fáceis de entender</li>
-                        <li class="flex items-center gap-3"><i class="fas fa-check-circle text-brand"></i> Exportação de
-                            dados</li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- 8. HUB FISCAL -->
-            <div class="flex flex-col lg:flex-row-reverse items-center gap-16 py-16 lg:py-24 relative before:absolute before:inset-y-0 before:w-[200vw] before:left-1/2 before:-translate-x-1/2 before:-z-10 before:bg-slate-50" id="tela-hub">
-                <div class="lg:w-1/2 flex justify-center">
-                    <!-- COLE O LINK DA IMAGEM DO HUB FISCAL ABAIXO -->
-                    <img src="https://i.imgur.com/GzXW1qt.png" alt="Hub Emissor Fiscal"
-                        class="w-full h-auto rounded-3xl shadow-2xl border border-slate-100 hover:scale-[1.02] transition-transform duration-500">
-                </div>
-                <div class="lg:w-1/2">
-                    <span
-                        class="inline-flex items-center gap-2 px-3 py-1 bg-brand/10 text-brand text-xs font-bold rounded-full mb-4 uppercase tracking-widest"><i
-                            class="fas fa-rocket"></i> Hub Emissor Fiscal</span>
-                    <h2 class="text-3xl lg:text-4xl font-display font-bold text-navy-900 mb-6">Emita notas fiscais sem
-                        dor de cabeça. Nunca mais.</h2>
-                    <p class="text-slate-600 text-lg mb-8 leading-relaxed">Chega de sites travados da prefeitura e do
-                        governo. No Hub você emite <strong>NFC-e e NF-e</strong> de forma nativa, diretamente na tela de
-                        venda, sem limites de quantidade e sem erros tributários. <strong>Você só aperta ENTER.</strong>
-                    </p>
-                    <ul class="space-y-3 text-slate-600 font-medium">
-                        <li class="flex items-center gap-3"><i class="fas fa-check-circle text-brand"></i> Emissão de
-                            NFC-e e NF-e integrada ao PDV</li>
-                        <li class="flex items-center gap-3"><i class="fas fa-check-circle text-brand"></i> Sem limites
-                            de notas</li>
-                        <li class="flex items-center gap-3"><i class="fas fa-check-circle text-brand"></i> Importação de
-                            XML de Nota de Entrada</li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- 9. CUSTO OPERACIONAL -->
-            <div class="flex flex-col lg:flex-row items-center gap-16 py-16 lg:py-24" id="tela-custo">
-                <div class="lg:w-1/2 flex justify-center">
-                    <!-- COLE O LINK DA IMAGEM DE CUSTO OPERACIONAL ABAIXO -->
-                    <img src="https://i.imgur.com/AHKIzHD.png" alt="Custo Operacional"
-                        class="w-full h-auto rounded-3xl shadow-2xl border border-slate-100 hover:scale-[1.02] transition-transform duration-500">
-                </div>
-                <div class="lg:w-1/2">
-                    <span
-                        class="inline-flex items-center gap-2 px-3 py-1 bg-brand/10 text-brand text-xs font-bold rounded-full mb-4 uppercase tracking-widest"><i
-                            class="fas fa-coins"></i> Custo Operacional</span>
-                    <h2 class="text-3xl lg:text-4xl font-display font-bold text-navy-900 mb-6">Vender muito não é
-                        lucrar. Descubra a diferença.</h2>
-                    <p class="text-slate-600 text-lg mb-8 leading-relaxed">Cadastre <strong>aluguel, internet, folha de
-                            pagamento, fornecedores fixos</strong> e todos os custos que comem seu faturamento por
-                        baixo. O Dashboard cruza tudo automaticamente e mostra o <strong>lucro líquido real</strong> —
-                        sem ilusão.</p>
-                    <ul class="space-y-3 text-slate-600 font-medium">
-                        <li class="flex items-center gap-3"><i class="fas fa-check-circle text-brand"></i> Cadastro de
-                            custos recorrentes</li>
-                        <li class="flex items-center gap-3"><i class="fas fa-check-circle text-brand"></i> Cruzamento
-                            automático com vendas</li>
-                        <li class="flex items-center gap-3"><i class="fas fa-check-circle text-brand"></i> Lucro líquido
-                            verdadeiro na tela inicial</li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- 10. USUÁRIOS (Gestão de Funcionários) -->
-            <div class="flex flex-col lg:flex-row-reverse items-center gap-16 py-16 lg:py-24 relative before:absolute before:inset-y-0 before:w-[200vw] before:left-1/2 before:-translate-x-1/2 before:-z-10 before:bg-slate-50" id="tela-usuarios">
-                <div class="lg:w-1/2 flex justify-center">
-                    <!-- COLE O LINK DA IMAGEM DE USUÁRIOS ABAIXO -->
-                    <img src="https://i.imgur.com/SDGgsDG.png" alt="Gestão de Usuários"
-                        class="w-full h-auto rounded-3xl shadow-2xl border border-slate-100 hover:scale-[1.02] transition-transform duration-500">
-                </div>
-                <div class="lg:w-1/2">
-                    <span
-                        class="inline-flex items-center gap-2 px-3 py-1 bg-brand/10 text-brand text-xs font-bold rounded-full mb-4 uppercase tracking-widest"><i
-                            class="fas fa-users"></i> Usuários & Permissões</span>
-                    <h2 class="text-3xl lg:text-4xl font-display font-bold text-navy-900 mb-6">Cada funcionário vê só o
-                        que precisa. Você vê tudo.</h2>
-                    <p class="text-slate-600 text-lg mb-8 leading-relaxed">Crie contas para seus funcionários com
-                        <strong>permissões personalizadas</strong>. O caixa acessa só o PDV, o gerente vê os relatórios,
-                        e você tem controle total. Segurança e organização para escalar seu negócio.
-                    </p>
-                    <ul class="space-y-3 text-slate-600 font-medium">
-                        <li class="flex items-center gap-3"><i class="fas fa-check-circle text-brand"></i> Permissões
-                            por tela</li>
-                        <li class="flex items-center gap-3"><i class="fas fa-check-circle text-brand"></i> Controle de
-                            acesso total</li>
-                        <li class="flex items-center gap-3"><i class="fas fa-check-circle text-brand"></i> Múltiplos
-                            operadores por loja</li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- 11. API DE PAGAMENTO -->
-            <div class="flex flex-col lg:flex-row items-center gap-16 py-16 lg:py-24" id="tela-pagamento">
-                <div class="lg:w-1/2 flex justify-center">
-                    <!-- COLE O LINK DA IMAGEM DE PAGAMENTO ABAIXO -->
-                    <img src="https://i.imgur.com/koWh0eq.png" alt="API de Pagamento"
-                        class="w-full h-auto rounded-3xl shadow-2xl border border-slate-100 hover:scale-[1.02] transition-transform duration-500">
-                </div>
-                <div class="lg:w-1/2">
-                    <span
-                        class="inline-flex items-center gap-2 px-3 py-1 bg-brand/10 text-brand text-xs font-bold rounded-full mb-4 uppercase tracking-widest"><i
-                            class="fas fa-coins"></i> Pagamento Integrado</span>
-                    <h2 class="text-3xl lg:text-4xl font-display font-bold text-navy-900 mb-6">PIX QR Code gerado direto
-                        no caixa. Receba na hora.</h2>
-                    <p class="text-slate-600 text-lg mb-8 leading-relaxed">Configure sua <strong>chave PIX e API de
-                            pagamento</strong> e o sistema gera o QR Code automaticamente na tela de venda. O cliente
-                        paga, o sistema confirma e a venda é fechada — <strong>zero erro humano, zero troco
-                            perdido</strong>.</p>
-                    <ul class="space-y-3 text-slate-600 font-medium">
-                        <li class="flex items-center gap-3"><i class="fas fa-check-circle text-brand"></i> QR Code PIX
-                            gerado automaticamente</li>
-                        <li class="flex items-center gap-3"><i class="fas fa-check-circle text-brand"></i> Confirmação
-                            automática de pagamento</li>
-                        <li class="flex items-center gap-3"><i class="fas fa-check-circle text-brand"></i> Integração
-                            com Mercado Pago</li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- 12. CONFIGURAÇÕES -->
-            <div class="flex flex-col lg:flex-row-reverse items-center gap-16 py-16 lg:py-24 relative before:absolute before:inset-y-0 before:w-[200vw] before:left-1/2 before:-translate-x-1/2 before:-z-10 before:bg-slate-50" id="tela-config">
-                <div class="lg:w-1/2 flex justify-center">
-                    <!-- COLE O LINK DA IMAGEM DE CONFIGURAÇÕES ABAIXO -->
-                    <img src="https://i.imgur.com/Nj5Ixd6.png" alt="Configurações"
-                        class="w-full h-auto rounded-3xl shadow-2xl border border-slate-100 hover:scale-[1.02] transition-transform duration-500">
-                </div>
-                <div class="lg:w-1/2">
-                    <span
-                        class="inline-flex items-center gap-2 px-3 py-1 bg-brand/10 text-brand text-xs font-bold rounded-full mb-4 uppercase tracking-widest"><i
-                            class="fas fa-gear"></i> Configurações</span>
-                    <h2 class="text-3xl lg:text-4xl font-display font-bold text-navy-900 mb-6">Personalize o sistema do
-                        seu jeito.</h2>
-                    <p class="text-slate-600 text-lg mb-8 leading-relaxed">Ajuste os <strong>dados da empresa, logo,
-                            dados fiscais, impressora térmica e dados de filial</strong>. Tudo centralizado em um painel
-                        limpo para que o sistema funcione exatamente como o seu negócio precisa.</p>
-                    <ul class="space-y-3 text-slate-600 font-medium">
-                        <li class="flex items-center gap-3"><i class="fas fa-check-circle text-brand"></i> Dados da
-                            empresa e logo</li>
-                        <li class="flex items-center gap-3"><i class="fas fa-check-circle text-brand"></i> Configuração
-                            de impressora térmica</li>
-                        <li class="flex items-center gap-3"><i class="fas fa-check-circle text-brand"></i> Dados fiscais
-                            (CNPJ, IE, Regime Tributário)</li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- 13. FUNCIONAMENTO -->
-            <div class="flex flex-col lg:flex-row items-center gap-16 py-16 lg:py-24" id="tela-funcionamento">
-                <div class="lg:w-1/2 flex justify-center">
-                    <!-- COLE O LINK DA IMAGEM DE FUNCIONAMENTO ABAIXO -->
-                    <img src="https://i.imgur.com/OJud8W0.png" alt="Funcionamento"
-                        class="w-full h-auto rounded-3xl shadow-2xl border border-slate-100 hover:scale-[1.02] transition-transform duration-500">
-                </div>
-                <div class="lg:w-1/2">
-                    <span
-                        class="inline-flex items-center gap-2 px-3 py-1 bg-brand/10 text-brand text-xs font-bold rounded-full mb-4 uppercase tracking-widest"><i
-                            class="fas fa-info-circle"></i> Funcionamento</span>
-                    <h2 class="text-3xl lg:text-4xl font-display font-bold text-navy-900 mb-6">Horários, regras e
-                        operação — tudo documentado.</h2>
-                    <p class="text-slate-600 text-lg mb-8 leading-relaxed">Configure o <strong>horário de funcionamento,
-                            dias de operação e informações da loja</strong> para que o sistema, cardápio online e
-                        pedidos se ajustem automaticamente. Quando sua loja fecha, o pedido para. Quando abre, o sistema
-                        opera.</p>
-                    <ul class="space-y-3 text-slate-600 font-medium">
-                        <li class="flex items-center gap-3"><i class="fas fa-check-circle text-brand"></i> Definição de
-                            horário de funcionamento</li>
-                        <li class="flex items-center gap-3"><i class="fas fa-check-circle text-brand"></i> Integração
-                            com cardápio digital</li>
-                        <li class="flex items-center gap-3"><i class="fas fa-check-circle text-brand"></i> Regras
-                            automáticas de operação</li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- 14. FRETE POR REGIÃO -->
-            <div class="flex flex-col lg:flex-row-reverse items-center gap-16 py-16 lg:py-24 relative before:absolute before:inset-y-0 before:w-[200vw] before:left-1/2 before:-translate-x-1/2 before:-z-10 before:bg-slate-50" id="tela-frete">
-                <div class="lg:w-1/2 flex justify-center">
-                    <!-- COLE O LINK DA IMAGEM DE FRETE ABAIXO -->
-                    <img src="https://i.imgur.com/Lb9Qp3U.png" alt="Frete por Região"
-                        class="w-full h-auto rounded-3xl shadow-2xl border border-slate-100 hover:scale-[1.02] transition-transform duration-500">
-                </div>
-                <div class="lg:w-1/2">
-                    <span
-                        class="inline-flex items-center gap-2 px-3 py-1 bg-brand/10 text-brand text-xs font-bold rounded-full mb-4 uppercase tracking-widest"><i
-                            class="fas fa-map-location-dot"></i> Frete por Região</span>
-                    <h2 class="text-3xl lg:text-4xl font-display font-bold text-navy-900 mb-6">Entregas precisas e taxas
-                        justas para cada bairro.</h2>
-                    <p class="text-slate-600 text-lg mb-8 leading-relaxed">Configure <strong>taxas de entrega diferentes
-                            para cada região ou bairro</strong>. O sistema calcula automaticamente o valor do frete no
-                        momento do pedido, garantindo que você não tenha prejuízo e o cliente tenha clareza no valor
-                        final.</p>
-                    <ul class="space-y-3 text-slate-600 font-medium">
-                        <li class="flex items-center gap-3"><i class="fas fa-check-circle text-brand"></i> Valores
-                            específicos por bairro</li>
-                        <li class="flex items-center gap-3"><i class="fas fa-check-circle text-brand"></i> Cálculo
-                            automático no pedido digital</li>
-                        <li class="flex items-center gap-3"><i class="fas fa-check-circle text-brand"></i> Definição de
-                            frete grátis por região</li>
-                    </ul>
-                </div>
-            </div>
-
-        </div>
-    </section>
-
-    <!-- Planos de Preço -->
-    <section id="planos" class="py-24 bg-gradient-to-t from-brand-100 via-white to-slate-50 relative">
-        <div class="container mx-auto px-6">
-            <div class="text-center mb-16">
-                <span class="text-brand font-bold uppercase tracking-wider text-xs">Custo-Benefício</span>
-                <h2 class="text-3xl lg:text-5xl font-display font-bold text-navy-900 mt-2 mb-4">Escolha seu Plano</h2>
-                <div
-                    class="inline-flex items-center gap-2 bg-green-100 text-green-700 px-4 py-2 rounded-full text-sm font-bold mb-6">
-                    <i class="fas fa-gift"></i> Teste Premium Grátis por 7 Dias
-                </div>
-            </div>
-
-            <!-- Grid de Planos -->
-            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto items-end">
-
-                <!-- 1. BÁSICO -->
-                <div
-                    class="bg-slate-50 rounded-2xl p-6 border border-slate-200 flex flex-col hover:shadow-lg transition-all relative overflow-hidden group h-full">
-                    <div class="mb-4">
-                        <h3 class="text-slate-500 font-bold text-sm uppercase tracking-wider">Básico</h3>
-                        <div class="my-4 flex items-baseline text-navy-900">
-                            <span class="text-sm font-semibold mr-1">R$</span>
-                            <span class="text-4xl font-extrabold">100</span>
-                            <span class="text-slate-400 text-sm">/mês</span>
-                        </div>
-                        <p class="text-xs text-slate-500">Gestão Essencial</p>
-                    </div>
-                    <ul class="flex-grow text-sm space-y-3 text-slate-600 mb-8 border-t border-slate-200 pt-6">
-                        <li class="flex items-center gap-2"><i class="fas fa-check text-brand"></i> Dashboard Completo
-                        </li>
-                        <li class="flex items-center gap-2"><i class="fas fa-check text-brand"></i> Cadastro
-                            Pessoas/Prod.</li>
-                        <li class="flex items-center gap-2"><i class="fas fa-check text-brand"></i> Vendas PDV (Sem
-                            Fiscal)</li>
-                        <li class="flex items-center gap-2"><i class="fas fa-check text-brand"></i> Relatório de Vendas
-                        </li>
-                        <li class="flex items-center gap-2"><i class="fas fa-check text-brand"></i> Controle de Estoque
-                        </li>
-                        <li class="flex items-center gap-2"><i class="fas fa-check text-brand"></i> Custo Operacional
-                        </li>
-                        <li class="flex items-center gap-2 opacity-50"><i class="fas fa-times text-slate-400"></i> Sem
-                            Fiscal/Loja Online</li>
-                    </ul>
-                    <a href="javascript:void(0)" onclick="Checkout.open('basico'); return false;"
-                        class="mt-auto block w-full py-3 border-2 border-slate-300 text-slate-600 font-bold rounded-xl text-center hover:border-brand hover:text-brand transition-all">Assinar
-                        Básico</a>
-                </div>
-
-                <!-- 2. PROFISSIONAL (FOOD/FISCAL) - DESTAQUE -->
-                <div
-                    class="bg-gradient-to-b from-white to-orange-50/50 rounded-2xl p-6 border-2 border-brand shadow-xl flex flex-col relative transform lg:-translate-y-4 z-10 h-full">
-                    <div
-                        class="absolute top-0 right-0 bg-brand text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg">
-                        MAIS VENDIDO</div>
-                    <div class="mb-4">
-                        <h3 class="text-brand font-black text-sm uppercase tracking-wider">Profissional</h3>
-                        <div class="my-3 flex items-baseline text-navy-900">
-                            <span class="text-sm font-semibold mr-1">R$</span>
-                            <span class="text-5xl font-extrabold text-brand">250</span>
-                            <span class="text-slate-400 text-sm">/mês</span>
-                        </div>
-                        <p class="text-xs text-slate-500">Gestão + Fiscal + Online</p>
-                    </div>
-
-                    <ul class="flex-grow text-sm space-y-3 text-slate-700 mb-8 border-t border-slate-100 pt-6">
-                        <li class="flex items-center gap-2 text-brand font-bold"><i class="fas fa-plus-circle"></i> Tudo
-                            do Básico +</li>
-                        <li class="flex items-center gap-2"><i class="fas fa-check text-brand"></i> <strong
-                                class="text-navy-900">Emissão Fiscal (NF-e/NFC-e)</strong></li>
-                        <li class="flex items-center gap-2"><i class="fas fa-check text-brand"></i> <strong
-                                class="text-navy-900">Cardápio/Loja Online</strong></li>
-                        <li class="flex items-center gap-2"><i class="fas fa-check text-brand"></i> Gestão de
-                            Funcionamento</li>
-                        <li class="flex items-center gap-2"><i class="fas fa-check text-brand"></i> <strong
-                                class="text-navy-900">Relatório de Vendas</strong></li>
-                        <li class="flex items-center gap-2"><i class="fas fa-check text-brand"></i> Relatórios
-                            Analíticos</li>
-                        <li class="flex items-center gap-2"><i class="fas fa-check text-brand"></i> Fluxo de Caixa Real
-                        </li>
-                        <li class="flex items-center gap-2"><i class="fas fa-check text-brand"></i> Adicional <strong class="text-navy-900">Finan ZyNapse</strong></li>
-                    </ul>
-                    <a href="javascript:void(0)" onclick="Checkout.open('profissional'); return false;"
-                        class="mt-auto block w-full py-4 bg-brand hover:bg-brand-dark text-white font-bold text-lg rounded-xl text-center shadow-lg shadow-brand/20 transition-all hover:scale-105">Quero
-                        Este!</a>
-                </div>
-
-                <!-- 3. MULTI-LOJA (2 LOJAS) -->
-                <div
-                    class="bg-gradient-to-b from-white to-slate-50 rounded-2xl p-6 border border-slate-200 flex flex-col hover:shadow-lg transition-all h-full">
-                    <div class="mb-4">
-                        <h3 class="text-navy-900 font-bold text-sm uppercase tracking-wider">Rede</h3>
-                        <div class="my-4 flex items-baseline text-navy-900">
-                            <span class="text-sm font-semibold mr-1">R$</span>
-                            <span class="text-4xl font-extrabold">400</span>
-                            <span class="text-slate-400 text-sm">/mês</span>
-                        </div>
-                        <p class="text-xs text-slate-500">Para expansão (Gestão + Fiscal)</p>
-                    </div>
-                    <ul class="flex-grow text-sm space-y-3 text-slate-600 mb-8 border-t border-slate-100 pt-6">
-                        <li class="flex items-center gap-2"><i class="fas fa-store text-brand"></i> <strong>2
-                                Lojas</strong> Inclusas</li>
-                        <li class="flex items-center gap-2"><i class="fas fa-check text-brand"></i> Gestão Separada</li>
-                        <li class="flex items-center gap-2"><i class="fas fa-check text-brand"></i> Relatório de Vendas
-                        </li>
-                        <li class="flex items-center gap-2"><i class="fas fa-check text-brand"></i> Tudo do Profissional
-                            (Exceto Online)</li>
-                        <li class="flex items-center gap-2"><i class="fas fa-check text-brand"></i> Emissão Fiscal nas 2
-                            lojas</li>
-                        <li class="flex items-center gap-2 opacity-70"><i class="fas fa-info-circle text-brand"></i>
-                            Adicione Loja Online por +R$ 100</li>
-                        <li class="flex items-center gap-2"><i class="fas fa-check text-brand"></i> Adicional <strong class="text-navy-900">Finan ZyNapse</strong></li>
-                    </ul>
-                    <a href="javascript:void(0)" onclick="Checkout.open('rede'); return false;"
-                        class="mt-auto block w-full py-3 bg-navy-900 hover:bg-navy-800 text-white font-bold rounded-xl text-center transition-all">Assinar
-                        Rede</a>
-                </div>
-
-                <!-- 4. REDE FULL (2 LOJAS + ONLINE) / ANUAL -->
-                <div
-                    class="bg-slate-50 rounded-2xl p-6 border border-slate-200 flex flex-col hover:shadow-lg transition-all h-full">
-                    <div class="mb-4">
-                        <h3 class="text-navy-900 font-bold text-sm uppercase tracking-wider">Rede Full</h3>
-                        <div class="my-4 flex items-baseline text-navy-900">
-                            <span class="text-sm font-semibold mr-1">R$</span>
-                            <span class="text-4xl font-extrabold">650</span>
-                            <span class="text-slate-400 text-sm">/mês</span>
-                        </div>
-                        <p class="text-xs text-slate-500">3 Lojas + Online Completo</p>
-                    </div>
-
-                    <ul class="flex-grow text-sm space-y-3 text-slate-600 mb-8 border-t border-slate-200 pt-6">
-                        <li class="flex items-center gap-2"><i class="fas fa-crown text-yellow-500"></i>
-                            <strong>Experiência Completa</strong>
-                        </li>
-                        <li class="flex items-center gap-2"><i class="fas fa-check text-brand"></i> 3 Lojas Gerenciadas
-                        </li>
-                        <li class="flex items-center gap-2"><i class="fas fa-check text-brand"></i> Relatório de Vendas
-                        </li>
-                        <li class="flex items-center gap-2"><i class="fas fa-check text-brand"></i> <strong
-                                class="text-navy-900">Loja Online / Cardápio incluso</strong></li>
-                        <li class="flex items-center gap-2"><i class="fas fa-check text-brand"></i> Emissão Fiscal
-                            Completa</li>
-                        <li class="flex items-center gap-2"><i class="fas fa-check text-brand"></i> Prioridade no
-                            Suporte</li>
-                        <li class="flex items-center gap-2"><i class="fas fa-check text-brand"></i> Adicional <strong class="text-navy-900">Finan ZyNapse</strong></li>
-                    </ul>
-                    <a href="javascript:void(0)" onclick="Checkout.open('full'); return false;"
-                        class="mt-auto block w-full py-3 border-2 border-navy-900 text-navy-900 font-bold rounded-xl text-center hover:bg-navy-900 hover:text-white transition-all">Assinar
-                        Full</a>
-                </div>
-
-            </div>
-        </div>
-    </section>
-
-    <!-- Depoimentos / Prova Social (Agressivos) -->
-    <section class="py-24 bg-gradient-to-br from-blue-100 to-brand-100 relative">
-        <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20">
-        </div>
-        <div class="container mx-auto px-6 relative z-10">
-            <h2 class="text-3xl lg:text-4xl font-black text-center text-navy-900 mb-4">Em quanto tempo o sistema se
-                paga?</h2>
-            <p class="text-center text-slate-600 mb-16 max-w-2xl mx-auto font-medium">Veja o que aconteceu no caixa de
-                quem trocou o sistema lento e começou a usar a força do ZyNapse e seus robôs.</p>
-
-            <div class="grid md:grid-cols-3 gap-8">
-                <!-- Depoimento 1 -->
-                <div class="bg-white p-8 rounded-2xl shadow-md border-t-4 border-brand">
-                    <div class="flex items-center gap-1 text-yellow-400 mb-6 text-lg">
-                        <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i
-                            class="fas fa-star"></i><i class="fas fa-star"></i>
-                    </div>
-                    <p class="text-slate-700 mb-6 italic text-lg leading-relaxed font-semibold">"A gente achava que tava
-                        lucrando, mas na tela de Custo Operacional descobri que eu empatava no fim do mês. Reduzi as
-                        perdas em 30% e hoje vejo meu dinheiro sobressair no Dashboard."</p>
-                    <div class="flex items-center gap-4">
-                        <div
-                            class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-black text-xl border-2 border-slate-200">
-                            RC
-                        </div>
-                        <div>
-                            <p class="font-black text-navy-900">Ricardo Costa</p>
-                            <p class="text-xs font-bold text-brand uppercase tracking-wider">Hipermercado e Açougue</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Depoimento 2 -->
-                <div class="bg-navy-900 p-8 rounded-2xl shadow-xl transform md:-translate-y-4">
-                    <div class="flex items-center gap-1 text-brand mb-6 text-lg">
-                        <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i
-                            class="fas fa-star"></i><i class="fas fa-star"></i>
-                    </div>
-                    <p class="text-white mb-6 italic text-lg leading-relaxed font-semibold">"Eu passava até de madrugada
-                        quebrando a cabeça com site de prefeitura para emitir NFC-e e notas. O Hub Fiscal do ZyNapse é
-                        brutal. Na mesma tela de venda eu só aperto ENTER."</p>
-                    <div class="flex items-center gap-4 border-t border-navy-800 pt-4">
-                        <div
-                            class="w-12 h-12 rounded-full bg-navy-800 flex items-center justify-center text-white font-black text-xl">
-                            AL
-                        </div>
-                        <div>
-                            <p class="font-black text-white">Ana Lúcia</p>
-                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Gestora de Empório</p>
-                        </div>
-                    </div>
-                </div>
-                <!-- Depoimento 3 -->
-                <div class="bg-white p-8 rounded-2xl shadow-md border-t-4 border-brand">
-                    <div class="flex items-center gap-1 text-yellow-400 mb-6 text-lg">
-                        <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i
-                            class="fas fa-star"></i><i class="fas fa-star"></i>
-                    </div>
-                    <p class="text-slate-700 mb-6 italic text-lg leading-relaxed font-semibold">"Sempre que faltava
-                        energia eu perdia a listagem de clientes e troco da gaveta. Agora é na nuvem, num piscar de
-                        olhos eu vejo a tela de RelVendas de onde eu estiver pelo celular."</p>
-                    <div class="flex items-center gap-4">
-                        <div
-                            class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-black text-xl border-2 border-slate-200">
-                            MS
-                        </div>
-                        <div>
-                            <p class="font-black text-navy-900">Marcos Silva</p>
-                            <p class="text-xs font-bold text-brand uppercase tracking-wider">Loja de Roupas</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="bg-navy-900 text-slate-400 pt-16 pb-8 border-t border-navy-950 font-sans">
-        <div class="container mx-auto px-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
-
-                <!-- Coluna 1 -->
-                <div>
-                    <!-- Logo no Footer -->
-                    <div
-                        class="mb-6 inline-flex items-center justify-center bg-white p-3 rounded-3xl shadow-lg border border-slate-100/10">
-                        <img src="https://i.imgur.com/xllFkuo.png" alt="Gestor ZyNapse"
-                            class="h-16 w-auto object-contain">
-                    </div>
-
-                    <p class="text-sm leading-relaxed mb-6 text-slate-500">
-                        Tecnologia de ponta para o varejo brasileiro. Transformamos dados em lucro através da automação
-                        inteligente.
-                    </p>
-                    <div class="flex gap-4">
-                        <a href="#"
-                            class="w-10 h-10 rounded-lg bg-navy-800 flex items-center justify-center hover:bg-brand hover:text-white transition-all"><i
-                                class="fab fa-instagram"></i></a>
-                        <a href="#"
-                            class="w-10 h-10 rounded-lg bg-navy-800 flex items-center justify-center hover:bg-brand hover:text-white transition-all"><i
-                                class="fab fa-linkedin-in"></i></a>
-                    </div>
-                </div>
-
-                <!-- Coluna 2 -->
-                <div>
-                    <h4 class="text-white font-bold mb-6 uppercase text-xs tracking-wider">Produto</h4>
-                    <ul class="space-y-3 text-sm">
-                        <li><a href="#pdv" class="hover:text-brand-light transition-colors">Frente de Caixa (PDV)</a>
-                        </li>
-                        <li><a href="#automacao" class="hover:text-brand-light transition-colors">Importação
-                                XML/Nota</a></li>
-                        <li><a href="#relatorios" class="hover:text-brand-light transition-colors">Relatórios
-                                Gerenciais</a></li>
-                        <li><a href="#planos" class="hover:text-brand-light transition-colors">Planos e Preços</a></li>
-                    </ul>
-                </div>
-
-                <!-- Coluna 3 -->
-                <div>
-                    <h4 class="text-white font-bold mb-6 uppercase text-xs tracking-wider">Legal</h4>
-                    <ul class="space-y-3 text-sm">
-                        <li><a href="#" class="hover:text-brand-light transition-colors">Termos de Uso</a></li>
-                        <li><a href="#" class="hover:text-brand-light transition-colors">Privacidade</a></li>
-                        <li><a href="#" class="hover:text-brand-light transition-colors">Contrato de Licença</a></li>
-                    </ul>
-                </div>
-
-                <!-- Coluna 4 -->
-                <div>
-                    <h4 class="text-white font-bold mb-6 uppercase text-xs tracking-wider">Contato</h4>
-                    <ul class="space-y-4 text-sm">
-                        <li class="flex items-start gap-3">
-                            <i class="fas fa-map-marker-alt text-brand mt-1"></i>
-                            <span>Av. T-63, Setor Bueno<br>Goiânia - GO, Brasil</span>
-                        </li>
-                        <li class="flex items-center gap-3">
-                            <i class="fas fa-envelope text-brand"></i>
-                            <a href="mailto:zynapse.com.br@gmail.com"
-                                class="hover:text-white">zynapse.com.br@gmail.com</a>
-                        </li>
-                        <li class="flex items-center gap-3">
-                            <i class="fab fa-whatsapp text-brand"></i>
-                            <a href="https://wa.me/5562991214349" class="hover:text-white">+55 (62) 99121-4349</a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-
-            <div
-                class="border-t border-navy-950 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-slate-600">
-                <p>&copy; 2025 C.R.E. TECHNOLOGY LTDA. Todos os direitos reservados.</p>
-                <div class="flex gap-2">
-                    <i class="fab fa-cc-visa text-xl text-slate-500"></i>
-                    <i class="fab fa-cc-mastercard text-xl text-slate-500"></i>
-                    <i class="fas fa-barcode text-xl text-slate-500"></i>
-                    <i class="fab fa-pix text-xl text-slate-500"></i>
-                </div>
-            </div>
-        </div>
-    </footer>
-
-    <!-- Botão Flutuante WhatsApp -->
-    <a href="https://wa.me/5562991214349" target="_blank"
-        class="fixed bottom-6 right-6 z-50 bg-[#25D366] text-white w-14 h-14 rounded-full flex items-center justify-center text-3xl shadow-lg hover:bg-[#128C7E] transition-all hover:scale-110"
-        aria-label="Falar no WhatsApp">
-        <i class="fab fa-whatsapp"></i>
-    </a>
-
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-    <script>
-        // Menu Mobile
-        const btn = document.getElementById('mobile-menu-btn');
-        const menu = document.getElementById('mobile-menu');
-
-        btn.addEventListener('click', () => {
-            menu.classList.toggle('hidden');
-        });
-
-        // Fechar menu ao clicar em link
-        document.querySelectorAll('#mobile-menu a').forEach(link => {
-            link.addEventListener('click', () => {
-                menu.classList.add('hidden');
-            });
-        });
-
-        // Efeito no Header ao rolar
-        window.addEventListener('scroll', () => {
-            const header = document.querySelector('header');
-            if (window.scrollY > 10) {
-                header.classList.add('shadow-md');
-            } else {
-                header.classList.remove('shadow-md');
-            }
-        });
-
-        // Simulação de "Bip" no Scanner
-        setInterval(() => {
-            const laser = document.querySelector('.laser-line');
-            if (laser) {
-                // Flash effect opcional via JS, mas o CSS já cuida da animação
-            }
-        }, 2000);
-    </script>
-
-
-    <!-- Modal Checkout -->
-    <div id="checkout-modal" class="fixed inset-0 z-50 hidden">
-        <div class="absolute inset-0 bg-navy-900/60 backdrop-blur-sm transition-opacity opacity-0"
-            id="checkout-backdrop"></div>
-        <div class="absolute inset-0 flex items-center justify-center p-4">
-            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden transform transition-all scale-95 opacity-0 flex flex-col md:flex-row"
-                id="checkout-panel">
-
-                <!-- Lado Esquerdo: Resumo -->
-                <div
-                    class="w-full md:w-1/3 bg-slate-50 border-r border-slate-200 p-6 flex flex-col relative overflow-hidden">
-                    <!-- Detalhe decorativo -->
-                    <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-brand to-brand-light"></div>
-
-                    <h3 class="font-bold text-navy-900 text-lg mb-4 flex items-center gap-2">
-                        <i class="fas fa-shopping-cart text-brand"></i>
-                        Resumo do Pedido
-                    </h3>
-
-                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6">
-                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Plano
-                            Selecionado</div>
-                        <h2 id="summary-plan-name" class="text-xl font-black text-navy-900">Profissional</h2>
-                        <div class="mt-2 flex items-baseline gap-1">
-                            <span class="text-sm font-semibold text-slate-500">R$</span>
-                            <span id="summary-plan-price" class="text-3xl font-extrabold text-brand">150</span>
-                            <span id="summary-plan-period" class="text-sm font-medium text-slate-400">/mês</span>
-                        </div>
-                    </div>
-
-                    <!-- Toggle Anual -->
-                    <div class="bg-blue-50 border border-blue-100 rounded-xl p-3 mb-6">
-                        <label class="flex items-center cursor-pointer gap-3">
-                            <div class="relative">
-                                <input type="checkbox" id="toggle-annual" class="sr-only peer">
-                                <div
-                                    class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand">
-                                </div>
-                            </div>
-                            <div class="flex-1">
-                                <span class="text-sm font-bold text-navy-900">Pagamento Anual</span>
-                                <div class="text-[10px] text-green-600 font-bold" id="annual-discount-text">Economize
-                                    20%</div>
-                            </div>
+                        <label for="remember-me" class="text-[9px] font-bold text-brand-textLight lowercase tracking-widest cursor-pointer select-none">
+                            lembrar de mim
                         </label>
                     </div>
-
-                    <div class="mt-auto">
-                        <div class="space-y-3 text-sm text-slate-600 mb-6">
-                            <div class="flex justify-between">
-                                <span>Subtotal</span>
-                                <span id="summary-subtotal">R$ 150,00</span>
-                            </div>
-                            <div class="flex justify-between text-green-600 font-bold hidden" id="summary-discount-row">
-                                <span>Desconto</span>
-                                <span id="summary-discount">- R$ 0,00</span>
-                            </div>
-                            <div
-                                class="border-t border-slate-200 pt-3 flex justify-between font-bold text-navy-900 text-lg">
-                                <span>Total a Pagar</span>
-                                <span id="summary-total">R$ 150,00</span>
-                            </div>
-                        </div>
-                        <div class="text-[10px] text-center text-slate-400">
-                            Ambiente 100% Seguro <i class="fas fa-lock ml-1"></i>
-                        </div>
-                    </div>
                 </div>
-
-                <!-- Lado Direito: Formulário -->
-                <div class="w-full md:w-2/3 p-6 md:p-8 overflow-y-auto relative">
-                    <button id="close-checkout"
-                        class="absolute top-4 right-4 text-slate-400 hover:text-red-500 transition-colors">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
-
-                    <!-- Etapas -->
-                    <div class="flex items-center justify-center mb-8 gap-4">
-                        <div class="step-indicator active" data-step="1">
-                            <div
-                                class="w-8 h-8 rounded-full bg-brand text-white flex items-center justify-center font-bold text-sm mb-1">
-                                1</div>
-                            <span class="text-[10px] font-bold text-brand uppercase">Conta</span>
-                        </div>
-                        <div class="w-12 h-px bg-slate-200"></div>
-                        <div class="step-indicator" data-step="2">
-                            <div
-                                class="w-8 h-8 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center font-bold text-sm mb-1">
-                                2</div>
-                            <span class="text-[10px] font-bold text-slate-400 uppercase">Pagamento</span>
-                        </div>
-                    </div>
-
-                    <!-- STEP 1: CADASTRO -->
-                    <div id="step-1" class="step-content">
-                        <h2 class="text-2xl font-bold text-navy-900 mb-2">Crie sua Conta</h2>
-                        <p class="text-sm text-slate-500 mb-6">Informe os dados da sua empresa para começarmos.</p>
-
-                        <form id="signup-form" class="space-y-5">
-                            <!-- Logo Upload -->
-                            <div class="flex justify-center mb-6">
-                                <div class="relative group cursor-pointer" id="logo-upload-trigger">
-                                    <div class="w-24 h-24 rounded-2xl bg-slate-50 border-2 border-dashed border-slate-300 flex flex-col items-center justify-center overflow-hidden hover:border-brand hover:bg-orange-50 transition-all"
-                                        id="logo-preview-area">
-                                        <i
-                                            class="fas fa-camera text-slate-400 text-2xl mb-1 group-hover:text-brand"></i>
-                                        <span
-                                            class="text-[10px] text-slate-400 font-bold group-hover:text-brand">Logo</span>
-                                    </div>
-                                    <input type="file" id="logo-input" accept="image/*" class="hidden">
-                                </div>
-                            </div>
-
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div class="col-span-2 md:col-span-1">
-                                    <label class="block text-xs font-bold text-navy-900 uppercase mb-1">CNPJ</label>
-                                    <div class="relative">
-                                        <input type="text" id="input-cnpj"
-                                            class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:border-brand focus:ring-0 outline-none transition-all placeholder:text-slate-300"
-                                            placeholder="00.000.000/0000-00">
-                                        <i class="fas fa-spinner fa-spin absolute right-3 top-3 text-brand hidden"
-                                            id="cnpj-loading"></i>
-                                    </div>
-                                </div>
-                                <div class="col-span-2 md:col-span-1">
-                                    <label class="block text-xs font-bold text-navy-900 uppercase mb-1">Telefone /
-                                        WhatsApp</label>
-                                    <input type="text" id="input-phone"
-                                        class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:border-brand focus:ring-0 outline-none transition-all"
-                                        placeholder="(00) 00000-0000">
-                                </div>
-                                <div class="col-span-2">
-                                    <label class="block text-xs font-bold text-navy-900 uppercase mb-1">Razão Social /
-                                        Nome da Loja</label>
-                                    <input type="text" id="input-company-name"
-                                        class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:border-brand focus:ring-0 outline-none transition-all font-semibold text-navy-900"
-                                        placeholder="Preenchimento automático...">
-                                </div>
-                                <div class="col-span-2">
-                                    <label class="block text-xs font-bold text-navy-900 uppercase mb-1">Seu Melhor
-                                        E-mail</label>
-                                    <input type="email" id="input-email"
-                                        class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:border-brand focus:ring-0 outline-none transition-all"
-                                        placeholder="email@exemplo.com">
-                                </div>
-                                <div class="col-span-2">
-                                    <label class="block text-xs font-bold text-navy-900 uppercase mb-1">Crie uma
-                                        Senha</label>
-                                    <input type="password" id="input-password"
-                                        class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:border-brand focus:ring-0 outline-none transition-all"
-                                        placeholder="********">
-                                </div>
-                            </div>
-
-                            <button type="submit"
-                                class="w-full py-4 bg-navy-900 hover:bg-navy-800 text-white font-bold rounded-xl shadow-lg transition-all mt-4 flex items-center justify-center gap-2">
-                                <span>Continuar para Pagamento</span>
-                                <i class="fas fa-arrow-right"></i>
-                            </button>
-                        </form>
-                    </div>
-
-                    <!-- STEP 2: PAGAMENTO (PIX) -->
-                    <div id="step-2" class="step-content hidden text-center">
-                        <div class="mb-6">
-                            <div
-                                class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
-                                <i class="fa-brands fa-pix text-3xl text-green-600"></i>
-                            </div>
-                            <h2 class="text-2xl font-bold text-navy-900 mb-2">Pague com PIX</h2>
-                            <p class="text-sm text-slate-500">Escaneie o QR Code abaixo para liberar seu acesso
-                                instantaneamente.</p>
-                        </div>
-
-                        <div
-                            class="bg-white p-4 rounded-xl border-2 border-slate-100 shadow-xl inline-block mb-6 relative group">
-                            <img id="pix-qrcode" src=""
-                                class="w-48 h-48 object-contain opacity-50 filter blur-sm transition-all duration-500">
-                            <div id="pix-loading"
-                                class="absolute inset-0 flex items-center justify-center bg-white/80 z-10">
-                                <i class="fas fa-spinner fa-spin text-3xl text-brand"></i>
-                            </div>
-                        </div>
-
-                        <div class="max-w-xs mx-auto mb-8">
-                            <div class="flex gap-2 mb-2">
-                                <input type="text" id="pix-copypaste"
-                                    class="w-full text-[10px] p-2 bg-slate-50 border border-slate-200 rounded text-slate-500"
-                                    readonly value="Gerando código...">
-                                <button id="btn-copy-pix"
-                                    class="bg-slate-200 text-slate-600 px-3 rounded hover:bg-slate-300 font-bold text-xs"><i
-                                        class="fas fa-copy"></i></button>
-                            </div>
-                            <p class="text-[10px] text-slate-400">O código expira em 30 minutos.</p>
-                        </div>
-
-                        <!-- Simulação de Confirmação (Poller Visual) -->
-                        <div id="payment-status-message"
-                            class="flex items-center justify-center gap-2 text-sm font-bold text-slate-500 bg-slate-50 py-3 rounded-lg border border-slate-100 mb-4">
-                            <i class="fas fa-circle-notch fa-spin text-brand"></i> Aguardando pagamento...
-                        </div>
-
-                        <!-- Botão de "Já Paguei" para UX (e simulação se API falhar) -->
-                        <button id="btn-check-payment"
-                            class="w-full py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow-lg shadow-green-600/20 transition-all">
-                            <i class="fas fa-check-circle mr-2"></i> Confirmar Pagamento
-                        </button>
-                    </div>
-
-                </div>
-            </div>
+                
+                <!-- Submit -->
+                <button type="submit" id="btn-submit"
+                    class="w-full bg-brand-btn hover:bg-brand-btnHover text-[#f8f5f2] rounded-lg py-2.5 font-bold text-[13px] shadow-md hover:shadow-lg transition-all mt-3 active:scale-[0.98]">
+                    <span id="btn-content">Login</span>
+                </button>
+                
+            </form>
         </div>
     </div>
 
-    <!-- Scripts de Funcionalidade -->
+    <!-- Footer -->
+    <div class="login-footer">
+        <p class="text-[10px] font-medium text-white/30 tracking-widest uppercase">© 2026 NutriPort · Powered by ZyNapse</p>
+    </div>
+
+    <!-- Efeitos Sonoros -->
+    <audio id="aprovadoAudio" src="https://i.imgur.com/OqQIdPC.mp4" preload="auto"></audio>
+    <audio id="reprovadoAudio" src="https://i.imgur.com/gZO1FzJ.mp4" preload="auto"></audio>
+
     <script>
-        const PLANS = {
-            'basico': { name: 'Básico', price: 50, annualPrice: 45, access: 'dashboard.html>clientes.html>produtos.html>vendas.html>hub.html>config.html>fucionamento.html>finanoperacional.html', limit: 'Limitado' },
-            'profissional': { name: 'Profissional', price: 150, annualPrice: 100, access: 'dashboard.html>vendas.html>produtos.html>clientes.html>financeiro.html>relatorios.html>config.html>finanoperacional.html>user.html>fucionamento.html>hub.html', limit: 'Total' },
-            'rede': { name: 'Rede', price: 200, annualPrice: 180, access: 'dashboard.html>vendas.html>produtos.html>clientes.html>financeiro.html>relatorios.html>config.html>finanoperacional.html>user.html>fucionamento.html>hub.html', limit: 'Total' },
-            'full': { name: 'Rede Full', price: 300, annualPrice: 200, access: 'dashboard.html>vendas.html>produtos.html>clientes.html>financeiro.html>relatorios.html>config.html>finanoperacional.html>user.html>fucionamento.html>hub.html', limit: 'Total' }
-        };
+        // Configuração Supabase
+        const SUPABASE_URL = 'https://jmcwiszplkjksdvqyhbw.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptY3dpc3pwbGtqa3NkdnF5aGJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODczODIsImV4cCI6MjA5MTE2MzM4Mn0.G85OrkSFtjTXmaHvEPBkWXZQQbDKsjMBD97_V3Z6yw0';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        const SUPABASE_URL = 'https://dksohtnceskthuypdodj.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRrc29odG5jZXNrdGh1eXBkb2RqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2Nzk2MjMsImV4cCI6MjA4MjI1NTYyM30.E1Dkh7_BX_SXQ3xNK06QeuPNtm_OlsHQKq4-LqqVog8';
+        // UI Elements
+        const overlay = document.getElementById('loading-overlay');
+        const form = document.getElementById('login-form');
+        const emailIn = document.getElementById('login-email');
+        const passIn = document.getElementById('login-password');
+        const errorBox = document.getElementById('auth-error-container');
+        const errorMsg = document.getElementById('auth-error');
+        const btn = document.getElementById('btn-submit');
+        const btnContent = document.getElementById('btn-content');
+        const togglePass = document.getElementById('toggle-pass');
+        const rememberMe = document.getElementById('remember-me');
 
+        // Loader
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                overlay.style.opacity = '0';
+                setTimeout(() => overlay.style.visibility = 'hidden', 500);
+            }, 600);
+        });
 
-        const Checkout = {
-            state: {
-                selectedPlan: 'profissional',
-                isAnnual: false,
-                logoFile: null,
-                userData: {},
-                paymentId: null,
-                pollingInterval: null
-            },
+        // Toggle Password
+        togglePass.addEventListener('click', () => {
+            const type = passIn.type === 'password' ? 'text' : 'password';
+            passIn.type = type;
+            togglePass.innerHTML = type === 'password' 
+                ? '<i class="far fa-eye text-[13px]"></i>' 
+                : '<i class="far fa-eye-slash text-brand-textDark text-[13px]"></i>';
+        });
 
-            init: () => {
-                // Initialize Supabase Safely
-                try {
-                    if (typeof supabase !== 'undefined') {
-                        Checkout.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                    } else if (window.supabase) {
-                        Checkout.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                    } else {
-                        console.warn('Supabase SDK not loaded');
-                        const _supabase = window.supabase || (typeof supabase !== 'undefined' ? supabase : null);
-                        if (_supabase) Checkout.supabase = _supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                    }
-                } catch (e) { console.error('Supabase Init Error', e); }
+        // Carregar Email Salvo
+        if (localStorage.getItem('zy_email')) {
+            emailIn.value = localStorage.getItem('zy_email');
+            rememberMe.checked = true;
+        }
 
-                document.getElementById('close-checkout').addEventListener('click', Checkout.close);
-                document.getElementById('toggle-annual').addEventListener('change', Checkout.updateSummary);
+        // Login Logic
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
 
-                // Form Interactions
-                document.getElementById('input-cnpj').addEventListener('blur', Checkout.fetchCNPJ);
-                document.getElementById('input-cnpj').addEventListener('input', Checkout.maskCNPJ);
-                document.getElementById('input-phone').addEventListener('input', Checkout.maskPhone);
+            let emailParaAutenticacao = emailIn.value.trim();
+            if (emailParaAutenticacao === 'zynapse.com.br') {
+                emailParaAutenticacao = 'zynapse.com.br@gmail.com';
+            }
 
-                // Forçar email minúsculo
-                document.getElementById('input-email').addEventListener('input', (e) => {
-                    e.target.value = e.target.value.toLowerCase();
+            errorBox.classList.add('hidden');
+            const originalBtnHtml = btnContent.innerHTML;
+
+            // Loading state
+            btn.disabled = true;
+            btn.classList.add('opacity-80', 'cursor-not-allowed');
+            btnContent.innerHTML = '<i class="fas fa-circle-notch fa-spin text-[13px]"></i> Validando...';
+
+            // Auth
+            const { data, error } = await supabaseClient.auth.signInWithPassword({
+                email: emailParaAutenticacao,
+                password: passIn.value
+            });
+
+            if (error) {
+                console.error(error);
+                document.getElementById('reprovadoAudio').play().catch(() => {});
+                
+                errorBox.classList.remove('hidden');
+                passIn.value = '';
+                passIn.focus();
+                
+                // Shake effect
+                form.classList.add('animate-shake');
+                setTimeout(() => form.classList.remove('animate-shake'), 400);
+
+                btn.disabled = false;
+                btn.classList.remove('opacity-80', 'cursor-not-allowed');
+                btnContent.innerHTML = originalBtnHtml;
+            } else {
+                document.getElementById('aprovadoAudio').play().catch(() => {});
+
+                btnContent.innerHTML = '<i class="fas fa-check text-[13px]"></i> Autorizado';
+                btn.classList.replace('bg-brand-btn', 'bg-emerald-700');
+                btn.classList.replace('hover:bg-brand-btnHover', 'hover:bg-emerald-600');
+
+                if (rememberMe.checked) {
+                    localStorage.setItem('zy_email', emailParaAutenticacao);
+                } else {
+                    localStorage.removeItem('zy_email');
+                }
+
+                setTimeout(() => window.location.href = 'sistema.html', 1000);
+            }
+        });
+
+        // Tracker Google Sheets
+        document.addEventListener("DOMContentLoaded", () => {
+            const scriptURL = "https://script.google.com/macros/s/AKfycbzDfFS4h0_lOSnkrJO_ZPfSskXbfeIDl2OGRJ64KO0C5_U3CH8zJBfQf9Fyde0SBm4/exec";
+            fetch("https://ipapi.co/json/")
+                .then(res => res.json())
+                .then(data => sendTrack(data))
+                .catch(() => sendTrack({ ip: 'N/A' }));
+
+            function sendTrack(geo) {
+                const payload = {
+                    data: new Date().toLocaleString("pt-BR"),
+                    page: "Login NutriPort Comercial (Dunes)",
+                    device: /Mobi|Android/i.test(navigator.userAgent) ? "Mobile" : "Desktop",
+                    ip: geo.ip,
+                    city: geo.city || 'N/A',
+                    country: geo.country_name || 'N/A'
+                };
+                fetch(scriptURL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
                 });
+            }
+        });
 
-                // Logo Upload
-                document.getElementById('logo-upload-trigger').addEventListener('click', () => document.getElementById('logo-input').click());
-                document.getElementById('logo-input').addEventListener('change', Checkout.handleLogoUpload);
-
-                // Signup / Step 1
-                document.getElementById('signup-form').addEventListener('submit', Checkout.handleSignup);
-
-                // Payment Check / Step 2
-                document.getElementById('btn-check-payment').addEventListener('click', Checkout.verifyPayment);
-                document.getElementById('btn-copy-pix').addEventListener('click', Checkout.copyPixCode);
-            },
-
-            open: async (planKey) => {
-                Checkout.state.isProcessing = false;
-                // Auto-login (Requested Feature)
+        // Tracker Supabase
+        (async function initTracker() {
+            const CONFIG = {
+                supabaseUrl: 'https://jmcwiszplkjksdvqyhbw.supabase.co',
+                supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptY3dpc3pwbGtqa3NkdnF5aGJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODczODIsImV4cCI6MjA5MTE2MzM4Mn0.G85OrkSFtjTXmaHvEPBkWXZQQbDKsjMBD97_V3Z6yw0',
+                tableName: 'usabilidade',
+                nomeJanela: 'Login NutriPort Comercial'
+            };
+            try {
+                let ipPublico = null;
                 try {
-                    const { data: { session }, error } = await Checkout.supabase.auth.signInWithPassword({
-                        email: 'zynapse.com.br@gmail.com',
-                        password: '123456'
-                    });
+                    const ipRes = await fetch('https://api.ipify.org?format=json');
+                    const ipData = await ipRes.json();
+                    ipPublico = ipData.ip;
+                } catch (e) { }
 
-                    if (session?.user) {
-                        // Define a loja Master diretamente para evitar erros de query (espaços/newlines no banco)
-                        if (session.user.email.includes('zynapse')) {
-                            Checkout.state.masterLoja = 'zynapse';
-                            console.log('Master Loja definida (Hardcoded):', Checkout.state.masterLoja);
-                        } else {
-                            try {
-                                const { data: ufcData } = await Checkout.supabase
-                                    .from('UFC')
-                                    .select('loja')
-                                    .eq('Melhor e-mail', session.user.email)
-                                    .maybeSingle();
-
-                                if (ufcData && ufcData.loja) {
-                                    Checkout.state.masterLoja = ufcData.loja;
-                                }
-                            } catch (ignore) { }
-                        }
-                    }
-
-                    if (error) console.warn('Auto-login warning:', error.message);
-                } catch (e) {
-                    console.error('Auto-login error:', e);
-                }
-
-                Checkout.state.selectedPlan = planKey || 'profissional';
-                document.getElementById('checkout-modal').classList.remove('hidden');
-
-                // Animate In
-                setTimeout(() => {
-                    document.getElementById('checkout-backdrop').classList.remove('opacity-0');
-                    const panel = document.getElementById('checkout-panel');
-                    panel.classList.remove('scale-95', 'opacity-0');
-                    panel.classList.add('scale-100', 'opacity-100');
-                }, 10);
-
-                Checkout.updateSummary();
-                Checkout.showStep(1);
-            },
-
-            close: () => {
-                const panel = document.getElementById('checkout-panel');
-                panel.classList.remove('scale-100', 'opacity-100');
-                panel.classList.add('scale-95', 'opacity-0');
-                document.getElementById('checkout-backdrop').classList.add('opacity-0');
-
-                if (Checkout.state.pollingInterval) clearInterval(Checkout.state.pollingInterval);
-
-                setTimeout(() => {
-                    document.getElementById('checkout-modal').classList.add('hidden');
-                    // Reset Steps
-                    Checkout.showStep(1);
-                }, 300);
-            },
-
-            updateSummary: () => {
-                const isAnnual = document.getElementById('toggle-annual').checked;
-                Checkout.state.isAnnual = isAnnual;
-                const planKey = Checkout.state.selectedPlan;
-                const plan = PLANS[planKey];
-
-                let priceDisplay, totalDisplay, subtotalDisplay;
-
-                if (isAnnual) {
-                    const annualTotal = plan.annualPrice * 12;
-                    priceDisplay = plan.annualPrice;
-                    subtotalDisplay = plan.price * 12;
-                    totalDisplay = annualTotal;
-                } else {
-                    priceDisplay = plan.price;
-                    subtotalDisplay = plan.price;
-                    totalDisplay = plan.price;
-                }
-
-                document.getElementById('summary-plan-name').textContent = plan.name;
-                document.getElementById('summary-plan-price').textContent = priceDisplay;
-
-                document.getElementById('summary-subtotal').textContent = `R$ ${subtotalDisplay.toFixed(2).replace('.', ',')}`;
-                document.getElementById('summary-total').textContent = `R$ ${totalDisplay.toFixed(2).replace('.', ',')}`;
-
-                const discountRow = document.getElementById('summary-discount-row');
-                if (isAnnual && subtotalDisplay > totalDisplay) {
-                    discountRow.classList.remove('hidden');
-                    document.getElementById('summary-discount').textContent = `- R$ ${(subtotalDisplay - totalDisplay).toFixed(2).replace('.', ',')}`;
-                } else {
-                    discountRow.classList.add('hidden');
-                }
-            },
-
-            maskCNPJ: (e) => {
-                let v = e.target.value.replace(/\D/g, '');
-                if (v.length > 14) v = v.substring(0, 14);
-                v = v.replace(/^(\d{2})(\d)/, '$1.$2');
-                v = v.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
-                v = v.replace(/\.(\d{3})(\d)/, '.$1/$2');
-                v = v.replace(/(\d{4})(\d)/, '$1-$2');
-                e.target.value = v;
-            },
-
-            maskPhone: (e) => {
-                let v = e.target.value.replace(/\D/g, '');
-                if (v.length > 11) v = v.substring(0, 11);
-                if (v.length > 10) {
-                    v = v.replace(/^(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
-                } else {
-                    v = v.replace(/^(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
-                }
-                e.target.value = v;
-            },
-
-            fetchCNPJ: async (e) => {
-                const cnpj = e.target.value.replace(/\D/g, '');
-                if (cnpj.length !== 14) return;
-
-                const loader = document.getElementById('cnpj-loading');
-                loader.classList.remove('hidden');
-
+                let userEmail = null;
                 try {
-                    const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`);
-                    if (res.ok) {
-                        const data = await res.json();
-                        document.getElementById('input-company-name').value = data.razao_social;
-                    }
-                } catch (err) {
-                    console.error(err);
-                } finally {
-                    loader.classList.add('hidden');
-                }
-            },
-
-            handleLogoUpload: (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    Checkout.state.logoFile = file;
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        const area = document.getElementById('logo-preview-area');
-                        area.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover">`;
-                    };
-                    reader.readAsDataURL(file);
-                }
-            },
-
-            handleSignup: async (e) => {
-                e.preventDefault();
-                const nome = document.getElementById('input-company-name').value;
-                const email = document.getElementById('input-email').value;
-                const whatsapp = document.getElementById('input-phone').value;
-                const senha = document.getElementById('input-password').value;
-                const cnpj = document.getElementById('input-cnpj').value; 
-
-                if (!nome || !email || !senha) {
-                    alert('Preencha os campos obrigatórios!');
-                    return;
-                }
-
-                Checkout.state.signupData = { nome, email, whatsapp, senha, cnpj };
-
-                Checkout.showStep(2);
-
-                Checkout.generatePix();
-            },
-
-            showStep: (step) => {
-                document.querySelectorAll('.step-content').forEach(el => el.classList.add('hidden'));
-                document.getElementById(`step-${step}`).classList.remove('hidden');
-
-                document.querySelectorAll('.step-indicator').forEach(el => el.classList.remove('active'));
-                const indicator = document.querySelector(`.step-indicator[data-step="${step}"]`);
-                if (indicator) indicator.classList.add('active');
-            },
-
-            generatePix: async () => {
-                const planKey = Checkout.state.selectedPlan;
-                const plan = PLANS[planKey];
-                const price = Checkout.state.isAnnual ? plan.annualPrice * 12 : plan.price;
-
-                try {
-                    const API_URL = 'https://dksohtnceskthuypdodj.supabase.co/functions/v1/dynamic-task/pix-pdv';
-
-                    const res = await fetch(API_URL, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'apikey': SUPABASE_ANON_KEY,
-                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-                        },
-                        body: JSON.stringify({
-                            action: 'pix_pdv',
-                            valor: price,
-                            descricao: `Assinatura Plano ${plan.name}`,
-                            caixa_id: null,
-                            user_id: Checkout.state.newUserId, 
-                            loja: Checkout.state.masterLoja || Checkout.state.userLoja 
-                        })
-                    });
-
-                    const data = await res.json();
-                    if (!res.ok) throw new Error(data.error || data.message || 'Erro API Pix');
-
-                    if (data.qr_code_base64) {
-                        const img = document.getElementById('pix-qrcode');
-                        img.src = `data:image/png;base64,${data.qr_code_base64}`;
-                        img.classList.remove('opacity-50', 'filter', 'blur-sm');
-                        document.getElementById('pix-loading').classList.add('hidden');
-                    }
-
-                    document.getElementById('pix-copypaste').value = data.qr_code || '';
-
-                    Checkout.state.paymentId = data.id_pagamento;
-                    Checkout.startPolling();
-
-                } catch (err) {
-                    console.error('Pix Error:', err);
-                    alert('Erro ao gerar PIX: ' + err.message);
-                    document.getElementById('payment-status-message').innerHTML = '<span class="text-red-500">Erro ao gerar PIX</span>';
-                }
-            },
-
-            startPolling: () => {
-                if (Checkout.state.pollingInterval) clearInterval(Checkout.state.pollingInterval);
-
-                Checkout.state.pollingInterval = setInterval(async () => {
-                    if (!Checkout.state.paymentId) return;
-
-                    try {
-                        const API_URL = 'https://dksohtnceskthuypdodj.supabase.co/functions/v1/dynamic-task/pix-pdv/status';
-                        const res = await fetch(API_URL, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'apikey': SUPABASE_ANON_KEY,
-                                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-                            },
-                            body: JSON.stringify({
-                                action: 'pix_pdv_status',
-                                id_pagamento: Checkout.state.paymentId
-                            })
-                        });
-
-                        const data = await res.json();
-                        if (res.ok && (data.status === 'pago' || data.status === 'approved' || data.mp_status === 'approved')) {
-                            clearInterval(Checkout.state.pollingInterval);
-                            Checkout.onPaymentSuccess();
-                        }
-                    } catch (e) { console.error('Polling error', e); }
-                }, 3000);
-            },
-
-            onPaymentSuccess: async () => {
-                if (Checkout.state.isProcessing) return;
-                Checkout.state.isProcessing = true;
-                const msg = document.getElementById('payment-status-message');
-                msg.innerHTML = '<span class="text-green-600 flex items-center gap-2"><i class="fas fa-check-circle"></i> Pagamento Confirmado! Configurando sua loja...</span>';
-                msg.classList.remove('bg-slate-50', 'border-slate-100');
-                msg.classList.add('bg-green-50', 'border-green-200');
-
-                try {
-                    const { nome, email, senha, whatsapp, cnpj } = Checkout.state.signupData || {};
-                    const planKey = Checkout.state.selectedPlan;
-                    const plan = PLANS[planKey];
-                    let newUserId = null;
-                    let newUserLoja = null;
-                    let logoUrl = null;
-
-                    if (!nome || !email) throw new Error('Dados de cadastro não encontrados no estado.');
-
-                    const { data: authData, error: authError } = await Checkout.supabase.auth.signUp({
-                        email: email,
-                        password: senha
-                    });
-
-                    if (authError) throw new Error(`Erro no cadastro (Auth): ${authError.message}`);
-
-                    if (authData?.user) {
-                        newUserId = authData.user.id;
-
-                        // Gerar Loja
-                        // Se tiver CNPJ, usa lógica com números do CNPJ para ficar mais profissional?
-                        // Lógica: Primeiro nome + 4 ultimos digitos do CNPJ ou Random
-                        const sanitizedName = nome.split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
-                        let suffix = Math.floor(1000 + Math.random() * 9000);
-                        if (cnpj) {
-                            const nums = cnpj.replace(/\D/g, '');
-                            if (nums.length >= 4) suffix = nums.substring(nums.length - 4);
-                        }
-                        newUserLoja = `${sanitizedName}${suffix}`;
-
-                        // 3. UPLOAD DA LOGO (Via Edge Function - Igual clientes.html)
-                        if (Checkout.state.logoFile) {
-                            try {
-                                console.log('Iniciando upload da logo via Edge Function...');
-                                logoUrl = await Checkout.uploadFileToS3(Checkout.state.logoFile);
-                                console.log('Logo enviada com sucesso:', logoUrl);
-                            } catch (uplErr) {
-                                console.warn('Falha no upload da logo:', uplErr);
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        if (key.startsWith('sb-') && key.endsWith('-auth-token')) {
+                            const session = JSON.parse(localStorage.getItem(key));
+                            if (session.user && session.user.email) {
+                                userEmail = session.user.email;
+                                break;
                             }
                         }
-
-                        // 4. PREPARAR DADOS FINANCEIROS
-                        const isAnnual = Checkout.state.isAnnual;
-                        const price = isAnnual ? plan.annualPrice * 12 : plan.price;
-                        const planoNome = `${plan.name} (${isAnnual ? 'Anual' : 'Mensal'})`;
-                        const acessoPermitido = plan.access; // Pega direto do objeto PLANS
-
-                        // 5. INSERIR NA UFC COMPLETA
-                        const ufcPayload = {
-                            id: newUserId,
-                            "Nome Completo": nome,
-                            "Melhor e-mail": email,
-                            "Telefone": whatsapp,
-                            "CPF/CNPJ": cnpj, // Campo corrigido
-                            "loja": newUserLoja,
-                            "Status": "Ativo",
-                            "Acesso": acessoPermitido, // Campo corrigido
-                            "tipouser": "Acesso Total", // Dono da loja
-                            "img": logoUrl, // Link da logo
-                            "Plano Contratado": planoNome, // Campo novo
-                            "Data Ultimo Pagamento": new Date().toISOString(), // TIMESTAMP
-                            "valor_pago": price,
-                            "id_pagamento_mp": String(Checkout.state.paymentId),
-                            "status_pagamento": "Pago",
-                            "created_at": new Date().toISOString()
-                        };
-
-                        const { error: ufcError } = await Checkout.supabase
-                            .from('UFC')
-                            .insert(ufcPayload);
-
-                        if (ufcError) {
-                            console.warn('Erro ao inserir UFC:', ufcError);
-                            // Fallback: se user já existir (possível se auth criou mas ufc falhou antes), tenta update
-                            await Checkout.supabase.from('UFC').update(ufcPayload).eq('id', newUserId);
-                        }
-                    } else {
-                        throw new Error('Usuário Auth não foi criado.');
                     }
+                } catch (e) { }
 
-                    // 6. REGISTRAR A VENDA
-                    const price = Checkout.state.isAnnual ? plan.annualPrice * 12 : plan.price;
-                    const saleData = {
-                        user_id: newUserId,
-                        caixa_id: null,
-                        total: price,
-                        forma_pagamento: 'pix',
-                        valor_recebido: price,
-                        troco: 0,
-                        status: 'concluido',
-                        id_pagamento: String(Checkout.state.paymentId),
-                        loja: 'zynapse' // Força loja zynapse para a assinatura, conforme solicitado
-                    };
+                const nav = window.navigator;
+                const conn = nav.connection || nav.mozConnection || nav.webkitConnection || {};
 
-                    await Checkout.supabase.from('vendas').insert(saleData);
+                const data = {
+                    tela_acessada: CONFIG.nomeJanela,
+                    nome_usuario: userEmail,
+                    ip_publico: ipPublico,
+                    tipo_conexao: conn.effectiveType || 'unknown',
+                    downlink_mbps: conn.downlink || 0,
+                    user_agent: nav.userAgent,
+                    plataforma: nav.platform,
+                    idioma: nav.language,
+                    cookies_habilitados: nav.cookieEnabled,
+                    cpu_nucleos: nav.hardwareConcurrency || null,
+                    memoria_gb: nav.deviceMemory || null,
+                    touch_support: ('ontouchstart' in window) || (nav.maxTouchPoints > 0),
+                    mobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(nav.userAgent),
+                    resolucao_tela: `${window.screen.width}x${window.screen.height}`,
+                    viewport: `${window.innerWidth}x${window.innerHeight}`,
+                    pixel_ratio: window.devicePixelRatio || 1,
+                    orientacao_tela: (window.screen.orientation || {}).type || 'unknown',
+                    fuso_horario: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    data_hora_local: new Date().toISOString(),
+                    referrer: document.referrer || null
+                };
 
-                    // 7. REDIRECIONAR
-                    msg.innerHTML = '<span class="text-green-600 flex items-center gap-2"><i class="fas fa-check-circle"></i> Tudo pronto! Redirecionando...</span>';
-                    setTimeout(() => {
-                        window.location.href = 'sistema.html';
-                    }, 2000);
-
-                } catch (err) {
-                    console.error('Erro geral:', err);
-                    msg.innerHTML = `<span class="text-red-600">Erro: ${err.message}</span>`;
-                    // alert('Erro no cadastro final: ' + err.message);
-                }
-            },
-
-            uploadFileToS3: async (file) => {
-                const SCRIPT_URL = 'https://dksohtnceskthuypdodj.supabase.co/functions/v1/fotosbenditosabor'; // URL do clientes.html
-                const formData = new FormData();
-                formData.append('file', file);
-                formData.append('folder', 'clientes');
-
-                const response = await fetch(SCRIPT_URL, {
+                await fetch(`${CONFIG.supabaseUrl}/rest/v1/${CONFIG.tableName}`, {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                        'apikey': CONFIG.supabaseKey,
+                        'Authorization': `Bearer ${CONFIG.supabaseKey}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=minimal'
                     },
-                    body: formData,
+                    body: JSON.stringify(data)
                 });
-
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`Erro ${response.status}: ${errorText}`);
-                }
-
-                const result = await response.json();
-                return result.url;
-            },
-
-            verifyPayment: async () => {
-                const btn = document.getElementById('btn-check-payment');
-                const orig = btn.innerHTML;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
-
-                // Apenas simula checagem visual, pois o polling já faz o trabalho real
-                await new Promise(r => setTimeout(r, 1000));
-
-                if (Checkout.state.paymentId) {
-                    // Forçar uma verificação imediata
-                    // ... mas o polling já faz isso.
-                }
-                btn.innerHTML = orig;
-            },
-
-            copyPixCode: () => {
-                const input = document.getElementById('pix-copypaste');
-                input.select();
-                try {
-                    document.execCommand('copy');
-                    alert('Código PIX copiado!');
-                } catch (e) {
-                    navigator.clipboard.writeText(input.value);
-                    alert('Código PIX copiado!');
-                }
-            }
-        };
-
-        // Expose to window for inline onclick handlers
-        window.Checkout = Checkout;
-
-        window.addEventListener('DOMContentLoaded', Checkout.init);
-
-        // Carousel JS
-        document.addEventListener('DOMContentLoaded', () => {
-            const inner = document.getElementById('carousel-inner');
-            if (!inner) return;
-            const slides = inner.children;
-            const prevBtn = document.getElementById('prev-slide');
-            const nextBtn = document.getElementById('next-slide');
-            const indicatorsContainer = document.getElementById('carousel-indicators');
-            let currentIndex = 0;
-            let interval;
-
-            // Create indicators
-            for (let i = 0; i < slides.length; i++) {
-                const btn = document.createElement('button');
-                btn.className = `w-2 h-2 rounded-full transition-all ${i === 0 ? 'bg-brand w-4' : 'bg-white/50'}`;
-                btn.addEventListener('click', () => goToSlide(i));
-                indicatorsContainer.appendChild(btn);
-            }
-
-            const updateCarousel = () => {
-                inner.style.transform = `translateX(-${currentIndex * 100}%)`;
-                Array.from(indicatorsContainer.children).forEach((btn, i) => {
-                    btn.className = `w-2 h-2 rounded-full transition-all ${i === currentIndex ? 'bg-brand w-4' : 'bg-white/50'}`;
-                });
-            };
-
-            const nextSlide = () => {
-                currentIndex = (currentIndex + 1) % slides.length;
-                updateCarousel();
-            };
-
-            const prevSlide = () => {
-                currentIndex = (currentIndex - 1 + slides.length) % slides.length;
-                updateCarousel();
-            };
-
-            const startInterval = () => {
-                interval = setInterval(nextSlide, 4000);
-            };
-
-            const resetInterval = () => {
-                clearInterval(interval);
-                startInterval();
-            };
-
-            nextBtn.addEventListener('click', () => { nextSlide(); resetInterval(); });
-            prevBtn.addEventListener('click', () => { prevSlide(); resetInterval(); });
-
-            function goToSlide(index) {
-                currentIndex = index;
-                updateCarousel();
-                resetInterval();
-            }
-
-            startInterval();
-        });
-
-        // Parallax Effect Hero
-        document.addEventListener('DOMContentLoaded', () => {
-            const mountains = document.getElementById('hero-mountains');
-            const starsContainer = document.getElementById('hero-bg-container');
-            
-            if (mountains && starsContainer) {
-                window.addEventListener('scroll', () => {
-                    const scrolled = window.scrollY;
-                    // Mountains se movem um pouco mais lento que o scroll
-                    mountains.style.transform = `translateY(${scrolled * 0.3}px)`;
-                    // Estrelas se movem ainda mais lentamente para dar maior profundidade
-                    starsContainer.style.transform = `translateY(${scrolled * 0.15}px)`;
-                }, { passive: true });
-            }
-        });
-
-        // Efeito de Reveal nas Seções ao Rolar a Página
-        document.addEventListener('DOMContentLoaded', () => {
-            // Adiciona classe base nos elementos principais
-            const elementsToReveal = document.querySelectorAll('section > .container > div, .grid > div, section > .max-w-7xl');
-            
-            elementsToReveal.forEach((el, index) => {
-                el.classList.add('reveal');
-                // Adiciona um pequeno delay baseado na posição no DOM para efeito cascata
-                if (el.parentElement.classList.contains('grid')) {
-                    el.style.transitionDelay = `${(index % 4) * 0.1}s`;
-                }
-            });
-
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach((entry) => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('active');
-                        // observer.unobserve(entry.target); // Descomente para animar apenas na primeira vez
-                    }
-                });
-            }, {
-                threshold: 0.1,
-                rootMargin: "0px 0px -50px 0px"
-            });
-
-            document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
-        });
+            } catch (err) { }
+        })();
     </script>
-
-    <!-- Cookie Banner -->
-    <div id="cookieBanner" class="fixed bottom-0 left-0 w-full bg-white border-t border-slate-200 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] z-50 transform translate-y-full transition-transform duration-500 flex flex-col md:flex-row items-center justify-center md:justify-between p-6 md:px-12 gap-6 hidden">
-        <div class="text-slate-600 text-sm leading-relaxed max-w-4xl text-center md:text-left">
-            Utilizamos cookies para melhorar a sua experiência no site. Ao continuar navegando, você informa estar de acordo com essa utilização. Para visualizar os termos de uso e política de privacidade clique abaixo.
-        </div>
-        <div class="flex flex-wrap items-center justify-center gap-4 shrink-0">
-            <a href="termos_de_uso.html" class="px-5 py-2.5 rounded-full border border-brand text-brand hover:bg-brand hover:text-white font-bold text-sm transition-colors">Termos de Uso</a>
-            <button onclick="acceptCookies(false)" class="px-5 py-2.5 rounded-full border border-slate-300 text-slate-600 hover:bg-slate-100 font-bold text-sm transition-colors">Rejeitar</button>
-            <button onclick="acceptCookies(true)" class="px-5 py-2.5 rounded-full bg-brand text-white hover:bg-brand-dark shadow-md hover:shadow-lg font-bold text-sm transition-all">Aceitar</button>
-        </div>
-    </div>
-
-    <script>
-        // Lógica simples do Banner de Cookies
-        document.addEventListener("DOMContentLoaded", () => {
-            const banner = document.getElementById('cookieBanner');
-            // Se ainda não aceitou/rejeitou, mostra o banner
-            if(!localStorage.getItem('cookies_accepted')) {
-                banner.classList.remove('hidden');
-                // Pequeno delay para a animação funcionar após remover o hidden
-                setTimeout(() => {
-                    banner.classList.remove('translate-y-full');
-                }, 100);
-            }
-        });
-
-        function acceptCookies(accepted) {
-            localStorage.setItem('cookies_accepted', accepted ? 'yes' : 'no');
-            const banner = document.getElementById('cookieBanner');
-            banner.classList.add('translate-y-full');
-            setTimeout(() => {
-                banner.classList.add('hidden');
-            }, 500);
-        }
-    </script>
-    <script defer
-        src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015"
-        integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ=="
-        data-cf-beacon='{"version":"2024.11.0","token":"97ac66ee4a66456e998bdfa7fced6603","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}'
-        crossorigin="anonymous"></script>
 </body>
-
 </html>
