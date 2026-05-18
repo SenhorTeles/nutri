@@ -20,6 +20,7 @@ import re
 import threading
 import getpass
 from datetime import datetime
+import shutil
 
 # --- CREDENCIAIS DE ACESSO AO SUPABASE ---
 SUPABASE_URL = "https://jmcwiszplkjksdvqyhbw.supabase.co"
@@ -584,7 +585,7 @@ def run_import_consumo():
                         
                         # Extrair dados do XML
                         nNF = (root.find('.//ide/nNF').text if root.find('.//ide/nNF') is not None else "0")
-                        serie = (root.find('.//ide/serie').text if root.find('.//ide/serie') is not None else "53")
+                        serie = (root.find('.//ide/serie').text if root.find('.//ide/serie') is not None else "1").zfill(3)
                         # Extrair data de emissao do XML com fallbacks robustos
                         dhEmi = ""
                         for tag_emi in ['.//ide/dhEmi', './/ide/dEmi', './/dhEmi', './/dEmi']:
@@ -691,9 +692,15 @@ def run_import_consumo():
                         codfor_filial = filial_db[6] if filial_db else None
                         ie_filial = filial_db[8] if filial_db and filial_db[8] else ""
                         
-                        codfiscal = 199 if uf_emit == uf_filial else 299
-                        codfiscal_base = 1556 if uf_emit == uf_filial else 2556
-                        log(f"ID {id_req}: UF_emit={uf_emit} UF_filial={uf_filial} codfiscal={codfiscal}", "[IMPORT_CONSUMO]")
+                        if uf_emit == uf_filial:
+                            codfiscal = 199
+                            codfiscal_base = 1556
+                            sittribut_val = 90
+                        else:
+                            codfiscal = 299
+                            codfiscal_base = 2407
+                            sittribut_val = 60
+                        log(f"ID {id_req}: UF_emit={uf_emit} UF_filial={uf_filial} codfiscal={codfiscal} codfiscal_base={codfiscal_base} sittribut={sittribut_val}", "[IMPORT_CONSUMO]")
                         
                         # Helper functions for formatting
                         def format_cnpj(cnpj):
@@ -718,21 +725,22 @@ def run_import_consumo():
                             cursor.execute("UPDATE pcconsum SET proxnumfornec = :val", val=novo_proxnumfornec)
                             log(f"ID {id_req}: Novo fornecedor codfornec={codfornec}", "[IMPORT_CONSUMO]")
                             
-                            sql_ins_forn = """INSERT INTO PCFORNEC (CODFORNEC, FORNECEDOR, TIPOPESSOA, CGC, IE, ENDER, BAIRRO, CIDADE, ESTADO, CEP, CODMUNICIPIO, CODCONTA) 
-                                              VALUES (:CODFORNEC, :FORNECEDOR, :TIPOPESSOA, :CGC, :IE, :ENDER, :BAIRRO, :CIDADE, :ESTADO, :CEP, :CODMUNICIPIO, :CODCONTA)"""
+                            current_table = 'PCFORNEC'
+                            sql_ins_forn = """INSERT INTO PCFORNEC (CODFORNEC, FORNECEDOR, TIPOPESSOA, CGC, IE, ENDER, BAIRRO, CIDADE, ESTADO, CEP, CODMUNICIPIO, CODCONTAB) 
+                                              VALUES (:CODFORNEC, :FORNECEDOR, :TIPOPESSOA, :CGC, :IE, :ENDER, :BAIRRO, :CIDADE, :ESTADO, :CEP, :CODMUNICIPIO, :CODCONTAB)"""
                             cursor.execute(sql_ins_forn, {
                                 'CODFORNEC': codfornec,
                                 'FORNECEDOR': xNome_emit[:60],
                                 'TIPOPESSOA': tipo_fj,
                                 'CGC': cnpj_emissor_fmt,
                                 'IE': ie_emit[:20],
-                                'ENDER': xLgr_emit[:80],
-                                'BAIRRO': xBairro_emit[:40],
-                                'CIDADE': xMun_emit[:40],
+                                'ENDER': xLgr_emit[:40],
+                                'BAIRRO': xBairro_emit[:20],
+                                'CIDADE': xMun_emit[:15],
                                 'ESTADO': uf_emit[:2],
                                 'CEP': cep_emit[:8],
                                 'CODMUNICIPIO': cMun_emit,
-                                'CODCONTA': 40183
+                                'CODCONTAB': 40183
                             })
                         
                         # 3. Check existing and Gerar numtransent
@@ -776,8 +784,9 @@ def run_import_consumo():
                                 :CODIBGE, :SIMPLESNACIONAL, :MODELO, :GERANFVENDA, :INDUSTRIALOCAL
                             )"""
 
+                            current_table = 'PCNFENT'
                             cursor.execute(sql_ins_pcnfent, {
-                                'CODFILIALNF': codfilial, 'ESPECIE': 'NF', 'SERIE': '001', 'NUMNOTA': nNF, 'DTEMISSAO': dt_emissao_formatada,
+                                'CODFILIALNF': codfilial, 'ESPECIE': 'NF', 'SERIE': serie, 'NUMNOTA': nNF, 'DTEMISSAO': dt_emissao_formatada,
                                 'DTENT': dt_ent, 'CODFORNEC': codfornec, 'VLTOTAL': round(float(vltotal), 2), 'CODCONT': 401003,
                                 'CODFISCAL': codfiscal, 'CODFILIAL': codfilial, 'TIPODESCARGA': '2', 'NUMTRANSENT': numtransent,
                                 'VLIPI': 0, 'VLFRETE': 0, 'VLST': 0, 'VLDESCONTO': 0, 'VLBASEIPI': 0, 'UF': uf_emit,
@@ -787,8 +796,8 @@ def run_import_consumo():
                                 'IE': ie_emit[:20], 'TIPOFJ': tipo_fj, 'TIPOFORNEC': 'O', 'CODPAIS': 1058, 'DESCPAIS': 'Brasil',
                                 'CGCFILIAL': cgc_filial, 'IEFILIAL': ie_filial, 'UFFILIAL': uf_filial, 'CODFORFILIAL': codfor_filial,
                                 'TIPOALIQOUTRASDESP': 'P', 'CODCONTFOR': 100001, 'CODCONTFRE': 100002, 'TIPOFRETECIFFOB': 'C',
-                                'REVENDA': 'O', 'UFCODIGO': uf_dest, 'HISTORICO': 'S', 'DTLANCTO': dt_ent, 'ENDERECO': xLgr_emit[:80],
-                                'BAIRRO': xBairro_emit[:40], 'MUNICIPIO': xMun_emit[:40], 'CEP': cep_emit[:8], 'CODMUNICIPIO': cMun_emit,
+                                'REVENDA': 'O', 'UFCODIGO': uf_dest, 'HISTORICO': 'S', 'DTLANCTO': dt_ent, 'ENDERECO': xLgr_emit[:40],
+                                'BAIRRO': xBairro_emit[:20], 'MUNICIPIO': xMun_emit[:15], 'CEP': cep_emit[:8], 'CODMUNICIPIO': cMun_emit,
                                 'CONSUMIDORFINAL': 'S', 'CODIBGE': cMun_dest, 'SIMPLESNACIONAL': 'N', 'MODELO': 55, 'GERANFVENDA': 'N',
                                 'INDUSTRIALOCAL': 'N'
                             })
@@ -806,9 +815,10 @@ def run_import_consumo():
                             INSERT INTO PCNFBASE (ALIQUOTA, VLBASE, VLICMS, NUMTRANSENT, CODCONT, CODFISCAL, TIPO, VLISENTAS, VLCONTABIL, SITTRIBUT, NUMTRANSPISCOFINS)
                             VALUES (:ALIQUOTA, :VLBASE, :VLICMS, :NUMTRANSENT, :CODCONT, :CODFISCAL, :TIPO, :VLISENTAS, :VLCONTABIL, :SITTRIBUT, :NUMTRANSPISCOFINS)
                             """
+                            current_table = 'PCNFBASE'
                             cursor.execute(sql_ins_base, {
                                 'ALIQUOTA': 0, 'VLBASE': 0, 'VLICMS': 0, 'NUMTRANSENT': numtransent, 'CODCONT': 401003,
-                                'CODFISCAL': codfiscal_base, 'TIPO': 1, 'VLISENTAS': 0, 'VLCONTABIL': round(float(vltotal), 2), 'SITTRIBUT': 90,
+                                'CODFISCAL': codfiscal_base, 'TIPO': 1, 'VLISENTAS': 0, 'VLCONTABIL': round(float(vltotal), 2), 'SITTRIBUT': sittribut_val,
                                 'NUMTRANSPISCOFINS': numtranspiscofins
                             })
                             log(f"ID {id_req}: PCNFBASE inserido", "[IMPORT_CONSUMO]")
@@ -836,10 +846,11 @@ def run_import_consumo():
                                 :VLCOFINS, :VLPIS, :NUMTRANSENT, :CODCONT, :NATCREDITO, :PERCREDBASEPISCOFINSFRETE
                             )
                             """
+                            current_table = 'PCNFENTPISCOFINS'
                             cursor.execute(sql_ins_piscofins, {
                                 'NUMTRANSPISCOFINS': numtranspiscofins,
                                 'CODTRIBPISCOFINS': 70, 'VLBASEPIS': 0, 'VLBASECOFINS': 0, 'PERPIS': 0, 'PERCOFINS': 0,
-                                'VLCOFINS': vlcofins_xml, 'VLPIS': vlpis_xml, 'NUMTRANSENT': numtransent, 'CODCONT': 401003,
+                                'VLCOFINS': 0, 'VLPIS': 0, 'NUMTRANSENT': numtransent, 'CODCONT': 401003,
                                 'NATCREDITO': 0, 'PERCREDBASEPISCOFINSFRETE': 0
                             })
                             log(f"ID {id_req}: PCNFENTPISCOFINS inserido", "[IMPORT_CONSUMO]")
@@ -874,7 +885,7 @@ def run_import_consumo():
                             "codfilial": codfilial,
                             "codfilialnf": codfilial,
                             "numnota": int(nNF) if nNF.isdigit() else nNF,
-                            "serie": '001',
+                            "serie": serie,
                             "especie": 'NF',
                             "dtent": datetime.now().strftime('%Y-%m-%d'),
                             "dtemissao": dt_emissao if dt_emissao else None,
@@ -928,11 +939,12 @@ def run_import_consumo():
                         log(f"ID {id_req}: IMPORTACAO CONCLUIDA COM SUCESSO!", "[IMPORT_CONSUMO]")
                         
                     except Exception as ex:
-                        log(f"ID {id_req}: ERRO: {ex}", "[IMPORT_CONSUMO]")
+                        err_msg = f"Erro na tabela {current_table}: {ex}" if 'current_table' in locals() else str(ex)
+                        log(f"ID {id_req}: ERRO: {err_msg}", "[IMPORT_CONSUMO]")
                         try: conn.rollback()
                         except: pass
                         try:
-                            requests.patch(f"{SUPABASE_URL}/rest/v1/{cfg['tbl_confronto']}?id=eq.{id_req}", headers=HEADERS, json={"status":"Erro Import", "obs": f"Erro: {str(ex)[:200]}"})
+                            requests.patch(f"{SUPABASE_URL}/rest/v1/{cfg['tbl_confronto']}?id=eq.{id_req}", headers=HEADERS, json={"status":"Erro Import", "obs": f"Erro: {err_msg[:200]}"})
                         except: pass
                         
                 try:
@@ -1014,10 +1026,225 @@ def run_logs_monitor():
         time.sleep(10)
 
 # ==========================================================
+# THREAD 9: MONITOR DE PASTAS XML
+# ==========================================================
+def run_xml_folder_monitor():
+    log("Iniciando rotina de monitoramento de pastas XML.", "[XML_MONITOR]")
+    
+    pastas_origem = [
+        r"D:\XMLCONSUMO FILIAL 1-11",
+        r"D:\XMLCONSUMO FILIAL 2-22",
+        r"D:\XMLCONSUMO FILIAL 3-33",
+        r"D:\XMLCONSUMO FILIAL 4"
+    ]
+    pasta_destino = r"D:\XMLCONSUMO - IMPORTADA"
+    
+    os.makedirs(pasta_destino, exist_ok=True)
+    
+    while True:
+        try:
+            cfg = MODOS_SQL.get('CONSUMO')
+            if not cfg:
+                time.sleep(10)
+                continue
+                
+            tbl_confronto = cfg['tbl_confronto']
+            
+            for pasta in pastas_origem:
+                if not os.path.exists(pasta):
+                    continue
+                    
+                for arquivo in os.listdir(pasta):
+                    if not arquivo.lower().endswith('.xml'):
+                        continue
+                        
+                    caminho_completo = os.path.join(pasta, arquivo)
+                    try:
+                        with open(caminho_completo, 'r', encoding='utf-8') as f:
+                            xml_text = f.read()
+                    except Exception:
+                        try:
+                            with open(caminho_completo, 'r', encoding='ISO-8859-1') as f:
+                                xml_text = f.read()
+                        except Exception as e2:
+                            log(f"Erro ao ler arquivo {arquivo}: {e2}", "[XML_MONITOR]")
+                            continue
+                    
+                    try:
+                        clean_xml = re.sub(r'\sxmlns(:\w+)?="[^"]+"', '', xml_text).replace('cte:', '').replace('nfe:', '')
+                        root = ET.fromstring(clean_xml)
+                    except ET.ParseError as e_pe:
+                        log(f"Erro ao processar arquivo {arquivo}: XML invalido ou vazio - {e_pe}", "[XML_MONITOR]")
+                        try:
+                            pasta_erros = os.path.join(pasta, 'erros')
+                            os.makedirs(pasta_erros, exist_ok=True)
+                            os.rename(caminho_completo, os.path.join(pasta_erros, arquivo))
+                        except:
+                            pass
+                        continue
+                    
+                    infNFe = root.find('.//infNFe')
+                    infCte = root.find('.//infCte')
+                    chave_acesso = ""
+                    if infNFe is not None:
+                        chave_acesso = infNFe.get('Id', '').replace('NFe', '')
+                    elif infCte is not None:
+                        chave_acesso = infCte.get('Id', '').replace('CTe', '')
+
+                    if not chave_acesso or len(chave_acesso) < 44:
+                        log(f"Chave nao encontrada no arquivo {arquivo}", "[XML_MONITOR]")
+                        continue
+
+                    vltotal_xml = 0.0
+                    vt_el = root.find('.//vTPrest') or root.find('.//vNF')
+                    if vt_el is not None and vt_el.text: vltotal_xml = float(vt_el.text)
+
+                    vlicms_xml = 0.0
+                    icms_tot = root.find('.//ICMSTot')
+                    if icms_tot is not None:
+                        vi = float(icms_tot.find('vICMS').text) if icms_tot.find('vICMS') is not None and icms_tot.find('vICMS').text else 0.0
+                        vm = float(icms_tot.find('vICMSMonoRet').text) if icms_tot.find('vICMSMonoRet') is not None and icms_tot.find('vICMSMonoRet').text else 0.0
+                        vlicms_xml = max(vi, vm)
+                    else:
+                        for t in ['ICMS00','ICMSOutraUF','ICMS20','ICMS45','ICMS60','ICMS90','ICMSSN','ICMS61']:
+                            n = root.find(f'.//{t}')
+                            if n is not None:
+                                vicms = n.find('vICMS') or n.find('vICMSOutraUF') or n.find('vICMSMonoRet')
+                                if vicms is not None and vicms.text:
+                                    vlicms_xml = float(vicms.text)
+                                    break
+
+                    vlpis_xml, vlcofins_xml = 0.0, 0.0
+                    p_el, c_el = root.find('.//vPIS'), root.find('.//vCOFINS')
+                    if p_el is not None and p_el.text: vlpis_xml = float(p_el.text)
+                    if c_el is not None and c_el.text: vlcofins_xml = float(c_el.text)
+
+                    toma_val, cnpj_tomador = None, ""
+                    for tg in ['.//toma3/toma', './/toma0/toma', './/toma4/toma', './/toma']:
+                        e = root.find(tg)
+                        if e is not None and e.text:
+                            toma_val = e.text.strip()
+                            break
+                    t_map = {'0':'.//rem/CNPJ','1':'.//exped/CNPJ','2':'.//receb/CNPJ','3':'.//dest/CNPJ','4':'.//toma4/CNPJ'}
+                    if toma_val in t_map:
+                        e = root.find(t_map[toma_val])
+                        if e is not None and e.text: cnpj_tomador = e.text
+                        
+                    if not cnpj_tomador:
+                        d_cnpj = root.find('.//dest/CNPJ') or root.find('.//dest/CPF')
+                        if d_cnpj is not None and d_cnpj.text: cnpj_tomador = d_cnpj.text
+                        
+                    cnpj_remetente = ""
+                    r_cnpj = root.find('.//rem/CNPJ') or root.find('.//emit/CNPJ')
+                    if r_cnpj is not None and r_cnpj.text: cnpj_remetente = r_cnpj.text
+
+                    num_nota_xml_el = root.find('.//ide/nNF')
+                    num_nota_xml = num_nota_xml_el.text if num_nota_xml_el is not None else ""
+                    serie_xml = (root.find('.//ide/serie').text if root.find('.//ide/serie') is not None else "1").zfill(3)
+                    mod_xml_el = root.find('.//ide/mod')
+                    mod_xml = mod_xml_el.text if mod_xml_el is not None else "55"
+                    especie_xml = "NF"
+                    
+                    dh_emi_xml = ""
+                    for tag_emi in ['.//ide/dhEmi', './/ide/dEmi', './/dhEmi', './/dEmi']:
+                        el_emi = root.find(tag_emi)
+                        if el_emi is not None and el_emi.text:
+                            dh_emi_xml = el_emi.text.strip()
+                            break
+                            
+                    cfop_xml_el = root.find('.//det/prod/CFOP')
+                    cfop_xml = cfop_xml_el.text if cfop_xml_el is not None else ""
+                    
+                    filial_detectada = None
+                    cnpj_map = {
+                        '03612312000144': '1',
+                        '03612312000306': '2',
+                        '03612312000497': '3',
+                        '03612312000225': '4'
+                    }
+                    cnpj_norm = re.sub(r'[^0-9]', '', cnpj_tomador) if cnpj_tomador else ""
+                    for c, f in cnpj_map.items():
+                        if c in cnpj_norm:
+                            filial_detectada = f
+                            break
+                    
+                    resp = requests.get(f"{SUPABASE_URL}/rest/v1/{tbl_confronto}?chavecte=eq.{chave_acesso}&select=id,status,vltotal,vlicms,codfilialnf,cnpj_filial", headers=HEADERS_GET)
+                    if resp.status_code == 200:
+                        dados = resp.json()
+                        if dados:
+                            existente = dados[0]
+                            if existente.get('status') != 'Sem XML':
+                                log(f"Arquivo {arquivo}: Ja existe com status {existente.get('status')}. Movendo.", "[XML_MONITOR]")
+                            else:
+                                vltotal_db = float(existente.get('vltotal') or 0)
+                                vlicms_db = float(existente.get('vlicms') or 0)
+                                cnpj_filial = existente.get('cnpj_filial') or ''
+
+                                diff_tomador = bool(cnpj_tomador and cnpj_filial and str(cnpj_tomador).lstrip('0') != str(cnpj_filial).lstrip('0'))
+                                diff_tot = abs(vltotal_db - vltotal_xml) > 0.01
+                                diff_icms = (vlicms_db != 0) and abs(vlicms_db - vlicms_xml) > 0.01
+
+                                novo_status = 'OK'
+                                obs_list = []
+                                if diff_tomador:
+                                    novo_status = 'Tomador Divergente'
+                                    obs_list.append(f"Tomador ({cnpj_tomador} != {cnpj_filial})")
+                                elif diff_tot or diff_icms:
+                                    novo_status = 'DIVERGENTE'
+                                    if diff_tot: obs_list.append(f"TOTAL (DB: {vltotal_db} | XML: {vltotal_xml})")
+                                    if diff_icms: obs_list.append(f"ICMS (DB: {vlicms_db} | XML: {vlicms_xml})")
+
+                                cnpj_filial_salvar = list(cnpj_map.keys())[list(cnpj_map.values()).index(filial_detectada)] if filial_detectada else None
+
+                                payload_upd = {
+                                    "xml_doc": xml_text, "vltotal_xml": vltotal_xml, "vlicms_xml": vlicms_xml,
+                                    "vlpis_xml": vlpis_xml, "vlcofins_xml": vlcofins_xml,
+                                    "cnpj_tomador": cnpj_tomador, "cnpj_remetente": cnpj_remetente,
+                                    "chave_xml": chave_acesso, "status": novo_status, "obs": " | ".join(obs_list),
+                                    "numnota": num_nota_xml, "serie": serie_xml, "modelo": mod_xml, "especie": especie_xml,
+                                    "codfilial": filial_detectada, "cnpj_filial": cnpj_filial_salvar or cnpj_filial,
+                                    "dtemissao": dh_emi_xml, "codfiscal": cfop_xml
+                                }
+                                requests.patch(f"{SUPABASE_URL}/rest/v1/{tbl_confronto}?id=eq.{existente['id']}", headers=HEADERS, json=payload_upd)
+                                log(f"Arquivo {arquivo}: Atualizado no banco (status original: Sem XML).", "[XML_MONITOR]")
+                        else:
+                            cnpj_filial_salvar = list(cnpj_map.keys())[list(cnpj_map.values()).index(filial_detectada)] if filial_detectada else None
+                            payload_ins = {
+                                "chavecte": chave_acesso, "chave_xml": chave_acesso,
+                                "xml_doc": xml_text, "vltotal_xml": vltotal_xml, "vlicms_xml": vlicms_xml,
+                                "vlpis_xml": vlpis_xml, "vlcofins_xml": vlcofins_xml,
+                                "cnpj_tomador": cnpj_tomador, "cnpj_remetente": cnpj_remetente,
+                                "numnota": num_nota_xml, "serie": serie_xml, "modelo": mod_xml, "especie": especie_xml,
+                                "codfilial": filial_detectada, "cnpj_filial": cnpj_filial_salvar,
+                                "dtemissao": dh_emi_xml, "codfiscal": cfop_xml,
+                                "status": "Nao Importada", "obs": "Importado via Pasta. Aguardando WinThor..."
+                            }
+                            requests.post(f"{SUPABASE_URL}/rest/v1/{tbl_confronto}", headers=HEADERS, json=payload_ins)
+
+                            payload_bi = {
+                                "chavecte": chave_acesso, "status": "Pendente",
+                                "user_nome": "Robo Pastas", "user_email": "robo@nutriport.com"
+                            }
+                            requests.post(f"{SUPABASE_URL}/rest/v1/busca_isolada_queue", headers=HEADERS, json=payload_bi)
+                            log(f"Arquivo {arquivo}: Inserido como Nao Importada e enviado para Busca Isolada.", "[XML_MONITOR]")
+                    else:
+                        pass
+
+                    destino_arquivo = os.path.join(pasta_destino, arquivo)
+                    if os.path.exists(destino_arquivo):
+                        os.remove(destino_arquivo)
+                    shutil.move(caminho_completo, destino_arquivo)
+
+        except Exception as e_master:
+            log(f"Erro geral monitor XML: {e_master}", "[XML_MONITOR]")
+            
+        time.sleep(10)
+
+# ==========================================================
 # INICIAR TUDO
 # ==========================================================
 def main():
-    log("=== BOT MESTRE NUTRIPORT (6 MODULES IN PARALLEL) ===")
+    log("=== BOT MESTRE NUTRIPORT (7 MODULES IN PARALLEL) ===")
     t1 = threading.Thread(target=run_au_conta, daemon=True)
     t2 = threading.Thread(target=run_busca_isolada, daemon=True)
     t3 = threading.Thread(target=run_ve_ri, daemon=True)
@@ -1025,6 +1252,7 @@ def main():
     t5 = threading.Thread(target=run_import_consumo, daemon=True)
     t7 = threading.Thread(target=run_logs_monitor, daemon=True)
     t8 = threading.Thread(target=run_delete_nf, daemon=True)
+    t9 = threading.Thread(target=run_xml_folder_monitor, daemon=True)
 
     t1.start()
     t2.start()
@@ -1033,6 +1261,7 @@ def main():
     t5.start()
     t7.start()
     t8.start()
+    t9.start()
 
     log("Todas as rotinas conectadas e rodando em plano de fundo!")
     while True:
