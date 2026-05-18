@@ -25,8 +25,6 @@
                     document.documentElement.setAttribute('data-theme', 'dark');
                 }
             } catch (e) { }
-            
-            // Listen for changes in localStorage to update theme dynamically
             window.addEventListener('storage', function(e) {
                 if (e.key === 'gestaovscontabil_theme') {
                     try {
@@ -43,17 +41,13 @@
                     } catch (err) {}
                 }
             });
-
-            // Global chart theme updater
             window.updateChartThemes = function(isDark) {
                 const textColor = isDark ? '#a8a29e' : '#6b7280';
                 const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)';
                 const titleColor = isDark ? '#f2f2f2' : '#333';
                 const bgColor = isDark ? '#1c1917' : '#fff';
                 const tooltipBorderColor = isDark ? '#292524' : '#e5e7eb';
-
                 Chart.defaults.color = textColor;
-                
                 Object.values(chartInstances).forEach(chart => {
                     if (chart.options.plugins.tooltip) {
                         chart.options.plugins.tooltip.backgroundColor = bgColor;
@@ -76,723 +70,284 @@
     </script>
     <style>
         :root {
-            /* Tema Claro */
-            --bg: #f8f5f2;
-            --surface: #ffffff;
-            --surface-hover: #f3ebe1;
-            --border: #d4c6b8;
-            --text-primary: #1a110a;
-            --text-secondary: #58321b;
-            --accent: #c4982a;
-            --accent-light: #eabda1;
-            --accent-dark: #b8860b;
-            --stripe-color: #c4982a;
+            --bg: #f4f1ed; --surface: #ffffff; --surface-hover: #f8f5f0; --surface-alt: #faf8f5;
+            --border: #e2d9ce; --text-primary: #1a110a; --text-secondary: #78614e;
+            --accent: #b8860b; --accent-light: #f5e6c8; --accent-dark: #96700a;
+            --glass: rgba(255,255,255,0.7); --glass-border: rgba(212,198,184,0.5);
+            --shadow-sm: 0 1px 3px rgba(26,17,10,0.04); --shadow-md: 0 4px 16px rgba(26,17,10,0.06);
+            --shadow-lg: 0 8px 32px rgba(26,17,10,0.08);
         }
-
         html[data-theme="dark"] {
-            /* Tema Escuro */
-            --bg: #160d08;
-            --surface: #2b170e;
-            --surface-hover: #3a1f12;
-            --border: #3d2112;
-            --text-primary: #f8f5f2;
-            --text-secondary: #df9e7d;
-            --accent: #c4982a;
-            --accent-light: #4d2b17;
-            --accent-dark: #b8860b;
-            --stripe-color: #c4982a;
+            --bg: #0f0a07; --surface: #1a110a; --surface-hover: #251a10; --surface-alt: #1f1510;
+            --border: #2d1f14; --text-primary: #f5f0eb; --text-secondary: #a08870;
+            --accent: #d4a017; --accent-light: #3d2b17; --accent-dark: #b8860b;
+            --glass: rgba(26,17,10,0.6); --glass-border: rgba(45,31,20,0.7);
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.2); --shadow-md: 0 4px 16px rgba(0,0,0,0.25);
+            --shadow-lg: 0 8px 32px rgba(0,0,0,0.3);
         }
+        * { box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text-primary); margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
+        .scrollable { height: 100vh; overflow-y: auto; -ms-overflow-style: none; scrollbar-width: none; }
+        .scrollable::-webkit-scrollbar { display: none; }
 
-        * {
-            box-sizing: border-box;
-        }
+        /* Module Tabs */
+        .module-tabs { display: flex; gap: 6px; padding: 3px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; }
+        .module-tab { padding: 8px 16px; border-radius: 9px; font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); background: transparent; border: 1px solid transparent; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+        .module-tab:hover { background: var(--surface-hover); color: var(--text-primary); }
+        .module-tab.active { background: var(--accent); color: #fff; border-color: var(--accent-dark); box-shadow: 0 2px 8px rgba(184,134,11,0.25); }
+        .module-tab.active i { color: #fff; }
+        .module-tab i { font-size: 0.7rem; }
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg);
-            color: var(--text-primary);
-            margin: 0;
-            padding: 0;
-            -webkit-font-smoothing: antialiased;
-        }
+        /* Glass Card */
+        .g-card { background: var(--glass); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid var(--glass-border); border-radius: 16px; box-shadow: var(--shadow-sm); transition: all 0.25s cubic-bezier(0.4,0,0.2,1); }
+        .g-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
 
-        .scrollable {
-            height: 100vh;
-            overflow-y: auto;
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
+        /* KPI Primary */
+        .kpi-primary { padding: 20px; position: relative; overflow: hidden; }
+        .kpi-primary::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--kpi-color, var(--accent)); opacity: 0; transition: opacity 0.3s; }
+        .kpi-primary:hover::after { opacity: 1; }
+        .kpi-value { font-size: 2rem; font-weight: 800; line-height: 1; letter-spacing: -0.03em; color: var(--text-primary); }
+        .kpi-value.colored { color: var(--kpi-color); }
+        .kpi-label { font-size: 0.65rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 4px; }
+        .kpi-icon-wrap { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
 
-        .scrollable::-webkit-scrollbar {
-            display: none;
-        }
-
-        /* Nav Cards */
-        .nav-card {
-            background-color: var(--surface);
-            border: 1px solid var(--border);
-            color: var(--text-primary);
-        }
-        .nav-card:hover {
-            background-color: var(--surface-hover);
-            transform: translateY(-2px);
-        }
-        .nav-card.active {
-            border-color: var(--accent);
-            background-color: var(--surface);
-            box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
-        }
-        .nav-card .icon-circle {
-            background-color: var(--surface-hover);
-            color: var(--text-secondary);
-            border: 1px solid var(--border);
-        }
-        .nav-card.active .icon-circle {
-            background-color: var(--accent);
-            color: #ffffff;
-            border-color: var(--accent-dark);
-        }
-        .nav-card span {
-            color: var(--text-primary);
-        }
-
-        /* KPI Cards */
-        .kpi-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 1.25rem;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .kpi-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, var(--stripe-color, #e5e7eb), transparent);
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-
-        .kpi-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.08);
-            border-color: var(--stripe-color, var(--border));
-        }
-
-        .kpi-card:hover::before {
-            opacity: 1;
-        }
-
-        .kpi-icon {
-            width: 44px;
-            height: 44px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.1rem;
-            flex-shrink: 0;
-        }
-
-        .kpi-value {
-            font-size: 1.75rem;
-            font-weight: 800;
-            line-height: 1;
-            letter-spacing: -0.02em;
-        }
-
-        .kpi-label {
-            font-size: 0.7rem;
-            font-weight: 600;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-top: 2px;
-        }
-
-        /* Chart Cards */
-        .chart-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 1.5rem;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .chart-card-title {
-            font-size: 0.85rem;
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-
-        .chart-card-subtitle {
-            font-size: 0.65rem;
-            color: var(--text-secondary);
-            font-weight: 500;
-        }
-
-        /* Activity List */
-        .activity-item {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.65rem 0.75rem;
-            border-radius: 10px;
-            transition: background 0.15s;
-            border: 1px solid transparent;
-        }
-
-        .activity-item:hover {
-            background: var(--surface-hover);
-            border-color: var(--border);
-        }
-
-        .activity-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-
-        /* Skeleton */
-        .skeleton {
-            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-            background-size: 200% 100%;
-            animation: shimmer 1.5s infinite;
-            border-radius: 8px;
-        }
-
-        @keyframes shimmer {
-            0% {
-                background-position: 200% 0;
-            }
-
-            100% {
-                background-position: -200% 0;
-            }
-        }
-
-        /* Loader */
-        .loader-container {
-            position: fixed;
-            inset: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background-color: var(--bg);
-            z-index: 9999;
-            transition: opacity 0.4s ease-in-out;
-            opacity: 1;
-        }
-
-        .loader-container.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .preloader-container {
-            position: relative;
-            width: 150px;
-            height: 150px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .preloader-logo {
-            width: 80px;
-            height: auto;
-            z-index: 10;
-            animation: pulse 2s infinite ease-in-out;
-        }
-
-        .preloader-spinner {
-            position: absolute;
-            width: 150px;
-            height: 150px;
-            border-radius: 50%;
-            border: 3px solid transparent;
-            border-top-color: var(--accent);
-            animation: spin 1.5s linear infinite;
-        }
-
-        .preloader-spinner::before,
-        .preloader-spinner::after {
-            content: '';
-            position: absolute;
-            top: -3px;
-            left: -3px;
-            right: -3px;
-            bottom: -3px;
-            border-radius: 50%;
-            border: 3px solid color-mix(in srgb, var(--accent) 30%, transparent);
-            animation: sonar 2s infinite;
-            opacity: 0;
-        }
-
-        .preloader-spinner::after {
-            animation-delay: 1s;
-        }
-
-        .loader-container p {
-            margin-top: 20px;
-            color: var(--text-secondary);
-            font-size: 1rem;
-            letter-spacing: 1px;
-            animation: fadeIn 2s infinite alternate;
-            text-align: center;
-            max-width: 80%;
-        }
-
-        @keyframes spin {
-            from {
-                transform: rotate(0deg);
-            }
-
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        @keyframes sonar {
-            0% {
-                transform: scale(0.5);
-                opacity: 0;
-            }
-
-            50% {
-                opacity: 1;
-            }
-
-            100% {
-                transform: scale(1.2);
-                opacity: 0;
-            }
-        }
-
-        @keyframes pulse {
-
-            0%,
-            100% {
-                transform: scale(1);
-            }
-
-            50% {
-                transform: scale(1.05);
-            }
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0.5;
-            }
-
-            to {
-                opacity: 1;
-            }
-        }
-
-        /* Badge */
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.3rem;
-            padding: 0.2rem 0.6rem;
-            border-radius: 9999px;
-            font-size: 0.65rem;
-            font-weight: 600;
-        }
-
-        /* Pulse ring for warning KPI */
-        @keyframes pulse-ring {
-            0% {
-                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
-            }
-
-            70% {
-                box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
-            }
-
-            100% {
-                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
-            }
-        }
-
-        .pulse-warning {
-            animation: pulse-ring 2s ease infinite;
-        }
+        /* KPI Secondary (compact strip) */
+        .kpi-mini { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); transition: all 0.2s; }
+        .kpi-mini:hover { border-color: var(--accent); background: var(--surface-hover); }
+        .kpi-mini .kpi-mini-icon { width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; flex-shrink: 0; }
+        .kpi-mini .kpi-mini-val { font-size: 1.1rem; font-weight: 800; line-height: 1; }
+        .kpi-mini .kpi-mini-lbl { font-size: 0.6rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
 
         /* Micro progress bar */
-        .micro-bar {
-            height: 4px;
-            border-radius: 99px;
-            background: #f3f4f6;
-            overflow: hidden;
-            margin-top: 8px;
-        }
+        .micro-bar { height: 4px; border-radius: 99px; background: var(--border); overflow: hidden; margin-top: 10px; }
+        .micro-bar-fill { height: 100%; border-radius: 99px; transition: width 0.8s cubic-bezier(0.4,0,0.2,1); }
 
-        .micro-bar-fill {
-            height: 100%;
-            border-radius: 99px;
-            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-        }
+        /* Compliance Gauge */
+        .gauge-ring { position: relative; width: 140px; height: 140px; }
+        .gauge-ring svg { transform: rotate(-90deg); }
+        .gauge-ring .gauge-bg { fill: none; stroke: var(--border); stroke-width: 8; }
+        .gauge-ring .gauge-fill { fill: none; stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 1s cubic-bezier(0.4,0,0.2,1); }
+        .gauge-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .gauge-pct { font-size: 1.8rem; font-weight: 800; letter-spacing: -0.03em; }
+        .gauge-sub { font-size: 0.55rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); }
+
+        /* Chart Cards */
+        .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; }
+        .chart-card-title { font-size: 0.8rem; font-weight: 700; color: var(--text-primary); }
+        .chart-card-subtitle { font-size: 0.6rem; color: var(--text-secondary); font-weight: 500; }
+
+        /* Activity */
+        .activity-item { display: flex; align-items: center; gap: 0.75rem; padding: 8px 10px; border-radius: 8px; transition: background 0.15s; border: 1px solid transparent; }
+        .activity-item:hover { background: var(--surface-hover); border-color: var(--border); }
+        .activity-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .status-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 9999px; font-size: 0.6rem; font-weight: 600; }
+
+        /* Loader */
+        .loader-container { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: var(--bg); z-index: 9999; transition: opacity 0.4s; opacity: 1; }
+        .loader-container.hidden { opacity: 0; pointer-events: none; }
+        .preloader-container { position: relative; width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; }
+        .preloader-logo { width: 60px; height: auto; z-index: 10; animation: pulse 2s infinite ease-in-out; }
+        .preloader-spinner { position: absolute; width: 120px; height: 120px; border-radius: 50%; border: 2px solid transparent; border-top-color: var(--accent); animation: spin 1.2s linear infinite; }
+        .loader-container p { margin-top: 16px; color: var(--text-secondary); font-size: 0.8rem; letter-spacing: 0.5px; animation: fadeIn 2s infinite alternate; }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        @keyframes fadeIn { from { opacity: 0.5; } to { opacity: 1; } }
+        @keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 rgba(239,68,68,0.3); } 70% { box-shadow: 0 0 0 6px rgba(239,68,68,0); } 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); } }
+        .pulse-warning { animation: pulse-ring 2s ease infinite; }
+
+        /* Filiais badges */
+        .filial-badge { display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 8px; font-size: 0.7rem; font-weight: 600; border: 1px solid; transition: all 0.2s; }
+        .filial-ok { background: #ecfdf5; border-color: #a7f3d0; color: #065f46; }
+        .filial-err { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+        html[data-theme="dark"] .filial-ok { background: #052e16; border-color: #14532d; color: #86efac; }
+        html[data-theme="dark"] .filial-err { background: #450a0a; border-color: #7f1d1d; color: #fca5a5; }
+
+        /* Section title */
+        .sec-title { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; }
+        .sec-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
     </style>
 </head>
 
 <body>
-    <!-- Page Loader -->
     <div id="page-loader" class="loader-container">
         <div class="preloader-container">
-            <img src="https://i.imgur.com/8vy4QAK.png" alt="Logo NutriPort" class="preloader-logo">
+            <img src="https://i.imgur.com/8vy4QAK.png" alt="Logo" class="preloader-logo">
             <div class="preloader-spinner"></div>
         </div>
         <p id="loader-text">Carregando painel...</p>
     </div>
 
     <div class="scrollable">
-        <div class="max-w-7xl mx-auto p-4 sm:p-6 space-y-5">
+        <div class="max-w-7xl mx-auto p-4 sm:p-5 space-y-4">
 
             <!-- Header -->
             <header class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <div>
-                    <h1 class="text-xl font-extrabold tracking-tight flex items-center gap-2" style="color: var(--text-primary)">
-                        <span
-                            class="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-yellow-400 flex items-center justify-center shadow-sm">
-                            <i class="fa-solid fa-chart-pie text-white text-sm"></i>
-                        </span>
-                        Painel Principal
-                    </h1>
-                    <p class="text-xs mt-1" style="color: var(--text-secondary)">Indicadores do Confronto Fiscal — Atualizado em tempo real</p>
-                </div>
-                <div class="flex items-center gap-2">
-                    <div id="realtime-badge"
-                        class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-emerald-600 dark:text-emerald-400 text-xs font-semibold" style="background: var(--surface-hover); border: 1px solid var(--border)">
-                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                        Tempo Real
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-600 to-yellow-500 flex items-center justify-center shadow-md">
+                        <i class="fa-solid fa-shield-halved text-white text-sm"></i>
                     </div>
-                    <div id="last-update" class="text-xs font-medium hidden sm:block" style="color: var(--text-secondary)">Carregando...</div>
-                    <div
-                        class="flex items-center border rounded-md shadow-sm overflow-hidden text-xs" style="background: var(--surface); border-color: var(--border);">
-                        <span class="pl-2 pr-1 font-medium" style="color: var(--text-secondary)">De</span>
-                        <input type="date" id="filter-dtent-inicio"
-                            class="py-1.5 px-0.5 focus:outline-none focus:ring-0 font-semibold bg-transparent cursor-pointer" style="color: var(--text-primary)"/>
-                        <div class="w-px h-4 mx-1" style="background: var(--border)"></div>
-                        <span class="pr-1 font-medium" style="color: var(--text-secondary)">Até</span>
-                        <input type="date" id="filter-dtent-fim"
-                            class="py-1.5 px-0.5 pr-2 focus:outline-none focus:ring-0 font-semibold bg-transparent cursor-pointer" style="color: var(--text-primary)"/>
+                    <div>
+                        <h1 class="text-lg font-extrabold tracking-tight" style="color:var(--text-primary)">Centro de Comando Fiscal</h1>
+                        <p class="text-[10px] font-medium" style="color:var(--text-secondary)">Monitoramento de conformidade em tempo real</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <div id="realtime-badge" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-emerald-600 dark:text-emerald-400 text-[10px] font-bold" style="background:var(--surface);border:1px solid var(--border)">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>LIVE
+                    </div>
+                    <div id="last-update" class="text-[10px] font-medium hidden sm:block" style="color:var(--text-secondary)">Carregando...</div>
+                    <div class="flex items-center border rounded-lg shadow-sm overflow-hidden text-xs" style="background:var(--surface);border-color:var(--border)">
+                        <span class="pl-2.5 pr-1 font-semibold text-[10px]" style="color:var(--text-secondary)">DE</span>
+                        <input type="date" id="filter-dtent-inicio" class="py-1.5 px-1 focus:outline-none font-semibold bg-transparent text-xs cursor-pointer" style="color:var(--text-primary)"/>
+                        <div class="w-px h-4" style="background:var(--border)"></div>
+                        <span class="px-1 font-semibold text-[10px]" style="color:var(--text-secondary)">ATÉ</span>
+                        <input type="date" id="filter-dtent-fim" class="py-1.5 px-1 pr-2.5 focus:outline-none font-semibold bg-transparent text-xs cursor-pointer" style="color:var(--text-primary)"/>
                     </div>
                 </div>
             </header>
 
-            <!-- Navigation Cards -->
-            <section class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <button onclick="switchDashboard('confrontofiscalnfconsumo', this)" class="nav-card active flex flex-col items-center justify-center p-4 rounded-xl transition-all shadow-sm cursor-pointer">
-                    <div class="icon-circle w-12 h-12 rounded-full flex items-center justify-center mb-2 transition-colors">
-                        <i class="fa-solid fa-cart-shopping text-xl"></i>
-                    </div>
-                    <span class="font-bold text-sm">NF Consumo</span>
-                </button>
-                <button onclick="switchDashboard('confrontofiscalnfservico', this)" class="nav-card flex flex-col items-center justify-center p-4 rounded-xl transition-all shadow-sm cursor-pointer">
-                    <div class="icon-circle w-12 h-12 rounded-full flex items-center justify-center mb-2 transition-colors">
-                        <i class="fa-solid fa-briefcase text-xl"></i>
-                    </div>
-                    <span class="font-bold text-sm">NF Serviço</span>
-                </button>
-                <button onclick="switchDashboard('confrontofiscaldanfe', this)" class="nav-card flex flex-col items-center justify-center p-4 rounded-xl transition-all shadow-sm cursor-pointer">
-                    <div class="icon-circle w-12 h-12 rounded-full flex items-center justify-center mb-2 transition-colors">
-                        <i class="fa-solid fa-file-invoice text-xl"></i>
-                    </div>
-                    <span class="font-bold text-sm">DANFE</span>
-                </button>
-                <button onclick="switchDashboard('confrontofiscalcte', this)" class="nav-card flex flex-col items-center justify-center p-4 rounded-xl transition-all shadow-sm cursor-pointer">
-                    <div class="icon-circle w-12 h-12 rounded-full flex items-center justify-center mb-2 transition-colors">
-                        <i class="fa-solid fa-truck-fast text-xl"></i>
-                    </div>
-                    <span class="font-bold text-sm">CT-e</span>
-                </button>
-            </section>
+            <!-- Module Tabs (replaces huge nav cards) -->
+            <div class="module-tabs">
+                <button onclick="switchDashboard('confrontofiscalnfconsumo', this)" class="module-tab active"><i class="fa-solid fa-cart-shopping"></i>NF Consumo</button>
+                <button onclick="switchDashboard('confrontofiscalnfservico', this)" class="module-tab"><i class="fa-solid fa-briefcase"></i>NF Serviço</button>
+                <button onclick="switchDashboard('confrontofiscaldanfe', this)" class="module-tab"><i class="fa-solid fa-file-invoice"></i>DANFe</button>
+                <button onclick="switchDashboard('confrontofiscalcte', this)" class="module-tab"><i class="fa-solid fa-truck-fast"></i>CT-e</button>
+            </div>
 
-            <!-- KPIs Row -->
-            <section id="kpi-section" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                <!-- Total -->
-                <div class="kpi-card" style="--stripe-color: #6366f1;">
-                    <div class="flex items-start justify-between">
-                        <div>
-                            <div id="kpi-total" class="kpi-value" style="color: var(--text-primary)">—</div>
-                            <div class="kpi-label">Total Lançamentos</div>
+            <!-- Hero: Gauge + Primary KPIs -->
+            <section class="grid grid-cols-1 lg:grid-cols-[180px_1fr] gap-4">
+                <!-- Compliance Gauge -->
+                <div class="g-card kpi-primary flex flex-col items-center justify-center" style="--kpi-color:#22c55e">
+                    <div class="gauge-ring">
+                        <svg width="140" height="140" viewBox="0 0 140 140">
+                            <circle class="gauge-bg" cx="70" cy="70" r="58"/>
+                            <circle id="gauge-circle" class="gauge-fill" cx="70" cy="70" r="58" stroke="#22c55e" stroke-dasharray="364.42" stroke-dashoffset="364.42"/>
+                        </svg>
+                        <div class="gauge-center">
+                            <span id="validation-pct" class="gauge-pct" style="color:#22c55e">0%</span>
+                            <span class="gauge-sub">Conformidade</span>
                         </div>
-                        <div class="kpi-icon text-indigo-500" style="background: var(--surface-hover)">
-                            <i class="fa-solid fa-layer-group"></i>
+                    </div>
+                    <div class="text-center mt-2">
+                        <div class="flex items-center justify-center gap-3 text-[10px] font-semibold" style="color:var(--text-secondary)">
+                            <span><i class="fa-solid fa-check-circle text-blue-500 mr-1"></i><span id="legend-validados">0</span> valid.</span>
+                            <span><i class="fa-solid fa-clock text-gray-400 mr-1"></i><span id="legend-pendentes">0</span> pend.</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Divergentes -->
-                <div class="kpi-card" style="--stripe-color: #ef4444;">
-                    <div class="flex items-start justify-between">
-                        <div>
-                            <div id="kpi-divergentes" class="kpi-value text-red-500">—</div>
-                            <div class="kpi-label">Divergentes</div>
-                        </div>
-                        <div class="kpi-icon text-red-500" style="background: var(--surface-hover)">
-                            <i class="fa-solid fa-triangle-exclamation"></i>
+                <!-- Primary KPIs Grid -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                    <!-- Total -->
+                    <div class="g-card kpi-primary" style="--kpi-color:#6366f1">
+                        <div class="flex items-start justify-between">
+                            <div><div id="kpi-total" class="kpi-value">—</div><div class="kpi-label">Total Lançamentos</div></div>
+                            <div class="kpi-icon-wrap text-indigo-500" style="background:var(--surface-hover)"><i class="fa-solid fa-layer-group"></i></div>
                         </div>
                     </div>
-                    <div class="micro-bar">
-                        <div id="bar-divergentes" class="micro-bar-fill bg-red-500" style="width:0%"></div>
+                    <!-- Divergentes -->
+                    <div class="g-card kpi-primary" style="--kpi-color:#ef4444">
+                        <div class="flex items-start justify-between">
+                            <div><div id="kpi-divergentes" class="kpi-value colored" style="--kpi-color:#ef4444;color:#ef4444">—</div><div class="kpi-label">Divergentes</div></div>
+                            <div class="kpi-icon-wrap text-red-500" style="background:var(--surface-hover)"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                        </div>
+                        <div class="micro-bar"><div id="bar-divergentes" class="micro-bar-fill bg-red-500" style="width:0%"></div></div>
                     </div>
-                </div>
-
-                <!-- OK -->
-                <div class="kpi-card" style="--stripe-color: #22c55e;">
-                    <div class="flex items-start justify-between">
-                        <div>
-                            <div id="kpi-ok" class="kpi-value text-emerald-500">—</div>
-                            <div class="kpi-label">OK (Conferidos)</div>
+                    <!-- OK -->
+                    <div class="g-card kpi-primary" style="--kpi-color:#22c55e">
+                        <div class="flex items-start justify-between">
+                            <div><div id="kpi-ok" class="kpi-value colored" style="--kpi-color:#22c55e;color:#22c55e">—</div><div class="kpi-label">OK (Conferidos)</div></div>
+                            <div class="kpi-icon-wrap text-emerald-500" style="background:var(--surface-hover)"><i class="fa-solid fa-circle-check"></i></div>
                         </div>
-                        <div class="kpi-icon text-emerald-500" style="background: var(--surface-hover)">
-                            <i class="fa-solid fa-circle-check"></i>
-                        </div>
+                        <div class="micro-bar"><div id="bar-ok" class="micro-bar-fill bg-emerald-500" style="width:0%"></div></div>
                     </div>
-                    <div class="micro-bar">
-                        <div id="bar-ok" class="micro-bar-fill bg-emerald-500" style="width:0%"></div>
-                    </div>
-                </div>
-
-                <!-- Validados -->
-                <div class="kpi-card" style="--stripe-color: #3b82f6;">
-                    <div class="flex items-start justify-between">
-                        <div>
-                            <div id="kpi-validados" class="kpi-value text-blue-500">—</div>
-                            <div class="kpi-label">Validados WinThor</div>
+                    <!-- Validados -->
+                    <div class="g-card kpi-primary" style="--kpi-color:#3b82f6">
+                        <div class="flex items-start justify-between">
+                            <div><div id="kpi-validados" class="kpi-value colored" style="--kpi-color:#3b82f6;color:#3b82f6">—</div><div class="kpi-label">Validados WinThor</div></div>
+                            <div class="kpi-icon-wrap text-blue-500" style="background:var(--surface-hover)"><i class="fa-solid fa-clipboard-check"></i></div>
                         </div>
-                        <div class="kpi-icon text-blue-500" style="background: var(--surface-hover)">
-                            <i class="fa-solid fa-clipboard-check"></i>
-                        </div>
-                    </div>
-                    <div class="micro-bar">
-                        <div id="bar-validados" class="micro-bar-fill bg-blue-500" style="width:0%"></div>
-                    </div>
-                </div>
-
-                <!-- Tomador Divergente -->
-                <div class="kpi-card" style="--stripe-color: #f97316;">
-                    <div class="flex items-start justify-between">
-                        <div>
-                            <div id="kpi-tomador" class="kpi-value text-orange-500">—</div>
-                            <div class="kpi-label">Tomador ≠ Filial</div>
-                        </div>
-                        <div class="kpi-icon text-orange-500" style="background: var(--surface-hover)">
-                            <i class="fa-solid fa-user-xmark"></i>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Sem XML -->
-                <div class="kpi-card" style="--stripe-color: #94a3b8;">
-                    <div class="flex items-start justify-between">
-                        <div>
-                            <div id="kpi-semxml" class="kpi-value text-slate-500">—</div>
-                            <div class="kpi-label">Sem XML</div>
-                        </div>
-                        <div class="kpi-icon text-slate-500" style="background: var(--surface-hover)">
-                            <i class="fa-solid fa-file-excel"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Não Encontrado -->
-                <div class="kpi-card" style="--stripe-color: #52525b;">
-                    <div class="flex items-start justify-between">
-                        <div>
-                            <div id="kpi-naoencontrado" class="kpi-value text-zinc-500">—</div>
-                            <div class="kpi-label">Não Encontrado</div>
-                        </div>
-                        <div class="kpi-icon text-zinc-500" style="background: var(--surface-hover)">
-                            <i class="fa-solid fa-ghost"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Pendentes Verificação -->
-                <div class="kpi-card" id="kpi-verificando-card" style="--stripe-color: #a855f7;">
-                    <div class="flex items-start justify-between">
-                        <div>
-                            <div id="kpi-verificando" class="kpi-value text-purple-500">—</div>
-                            <div class="kpi-label">Em Verificação</div>
-                        </div>
-                        <div class="kpi-icon text-purple-500" style="background: var(--surface-hover)">
-                            <i id="icon-verificando" class="fa-solid fa-spinner"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Busca Isolada -->
-                <div class="kpi-card" id="kpi-buscaisolada-card" style="--stripe-color: #0ea5e9;">
-                    <div class="flex items-start justify-between">
-                        <div>
-                            <div id="kpi-buscaisolada" class="kpi-value text-sky-500">—</div>
-                            <div class="kpi-label">Busca Isolada</div>
-                        </div>
-                        <div class="kpi-icon text-sky-500" style="background: var(--surface-hover)">
-                            <i id="icon-buscaisolada" class="fa-solid fa-cloud-arrow-down"></i>
-                        </div>
+                        <div class="micro-bar"><div id="bar-validados" class="micro-bar-fill bg-blue-500" style="width:0%"></div></div>
                     </div>
                 </div>
             </section>
 
-            <!-- Filiais Panel -->
-            <section id="filiais-panel" class="rounded-xl border p-4 shadow-sm" style="background: var(--surface); border-color: var(--border);">
-                <div class="flex items-center gap-2 mb-3">
-                    <div
-                        class="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-100 to-yellow-50 flex items-center justify-center">
-                        <i class="fa-solid fa-building text-amber-500 text-xs"></i>
-                    </div>
-                    <div>
-                        <div class="text-sm font-bold" style="color: var(--text-primary)">Filiais Monitoradas</div>
-                        <div class="text-[10px]" style="color: var(--text-secondary)">Filiais sem lançamentos aparecem em vermelho</div>
-                    </div>
-                </div>
-                <div id="filiais-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-3">
-                    <!-- Preenchido dinamicamente -->
-                </div>
+            <!-- Secondary KPIs Strip -->
+            <section class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+                <div class="kpi-mini"><div class="kpi-mini-icon text-orange-500" style="background:#fff7ed;border:1px solid #fed7aa"><i class="fa-solid fa-user-xmark"></i></div><div><div id="kpi-tomador" class="kpi-mini-val text-orange-500">—</div><div class="kpi-mini-lbl">Tomador ≠ Filial</div></div></div>
+                <div class="kpi-mini"><div class="kpi-mini-icon text-slate-500" style="background:#f8fafc;border:1px solid #e2e8f0"><i class="fa-solid fa-file-excel"></i></div><div><div id="kpi-semxml" class="kpi-mini-val text-slate-500">—</div><div class="kpi-mini-lbl">Sem XML</div></div></div>
+                <div class="kpi-mini"><div class="kpi-mini-icon text-zinc-500" style="background:#fafafa;border:1px solid #e4e4e7"><i class="fa-solid fa-ghost"></i></div><div><div id="kpi-naoencontrado" class="kpi-mini-val text-zinc-500">—</div><div class="kpi-mini-lbl">Não Encontrado</div></div></div>
+                <div class="kpi-mini" id="kpi-verificando-card"><div class="kpi-mini-icon text-purple-500" style="background:#faf5ff;border:1px solid #e9d5ff"><i id="icon-verificando" class="fa-solid fa-spinner"></i></div><div><div id="kpi-verificando" class="kpi-mini-val text-purple-500">—</div><div class="kpi-mini-lbl">Em Verificação</div></div></div>
+                <div class="kpi-mini" id="kpi-buscaisolada-card"><div class="kpi-mini-icon text-sky-500" style="background:#f0f9ff;border:1px solid #bae6fd"><i id="icon-buscaisolada" class="fa-solid fa-cloud-arrow-down"></i></div><div><div id="kpi-buscaisolada" class="kpi-mini-val text-sky-500">—</div><div class="kpi-mini-lbl">Busca Isolada</div></div></div>
+            </section>
+
+            <!-- Filiais Strip -->
+            <div class="sec-title"><i class="fa-solid fa-building text-xs"></i>Filiais Monitoradas</div>
+            <section id="filiais-panel" class="g-card" style="padding:12px 16px;">
+                <div id="filiais-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-2"></div>
             </section>
 
             <!-- Charts Row -->
-            <section class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div class="sec-title"><i class="fa-solid fa-chart-bar text-xs"></i>Análise Visual</div>
+            <section class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <!-- Status Pie -->
                 <div class="chart-card">
-                    <div class="flex items-center justify-between mb-3">
-                        <div class="flex items-center gap-2">
-                            <div
-                                class="w-7 h-7 rounded-lg flex items-center justify-center border" style="background: var(--surface-hover); border-color: var(--border);">
-                                <i class="fa-solid fa-chart-pie" style="color: var(--accent);"></i>
-                            </div>
-                            <div>
-                                <div class="chart-card-title" style="color: var(--text-primary)">Distribuição por Status</div>
-                                <div class="chart-card-subtitle" style="color: var(--text-secondary)">Todos os lançamentos</div>
-                            </div>
-                        </div>
+                    <div class="flex items-center gap-2 mb-3">
+                        <div class="w-6 h-6 rounded-lg flex items-center justify-center" style="background:var(--surface-hover);border:1px solid var(--border)"><i class="fa-solid fa-chart-pie text-xs" style="color:var(--accent)"></i></div>
+                        <div><div class="chart-card-title">Distribuição por Status</div><div class="chart-card-subtitle">Todos os lançamentos</div></div>
                     </div>
-                    <div class="relative w-full flex-grow flex items-center justify-center" style="min-height: 220px;">
+                    <div class="relative w-full flex-grow flex items-center justify-center" style="min-height:200px;">
                         <canvas id="chart-status"></canvas>
                         <div class="absolute flex flex-col items-center justify-center pointer-events-none">
-                            <span id="chart-status-center" class="text-2xl font-extrabold" style="color: var(--text-primary)">0</span>
-                            <span class="text-[10px] font-medium" style="color: var(--text-secondary)">total</span>
+                            <span id="chart-status-center" class="text-2xl font-extrabold" style="color:var(--text-primary)">0</span>
+                            <span class="text-[10px] font-medium" style="color:var(--text-secondary)">total</span>
                         </div>
                     </div>
-                    <div id="chart-status-legend" class="mt-3 pt-3 border-t flex flex-wrap gap-2" style="border-color: var(--border);"></div>
+                    <div id="chart-status-legend" class="mt-3 pt-3 border-t flex flex-wrap gap-2" style="border-color:var(--border);"></div>
                 </div>
 
                 <!-- By Filial Bar -->
                 <div class="chart-card">
-                    <div class="flex items-center justify-between mb-3">
-                        <div class="flex items-center gap-2">
-                            <div
-                                class="w-7 h-7 rounded-lg flex items-center justify-center border" style="background: var(--surface-hover); border-color: var(--border);">
-                                <i class="fa-solid fa-building" style="color: var(--accent);"></i>
-                            </div>
-                            <div>
-                                <div class="chart-card-title" style="color: var(--text-primary)">Lançamentos por Filial</div>
-                                <div class="chart-card-subtitle" style="color: var(--text-secondary)">Distribuição entre filiais</div>
-                            </div>
-                        </div>
+                    <div class="flex items-center gap-2 mb-3">
+                        <div class="w-6 h-6 rounded-lg flex items-center justify-center" style="background:var(--surface-hover);border:1px solid var(--border)"><i class="fa-solid fa-building text-xs" style="color:var(--accent)"></i></div>
+                        <div><div class="chart-card-title">Lançamentos por Filial</div><div class="chart-card-subtitle">Distribuição entre unidades</div></div>
                     </div>
-                    <div class="relative w-full flex-grow" style="min-height: 220px;">
-                        <canvas id="chart-filial"></canvas>
-                    </div>
-                </div>
-
-                <!-- Validation Progress -->
-                <div class="chart-card">
-                    <div class="flex items-center justify-between mb-3">
-                        <div class="flex items-center gap-2">
-                            <div
-                                class="w-7 h-7 rounded-lg flex items-center justify-center border" style="background: var(--surface-hover); border-color: var(--border);">
-                                <i class="fa-solid fa-chart-line text-emerald-500 text-xs"></i>
-                            </div>
-                            <div>
-                                <div class="chart-card-title" style="color: var(--text-primary)">Progresso de Validação</div>
-                                <div class="chart-card-subtitle" style="color: var(--text-secondary)">Validados vs Pendentes</div>
-                            </div>
-                        </div>
-                        <span id="validation-pct"
-                            class="text-sm font-extrabold text-emerald-600 dark:text-emerald-400 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-900/50" style="background: var(--surface-hover);">0%</span>
-                    </div>
-                    <div class="relative w-full flex-grow flex items-center justify-center" style="min-height: 220px;">
-                        <canvas id="chart-validation"></canvas>
-                    </div>
-                    <div class="mt-3 pt-3 border-t flex items-center justify-between text-xs" style="border-color: var(--border);">
-                        <div class="flex items-center gap-1.5">
-                            <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
-                            <span class="font-medium" style="color: var(--text-secondary)">Validados</span>
-                            <span id="legend-validados" class="font-bold" style="color: var(--text-primary)">0</span>
-                        </div>
-                        <div class="flex items-center gap-1.5">
-                            <span class="w-2.5 h-2.5 rounded-full bg-gray-300"></span>
-                            <span class="font-medium" style="color: var(--text-secondary)">Pendentes</span>
-                            <span id="legend-pendentes" class="font-bold" style="color: var(--text-primary)">0</span>
-                        </div>
-                    </div>
+                    <div class="relative w-full flex-grow" style="min-height:200px;"><canvas id="chart-filial"></canvas></div>
                 </div>
             </section>
 
-            <!-- Bottom Row: Divergência por Filial + Atividade Recente -->
+            <!-- Bottom Row -->
             <section class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <!-- Divergência comparativa por filial -->
+                <!-- Divergência por filial -->
                 <div class="chart-card">
-                    <div class="flex items-center justify-between mb-3">
-                        <div class="flex items-center gap-2">
-                            <div
-                                class="w-7 h-7 rounded-lg flex items-center justify-center border" style="background: var(--surface-hover); border-color: var(--border);">
-                                <i class="fa-solid fa-scale-unbalanced text-red-500 text-xs"></i>
-                            </div>
-                            <div>
-                                <div class="chart-card-title" style="color: var(--text-primary)">Divergências por Filial</div>
-                                <div class="chart-card-subtitle" style="color: var(--text-secondary)">OK vs Divergente por unidade</div>
-                            </div>
-                        </div>
+                    <div class="flex items-center gap-2 mb-3">
+                        <div class="w-6 h-6 rounded-lg flex items-center justify-center" style="background:var(--surface-hover);border:1px solid var(--border)"><i class="fa-solid fa-scale-unbalanced text-red-500 text-xs"></i></div>
+                        <div><div class="chart-card-title">Divergências por Filial</div><div class="chart-card-subtitle">OK vs Divergente por unidade</div></div>
                     </div>
-                    <div class="relative w-full flex-grow" style="min-height: 260px;">
-                        <canvas id="chart-div-filial"></canvas>
-                    </div>
+                    <div class="relative w-full flex-grow" style="min-height:240px;"><canvas id="chart-div-filial"></canvas></div>
                 </div>
 
                 <!-- Atividade Recente -->
                 <div class="chart-card">
                     <div class="flex items-center justify-between mb-3">
                         <div class="flex items-center gap-2">
-                            <div
-                                class="w-7 h-7 rounded-lg flex items-center justify-center border" style="background: var(--surface-hover); border-color: var(--border);">
-                                <i class="fa-solid fa-clock-rotate-left" style="color: var(--accent);"></i>
-                            </div>
-                            <div>
-                                <div class="chart-card-title" style="color: var(--text-primary)">Atividade Recente</div>
-                                <div class="chart-card-subtitle" style="color: var(--text-secondary)">Últimas validações realizadas</div>
-                            </div>
+                            <div class="w-6 h-6 rounded-lg flex items-center justify-center" style="background:var(--surface-hover);border:1px solid var(--border)"><i class="fa-solid fa-clock-rotate-left text-xs" style="color:var(--accent)"></i></div>
+                            <div><div class="chart-card-title">Atividade Recente</div><div class="chart-card-subtitle">Últimas validações</div></div>
                         </div>
-                        <span id="activity-count"
-                            class="text-xs font-bold px-2 py-0.5 rounded-full border" style="color: var(--text-primary); background: var(--surface-hover); border-color: var(--border);">0</span>
+                        <span id="activity-count" class="text-[10px] font-bold px-2 py-0.5 rounded-full" style="color:var(--text-primary);background:var(--surface-hover);border:1px solid var(--border)">0</span>
                     </div>
-                    <div id="activity-list" class="flex-grow overflow-y-auto space-y-1" style="max-height: 280px;">
-                        <div class="flex items-center justify-center h-full text-sm py-12" style="color: var(--text-secondary)">
-                            <i class="fa-solid fa-inbox text-2xl mr-2"></i> Carregando...
-                        </div>
+                    <div id="activity-list" class="flex-grow overflow-y-auto space-y-1" style="max-height:260px;">
+                        <div class="flex items-center justify-center h-full text-sm py-12" style="color:var(--text-secondary)"><i class="fa-solid fa-inbox text-2xl mr-2"></i>Carregando...</div>
                     </div>
                 </div>
             </section>
 
-            <!-- Footer -->
-            <footer class="text-center py-4">
-                <p class="text-xs" style="color: var(--text-secondary)">NutriPort &middot; Painel em tempo real</p>
+            <!-- Hidden validation chart canvas (JS still references it) -->
+            <div style="display:none"><canvas id="chart-validation"></canvas></div>
+
+            <footer class="text-center py-3">
+                <p class="text-[10px] font-medium" style="color:var(--text-secondary)">NutriPort &middot; Centro de Comando Fiscal &middot; Tempo Real</p>
             </footer>
         </div>
     </div>
@@ -813,7 +368,7 @@
             window.currentTable = tableName;
             
             // Visual Update
-            document.querySelectorAll('.nav-card').forEach(btn => {
+            document.querySelectorAll('.module-tab').forEach(btn => {
                 btn.classList.remove('active');
             });
             btnElement.classList.add('active');
@@ -829,6 +384,9 @@
                 startRealtime();
             }, 50);
         };
+        function isValidadoWinThor(val) {
+            return val === true || val === 'true' || val === 1 || val === '1';
+        }
         function animateValue(el, end, skipAnim = false, duration = 300) {
             if (el._animFrame) cancelAnimationFrame(el._animFrame);
             if (skipAnim) {
@@ -887,7 +445,7 @@
 
                 let queryValid = supabase.from(window.currentTable)
                     .select('id, codfilial, codfilialnf, numnota, validado_por, validado_em, validado_email, status')
-                    .eq('validado_winthor', true);
+                    .or('validado_winthor.eq.true,status.eq."Totalmente Validada"');
                 if (dtInicio) queryValid = queryValid.gte('dtent', dtInicio);
                 if (dtFim) queryValid = queryValid.lte('dtent', dtFim);
                 const { data: recentValidated } = await queryValid.order('validado_em', { ascending: false }).limit(20);
@@ -948,30 +506,26 @@
         function renderKPIs(data, verificandoCount, buscaIsoladaCount = 0, skipAnim = false, isTomadorLoading = false) {
             const total = data.length;
 
-            // Validação Virtual Unificada
-            // Identify tomador divergente diretamente pelo status do banco e força Divergente se filial diferir
+            // Identificação de Tomador Divergente
             let tomadorDivCount = 0;
             data.forEach(item => {
-                // 1. Tomador Divergente
                 if (item.status === 'Tomador Divergente') {
                     item._isTomadorDiv = true;
                     tomadorDivCount++;
                 } else {
                     item._isTomadorDiv = false;
                 }
-
-                // 2. Validação Virtual (Mesma regra do lancamentos.html)
-                if (!item._isTomadorDiv && String(item.codfilialnf) !== String(item.codfilial) && item.status !== 'Resolvido') {
-                    item.status = 'Divergente';
-                }
+                // Preserva o status original do banco para o cálculo de KPIs
+                item._originalStatus = item.status;
             });
 
             const nonTomadorDiv = data.filter(d => !d._isTomadorDiv);
-            const validados = nonTomadorDiv.filter(d => d.validado_winthor === true).length;
-            const okCount = nonTomadorDiv.filter(d => d.status === 'OK' && !d.validado_winthor).length;
-            const divergentes = nonTomadorDiv.filter(d => d.status !== 'OK' && d.status !== 'Validado' && d.status !== 'Sem XML' && d.status !== 'Não Encontrado no Sieg' && !d.validado_winthor).length;
-            const semXmlCount = nonTomadorDiv.filter(d => d.status === 'Sem XML').length;
-            const naoEcontradoCount = nonTomadorDiv.filter(d => d.status === 'Não Encontrado no Sieg').length;
+            const isRecordValidado = (d) => isValidadoWinThor(d.validado_winthor) || d._originalStatus === 'Totalmente Validada';
+            const validados = nonTomadorDiv.filter(d => isRecordValidado(d)).length;
+            const okCount = nonTomadorDiv.filter(d => d._originalStatus === 'OK' && !isRecordValidado(d)).length;
+            const divergentes = nonTomadorDiv.filter(d => d._originalStatus !== 'OK' && d._originalStatus !== 'Totalmente Validada' && d._originalStatus !== 'Sem XML' && d._originalStatus !== 'Não Encontrado no Sieg' && d._originalStatus !== 'Resolvido' && !isRecordValidado(d)).length;
+            const semXmlCount = nonTomadorDiv.filter(d => d._originalStatus === 'Sem XML').length;
+            const naoEcontradoCount = nonTomadorDiv.filter(d => d._originalStatus === 'Não Encontrado no Sieg').length;
 
             animateValue(document.getElementById('kpi-total'), total, skipAnim);
             animateValue(document.getElementById('kpi-divergentes'), divergentes, skipAnim);
@@ -1019,7 +573,7 @@
             const nonTomadorDiv = data.filter(d => !d._isTomadorDiv);
             const counts = {};
             nonTomadorDiv.forEach(d => {
-                let s = d.validado_winthor ? 'Validado' : (d.status || 'Sem Status');
+                let s = isValidadoWinThor(d.validado_winthor) ? 'Totalmente Validada' : (d._originalStatus || 'Sem Status');
                 counts[s] = (counts[s] || 0) + 1;
             });
 
@@ -1032,7 +586,7 @@
 
             const colorMap = {
                 'OK': '#22c55e',
-                'Validado': '#3b82f6',
+                'Totalmente Validada': '#3b82f6',
                 'Divergente': '#ef4444',
                 'Tomador Divergente': '#f97316',
                 'Sem Status': '#9ca3af'
@@ -1122,13 +676,25 @@
 
         function renderValidationChart(data, skipAnim = false) {
             const nonTomadorDiv = data.filter(d => !d._isTomadorDiv);
-            const validados = nonTomadorDiv.filter(d => d.validado_winthor).length;
+            const validados = nonTomadorDiv.filter(d => isValidadoWinThor(d.validado_winthor) || d._originalStatus === 'Totalmente Validada').length;
             const pendentes = nonTomadorDiv.length - validados;
             const pct = nonTomadorDiv.length > 0 ? Math.round((validados / nonTomadorDiv.length) * 100) : 0;
 
             document.getElementById('validation-pct').textContent = pct + '%';
             document.getElementById('legend-validados').textContent = validados.toLocaleString('pt-BR');
             document.getElementById('legend-pendentes').textContent = pendentes.toLocaleString('pt-BR');
+
+            // Update SVG gauge
+            const gaugeCircle = document.getElementById('gauge-circle');
+            if (gaugeCircle) {
+                const circumference = 2 * Math.PI * 58; // r=58
+                const offset = circumference - (pct / 100) * circumference;
+                gaugeCircle.style.strokeDashoffset = offset;
+                const color = pct >= 70 ? '#22c55e' : pct >= 40 ? '#f59e0b' : '#ef4444';
+                gaugeCircle.setAttribute('stroke', color);
+                const pctEl = document.getElementById('validation-pct');
+                if (pctEl) pctEl.style.color = color;
+            }
 
             if (chartInstances['validation']) {
                 chartInstances['validation'].data.datasets[0].data = [validados, pendentes];
@@ -1137,7 +703,7 @@
                 chartInstances['validation'] = new Chart(document.getElementById('chart-validation').getContext('2d'), {
                     type: 'doughnut',
                     data: {
-                        labels: ['Validados', 'Pendentes'],
+                        labels: ['Totalmente Validada', 'Pendentes'],
                         datasets: [{ data: [validados, pendentes], backgroundColor: ['#3b82f6', '#e5e7eb'], borderWidth: 0, borderRadius: 4 }]
                     },
                     options: {
@@ -1153,12 +719,12 @@
         }
 
         function renderDivFilialChart(data, skipAnim = false) {
-            const nonTomadorDiv = data.filter(d => !d._isTomadorDiv && !d.validado_winthor);
+            const nonTomadorDiv = data.filter(d => !d._isTomadorDiv && !(isValidadoWinThor(d.validado_winthor) || d._originalStatus === 'Totalmente Validada'));
             const filialData = {};
             nonTomadorDiv.forEach(d => {
                 const f = d.codfilial || 'N/D';
                 if (!filialData[f]) filialData[f] = { ok: 0, div: 0 };
-                if (d.status === 'OK') filialData[f].ok++;
+                if (d._originalStatus === 'OK') filialData[f].ok++;
                 else filialData[f].div++;
             });
 
@@ -1211,7 +777,8 @@
             }
 
             container.innerHTML = recentValidated.map(item => {
-                const isOk = item.status === 'OK' || item.status === 'Validado';
+                const status = item._originalStatus || item.status;
+                const isOk = isValidadoWinThor(item.validado_winthor) || status === 'OK' || status === 'Totalmente Validada';
                 const dotColor = isOk ? '#22c55e' : '#f59e0b';
                 const statusBadge = isOk
                     ? '<span class="status-badge bg-emerald-50 text-emerald-700 border border-emerald-200"><i class="fa-solid fa-check fa-xs"></i>Validado</span>'
@@ -1241,10 +808,9 @@
         // FILIAIS PANEL
         // =====================
         const ALL_FILIAIS = [
-            { codigo: '1', uf: 'SP' }, { codigo: '11', uf: 'SP' },
-            { codigo: '2', uf: 'RS' }, { codigo: '22', uf: 'RS' },
-            { codigo: '3', uf: 'SC' }, { codigo: '33', uf: 'SC' },
-            { codigo: '4', uf: 'SP' }
+            { codigo: '1', uf: 'SP' },
+            { codigo: '2', uf: 'RS' },
+            { codigo: '3', uf: 'SC' }
         ];
 
         function renderFiliaisPanel(data) {
@@ -1258,14 +824,14 @@
                 const temDados = filiaisComDados.has(f.codigo);
                 const count = data.filter(d => String(d.codfilial) === f.codigo).length;
                 if (temDados) {
-                    return `<div class="flex items-center justify-between px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-700 w-full" title="${count} lançamentos">
-                        <div class="flex items-center gap-1.5"><i class="fa-solid fa-circle-check fa-xs"></i><span>${f.codigo} (${f.uf})</span></div>
-                        <span class="text-[10px] font-bold bg-emerald-100/80 px-1.5 py-0.5 rounded text-emerald-800">${count}</span>
+                    return `<div class="filial-badge filial-ok" title="${count} lançamentos">
+                        <i class="fa-solid fa-circle-check fa-xs"></i><span>${f.codigo} (${f.uf})</span>
+                        <span class="ml-auto text-[10px] font-bold">${count}</span>
                     </div>`;
                 } else {
-                    return `<div class="flex items-center justify-between px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-xs font-bold text-red-600 w-full" title="Nenhum lançamento encontrado">
-                        <div class="flex items-center gap-1.5"><i class="fa-solid fa-triangle-exclamation fa-xs"></i><span>${f.codigo} (${f.uf})</span></div>
-                        <span class="text-[10px] font-bold bg-red-100/80 px-1.5 py-0.5 rounded text-red-800">0</span>
+                    return `<div class="filial-badge filial-err" title="Sem lançamentos">
+                        <i class="fa-solid fa-triangle-exclamation fa-xs"></i><span>${f.codigo} (${f.uf})</span>
+                        <span class="ml-auto text-[10px] font-bold">0</span>
                     </div>`;
                 }
             }).join('');
@@ -1384,7 +950,7 @@
                         window.dashboardData.all.unshift(row);
                     }
 
-                    if (row.validado_winthor && !window.dashboardData.recentValidated.find(r => r.id === row.id)) {
+                    if ((isValidadoWinThor(row.validado_winthor) || row.status === 'Totalmente Validada') && !window.dashboardData.recentValidated.find(r => r.id === row.id)) {
                         window.dashboardData.recentValidated.unshift(row);
                     }
 
