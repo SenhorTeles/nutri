@@ -8,7 +8,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
-            darkMode: ['class', '[data-theme="dark"]'],
             theme: {
                 extend: {
                     colors: {
@@ -36,15 +35,6 @@
             --color-primary-hover: #9a7209;
             --color-primary-light: #fdf8f0;
             --color-accent: #d97706;
-        }
-
-        html[data-theme="dark"] {
-            --color-bg: #0c0a09;
-            --color-surface: #1c1917;
-            --color-border: #292524;
-            --color-text-primary: #f2f2f2;
-            --color-text-secondary: #a8a29e;
-            --color-primary-light: #3d2e0a;
         }
 
         body {
@@ -168,29 +158,158 @@
         }
 
         @media print {
+            @page {
+                margin: 15mm 12mm 15mm 12mm;
+                size: A4;
+            }
+
             body {
-                background: white;
+                background: white !important;
+                color: #000 !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                font-size: 11px;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
             }
 
             .no-print {
-                display: none;
+                display: none !important;
             }
 
-            .card {
-                box-shadow: none;
-                border: 1px solid #ddd;
+            .max-w-4xl {
+                max-width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            .card,
+            .feature-card {
+                box-shadow: none !important;
+                border: 1px solid #ccc !important;
+                border-radius: 6px !important;
+                break-inside: avoid;
+                page-break-inside: avoid;
+                transform: none !important;
+                background: white !important;
+            }
+
+            .feature-card {
+                border-left: 4px solid #b8860b !important;
+            }
+
+            .gradient-header {
+                background: #1c1917 !important;
+                padding: 16px 20px !important;
+                border-radius: 6px !important;
+            }
+
+            .price-card {
+                background: #1c1917 !important;
+                border: 2px solid #b8860b !important;
+                border-radius: 6px !important;
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+
+            .stat-box {
+                border: 1px solid #ccc !important;
+                background: white !important;
+            }
+
+            h1, h2, h3, h4 {
+                break-after: avoid;
+                page-break-after: avoid;
+            }
+
+            .card.p-6,
+            .feature-card.p-5 {
+                padding: 12px 14px !important;
+            }
+
+            .space-y-6 > * {
+                margin-bottom: 10px !important;
+            }
+
+            .gradient-header *,
+            .price-card * {
+                color: #fff !important;
+            }
+
+            .price-card .text-5xl {
+                font-size: 28px !important;
+            }
+
+            .badge {
+                background: #f5f5f5 !important;
+                color: #b8860b !important;
+                border: 1px solid #b8860b !important;
+            }
+
+            .grid {
+                display: block !important;
+            }
+
+            .grid > * {
+                width: 100% !important;
+                margin: 0 0 8px 0 !important;
+                display: block !important;
+            }
+
+            .grid.grid-cols-2 > *,
+            .grid.grid-cols-3 > *,
+            .grid.grid-cols-4 > * {
+                width: 100% !important;
+            }
+
+            img {
+                max-width: 80px !important;
+            }
+
+            .timeline-item {
+                break-inside: avoid;
+                page-break-inside: avoid;
+                padding: 6px 0 6px 16px !important;
+            }
+
+            .rounded-2xl,
+            .rounded-xl,
+            .rounded-lg {
+                border-radius: 6px !important;
+            }
+
+            .section-divider {
+                margin: 12px 0 !important;
+            }
+
+            p, li {
+                font-size: 10px !important;
+            }
+
+            .text-3xl {
+                font-size: 20px !important;
+            }
+            .text-xl {
+                font-size: 16px !important;
+            }
+            .text-lg {
+                font-size: 14px !important;
+            }
+            .text-xs {
+                font-size: 9px !important;
+            }
+
+            .stat-value {
+                font-size: 20px !important;
+            }
+
+            .gradient-header,
+            .bg-gradient-to-r {
+                background: #1c1917 !important;
             }
         }
     </style>
-    <script>
-            (function () {
-                try {
-                    if (JSON.parse(localStorage.getItem('gestaovscontabil_theme'))?.mode === 'escuro') {
-                        document.documentElement.setAttribute('data-theme', 'dark');
-                    }
-                } catch (e) { }
-            })();
-    </script>
+    
 </head>
 
 <body class="min-h-screen py-8 px-4">
@@ -213,7 +332,7 @@
                 </div>
                 <div class="text-right">
                     <div class="badge bg-white/10 text-white border border-white/20">
-                        <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-file-signature"></i>
                         Proposta Exclusiva
                     </div>
                 </div>
@@ -239,7 +358,7 @@
                 </div>
                 <div class="p-4 rounded-lg bg-gray-50 border border-gray-100">
                     <p class="text-xs text-gray-500 uppercase tracking-wide">Validade</p>
-                    <p class="font-semibold text-lg mt-1 text-amber-600">08/05/2026</p>
+                    <p class="font-semibold text-lg mt-1 text-amber-600">29/05/2026</p>
                 </div>
             </div>
         </div>
@@ -264,6 +383,14 @@
                     </li>
                     <li class="flex items-start gap-2">
                         <i class="fa-solid fa-xmark text-red-500 mt-1"></i>
+                        <span>Sem Manifestação do Destinatário — risco de aceitar notas indevidas.</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <i class="fa-solid fa-xmark text-red-500 mt-1"></i>
+                        <span>Ausência de confronto de DACTe, DANFe e NFS.</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <i class="fa-solid fa-xmark text-red-500 mt-1"></i>
                         <span>Processos manuais propensos a erros.</span>
                     </li>
                     <li class="flex items-start gap-2">
@@ -282,11 +409,15 @@
                 <ul class="space-y-3 text-sm text-gray-600">
                     <li class="flex items-start gap-2">
                         <i class="fa-solid fa-check text-green-500 mt-1"></i>
-                        <span>Automação completa de confronto fiscal.</span>
+                        <span>Automação completa de confronto fiscal (NF Consumo, DANFe, DACTe, NFS).</span>
                     </li>
                     <li class="flex items-start gap-2">
                         <i class="fa-solid fa-check text-green-500 mt-1"></i>
-                        <span>Validação em tempo real de NF-e e NFC-e.</span>
+                        <span>Manifestação do Destinatário da NF-e com os 4 tipos de evento.</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <i class="fa-solid fa-check text-green-500 mt-1"></i>
+                        <span>Validação em tempo real de NF-e, NFC-e, DACTe e NFS-e.</span>
                     </li>
                     <li class="flex items-start gap-2">
                         <i class="fa-solid fa-check text-green-500 mt-1"></i>
@@ -382,8 +513,73 @@
                         </li>
                         <li><i class="fa-solid fa-check text-amber-500 mr-1"></i>Log de validações (quem, quando,
                             e-mail)</li>
-                        <li><i class="fa-solid fa-check text-amber-500 mr-1"></i>Segurança via Supabase (PostgreSQL)
+                        <li><i class="fa-solid fa-check text-amber-500 mr-1"></i>Segurança via banco de dados seguro e escalável
                         </li>
+                    </ul>
+                </div>
+
+                <div class="feature-card p-5 rounded-xl">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div
+                            class="w-10 h-10 rounded-lg bg-white flex items-center justify-center text-amber-600 shadow-sm">
+                            <i class="fa-solid fa-file-signature"></i>
+                        </div>
+                        <h4 class="font-bold text-gray-900">Manifestação do Destinatário NF-e</h4>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-3">Permite que o destinatário manifeste ciência, confirmação, desconhecimento ou não realização da operação.</p>
+                    <ul class="text-xs text-gray-500 space-y-1">
+                        <li><i class="fa-solid fa-check text-amber-500 mr-1"></i>Ciência da Operação — você viu que a nota existe</li>
+                        <li><i class="fa-solid fa-check text-amber-500 mr-1"></i>Confirmação da Operação — a nota é realmente sua</li>
+                        <li><i class="fa-solid fa-check text-amber-500 mr-1"></i>Desconhecimento da Operação — você não conhece essa nota</li>
+                        <li><i class="fa-solid fa-check text-amber-500 mr-1"></i>Operação não Realizada — a compra não aconteceu</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card p-5 rounded-xl">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div
+                            class="w-10 h-10 rounded-lg bg-white flex items-center justify-center text-amber-600 shadow-sm">
+                            <i class="fa-solid fa-truck-fast"></i>
+                        </div>
+                        <h4 class="font-bold text-gray-900">Confronto DACTe</h4>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-3">Validação automática do Documento Auxiliar de Conhecimento de Transporte Eletrônico.</p>
+                    <ul class="text-xs text-gray-500 space-y-1">
+                        <li><i class="fa-solid fa-check text-amber-500 mr-1"></i>Confronto de valores de frete e espécie de transporte</li>
+                        <li><i class="fa-solid fa-check text-amber-500 mr-1"></i>Validação de tomador, remetente e destinatário</li>
+                        <li><i class="fa-solid fa-check text-amber-500 mr-1"></i>Conferência de chave de acesso e série do documento</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card p-5 rounded-xl">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div
+                            class="w-10 h-10 rounded-lg bg-white flex items-center justify-center text-amber-600 shadow-sm">
+                            <i class="fa-solid fa-file-invoice"></i>
+                        </div>
+                        <h4 class="font-bold text-gray-900">Confronto DANFe</h4>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-3">Validação completa do Documento Auxiliar da Nota Fiscal Eletrônica contra WinThor e SEFAZ.</p>
+                    <ul class="text-xs text-gray-500 space-y-1">
+                        <li><i class="fa-solid fa-check text-amber-500 mr-1"></i>Confronto de valores totais, base de cálculo e impostos</li>
+                        <li><i class="fa-solid fa-check text-amber-500 mr-1"></i>Validação de emitente, destinatário e CFOP</li>
+                        <li><i class="fa-solid fa-check text-amber-500 mr-1"></i>Conferência de data de emissão e protocolo de autorização</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card p-5 rounded-xl">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div
+                            class="w-10 h-10 rounded-lg bg-white flex items-center justify-center text-amber-600 shadow-sm">
+                            <i class="fa-solid fa-receipt"></i>
+                        </div>
+                        <h4 class="font-bold text-gray-900">Confronto NFS (Nota Fiscal de Serviço)</h4>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-3">Validação automática de Notas Fiscais de Serviço contra sistemas internos e prefeituras.</p>
+                    <ul class="text-xs text-gray-500 space-y-1">
+                        <li><i class="fa-solid fa-check text-amber-500 mr-1"></i>Confronto de valores de serviços, ISS e deduções</li>
+                        <li><i class="fa-solid fa-check text-amber-500 mr-1"></i>Validação de tomador e prestador do serviço</li>
+                        <li><i class="fa-solid fa-check text-amber-500 mr-1"></i>Conferência de RPS, série e número da NFS-e</li>
                     </ul>
                 </div>
             </div>
@@ -429,7 +625,7 @@
                 <div class="timeline-item">
                     <div class="flex-1">
                         <h4 class="font-semibold">Fase 1: Setup e Configuração</h4>
-                        <p class="text-sm text-gray-500">Configuração de integração com WinThor e Supabase. Definição de
+                        <p class="text-sm text-gray-500">Configuração de integração com WinThor e banco de dados. Definição de
                             regras de validação.</p>
                     </div>
                     <div class="text-right">
@@ -438,8 +634,8 @@
                 </div>
                 <div class="timeline-item">
                     <div class="flex-1">
-                        <h4 class="font-semibold">Fase 2: Implementação do Módulo</h4>
-                        <p class="text-sm text-gray-500">Deploy do Confronto NF Consumo, treinamento da equipe.</p>
+                        <h4 class="font-semibold">Fase 2: Módulos de Confronto</h4>
+                        <p class="text-sm text-gray-500">Deploy do Confronto NF Consumo, DANFe, DACTe e NFS. Treinamento da equipe.</p>
                     </div>
                     <div class="text-right">
                         <span class="badge">Semana 2-3</span>
@@ -447,7 +643,16 @@
                 </div>
                 <div class="timeline-item">
                     <div class="flex-1">
-                        <h4 class="font-semibold">Fase 3: Go Live e Suporte</h4>
+                        <h4 class="font-semibold">Fase 3: Manifestação do Destinatário</h4>
+                        <p class="text-sm text-gray-500">Implementação da Manifestação do Destinatário NF-e com os 4 tipos de evento.</p>
+                    </div>
+                    <div class="text-right">
+                        <span class="badge">Semana 3</span>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="flex-1">
+                        <h4 class="font-semibold">Fase 4: Go Live e Suporte</h4>
                         <p class="text-sm text-gray-500">Ativação do sistema, suporte intensivo e ajustes finos.</p>
                     </div>
                     <div class="text-right">
@@ -487,11 +692,17 @@
                 <div class="text-center">
                     <div class="inline-block bg-amber-500/20 rounded-2xl px-8 py-4 border border-amber-500/30">
                         <p class="text-gray-400 text-sm mb-1">VALOR MENSAL DO INVESTIMENTO</p>
-                        <p class="text-5xl font-extrabold text-white">R$ 5.000,00</p>
+                        <p class="text-5xl font-extrabold text-white">R$ 6.000,00</p>
                         <p class="text-amber-400 text-sm mt-2">Contrato mensal com possibilidade de negociação</p>
                     </div>
                     <p class="text-gray-500 text-xs mt-4"><i class="fa-solid fa-handshake text-amber-400"></i> Valor
                         aberto para discussão - fale com seu consultor</p>
+                    <div class="mt-6 p-4 rounded-lg bg-white/5 border border-white/10">
+                        <p class="text-sm text-gray-300 text-center">
+                            <i class="fa-solid fa-clock text-amber-400 mr-1"></i>
+                            O aceite desta proposta autoriza o uso, teste e implementação do sistema pelo período de <strong class="text-white">30 dias</strong>. Após este período, as mensalidades passarão a vigorar normalmente.
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
